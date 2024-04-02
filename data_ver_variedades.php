@@ -84,7 +84,7 @@ if ($consulta == "busca_variedades") {
             if (mysqli_num_rows($val) > 0) {
                 echo "EL CÓDIGO INGRESADO YA ESTÁ EN USO. ELIGE OTRO.";
             } else {
-                $query = "INSERT INTO variedades_producto (nombre, precio, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', '$id_tipo', '$codigo', '$dias_produccion');";
+                $query = "INSERT INTO variedades_producto (nombre, precio, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', '$id_tipo', '$codigo', $dias_produccion);";
                 if (mysqli_query($con, $query)) {
                     echo "success";
                 } else {
@@ -103,7 +103,7 @@ if ($consulta == "busca_variedades") {
     $dias_produccion = $_POST["dias_produccion"] == null ? "NULL" : $_POST["dias_produccion"];
 
     try {
-        $query = "UPDATE variedades_producto SET nombre = UPPER('$nombre'), precio = '$precio', dias_produccion = '$dias_produccion' WHERE id = $id_variedad";
+        $query = "UPDATE variedades_producto SET nombre = UPPER('$nombre'), precio = '$precio', dias_produccion = $dias_produccion WHERE id = $id_variedad";
         if (mysqli_query($con, $query)) {
             echo "success";
         } else {

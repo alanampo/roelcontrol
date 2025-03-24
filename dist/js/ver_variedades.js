@@ -31,14 +31,31 @@ $(document).ready(() => {
   });
 });
 
+function handleKeyDown(event, obj,id) {
+  if (event.key === 'Enter') {
+    $(obj).parent().find("button").click()
+    setTimeout(()=>{
+      if (id){
+        $(".input-value-"+id).focus()
+      }
+      else{
+        $("#input-nombre-atributo").focus()
+      }
+      
+    },500)
+  }
+}
+
 function busca_productos(filtro) {
+  const filtroAtributos = $("#select_filtro_atributos").val();
+ 
   $.ajax({
     beforeSend: function () {
       $("#tabla_entradas").html("Cargando productos, espere...");
     },
     url: "data_ver_variedades.php",
     type: "POST",
-    data: { filtro: filtro, consulta: "busca_variedades" },
+    data: { filtro: filtro, consulta: "busca_variedades", filtroAtributos },
     success: function (x) {
       $("#tabla_entradas").html(x);
       let table = $("#tabla").DataTable({
@@ -121,6 +138,7 @@ function MostrarModalAgregarProducto(producto) {
     }
 
     edit_mode = true;
+    getAtributosVariedad(producto.id)
   } else {
     //AGREGANDO
     $(
@@ -135,10 +153,14 @@ function MostrarModalAgregarProducto(producto) {
     $("#ModalAgregarProducto").removeAttr("x-codigo-tipo");
     edit_mode = false;
     $(".form-dias-produccion-variedad").addClass("d-none");
+    getAtributosVariedad()
   }
 
   $("#ModalAgregarProducto").modal("show");
   $("#input-nombre").focus();
+
+
+  
 }
 
 function CerrarModalProducto() {
@@ -186,6 +208,22 @@ function GuardarProducto() {
     return;
   }
 
+  let atributos = null;
+  if ($("#table-atributos > tbody > tr").length) {
+    atributos = [];
+    $("#table-atributos > tbody > tr").each(function (e) {
+      const id = $(this).attr("x-id");
+
+      const valorSelect = $(this).find(".selectpicker").length
+        ? $(this).find(".selectpicker").first().val()
+        : null;
+      atributos.push({
+        id: id,
+        valorSelect: valorSelect && valorSelect.length ? valorSelect : null,
+      });
+    });
+  }
+
   CerrarModalProducto();
   if (!edit_mode) {
     $.ajax({
@@ -197,6 +235,7 @@ function GuardarProducto() {
         precio: precio,
         id_tipo: id_tipo,
         codigo: codigo,
+        atributos: atributos && atributos.length ? JSON.stringify(atributos) : null,
         dias_produccion:
           codigo_tipo == "E" || codigo_tipo == "S" ? dias_produccion : null,
       },
@@ -227,6 +266,7 @@ function GuardarProducto() {
         id_variedad: $("#ModalAgregarProducto").attr("x-id-variedad"),
         nombre: nombre,
         precio: precio,
+        atributos: atributos && atributos.length ? JSON.stringify(atributos) : null,
         dias_produccion:
           codigo_tipo == "E" || codigo_tipo == "S" ? dias_produccion : null,
       },
@@ -279,7 +319,7 @@ function pone_tipos() {
         }
       );
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 }
 
@@ -301,7 +341,7 @@ function eliminar(id) {
     switch (value) {
       case "catch":
         $.ajax({
-          beforeSend: function () {},
+          beforeSend: function () { },
           url: "data_ver_variedades.php",
           type: "POST",
           data: { consulta: "eliminar_variedad", id_variedad: id },
@@ -317,7 +357,7 @@ function eliminar(id) {
               );
             }
           },
-          error: function (jqXHR, estado, error) {},
+          error: function (jqXHR, estado, error) { },
         });
 
         break;
@@ -344,17 +384,17 @@ function cargarUltimaVariedad2(id_tipo) {
   });
 }
 
-function exportarVariedades(){
+function exportarVariedades() {
   $.ajax({
     url: "data_ver_variedades.php",
     type: "POST",
     data: {
       consulta: "exportar_variedades",
-      
+
     },
     success: function (x) {
       console.log(x)
-      if (x.includes("success")){
+      if (x.includes("success")) {
         swal("Generaste el CSV correctamente!", "", "success")
       }
     },

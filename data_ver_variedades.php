@@ -13,12 +13,38 @@ mysqli_query($con, "SET NAMES 'utf8'");
 $consulta = $_POST["consulta"];
 
 if ($consulta == "busca_variedades") {
+    $filtroAtributos = $_POST["filtroAtributos"] ?? [];
+    $atributos = [];
+    $headersAtributos = "";
+    $atributosValoresPorVariedad = [];
+
+    if (!empty($filtroAtributos)) {
+        // Obtener los atributos seleccionados
+        $query = "SELECT * FROM atributos WHERE id IN (" . implode(",", $filtroAtributos) . ")";
+        $result = mysqli_query($con, $query);
+        while ($row = mysqli_fetch_assoc($result)) {
+            $atributos[] = $row;
+            $headersAtributos .= "<th>$row[nombre]</th>";
+        }
+
+        // Obtener los valores de atributos para cada variedad
+        $query = "SELECT avv.id_variedad, av.valor, av.id_atributo 
+                  FROM atributos_valores_variedades avv
+                  INNER JOIN atributos_valores av ON avv.id_atributo_valor = av.id
+                  WHERE av.id_atributo IN (" . implode(",", $filtroAtributos) . ")";
+        $result = mysqli_query($con, $query);
+        while ($row = mysqli_fetch_assoc($result)) {
+            $atributosValoresPorVariedad[$row['id_variedad']][$row['id_atributo']] = $row['valor'];
+        }
+    }
+
     $id_variedadfiltro = $_POST['filtro'];
-    $val = mysqli_query($con, "SET SESSION SQL_BIG_SELECTS=1");
+    mysqli_query($con, "SET SESSION SQL_BIG_SELECTS=1");
 
     $cadena = "SELECT v.id as id_variedad, t.id as id_tipo, t.nombre as nombre_tipo,
           v.nombre as nombre_variedad, t.codigo, v.precio, v.id_interno, v.dias_produccion
-          FROM variedades_producto v INNER JOIN tipos_producto t ON t.id = v.id_tipo";
+          FROM variedades_producto v 
+          INNER JOIN tipos_producto t ON t.id = v.id_tipo";
 
     if ($id_variedadfiltro != null) {
         $cadena .= " WHERE v.eliminada IS NULL AND id_tipo = " . $id_variedadfiltro;
@@ -29,17 +55,13 @@ if ($consulta == "busca_variedades") {
     $val = mysqli_query($con, $cadena);
 
     if (mysqli_num_rows($val) > 0) {
-
         echo "<div class='box box-primary'>";
-        echo "<div class='box-header with-border'>";
-        echo "</div>";
+        echo "<div class='box-header with-border'></div>";
         echo "<div class='box-body'>";
         echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
-        echo "<thead>";
-        echo "<tr>";
-        echo "<th>Tipo</th><th>Variedad</th><th>Precio</th><th>Precio c/ IVA</th><th>Días en Producción</th><th></th>";
-        echo "</tr>";
-        echo "</thead>";
+        echo "<thead><tr>";
+        echo "<th>Tipo</th><th>Variedad</th>$headersAtributos<th>Precio</th><th>Precio c/ IVA</th><th>Días en Producción</th><th></th>";
+        echo "</tr></thead>";
         echo "<tbody>";
 
         while ($ww = mysqli_fetch_array($val)) {
@@ -49,19 +71,26 @@ if ($consulta == "busca_variedades") {
             $precio = $ww['precio'];
             $precio_iva = number_format(round((float) $ww['precio'] * 1.19, 0, PHP_ROUND_HALF_UP), 2);
             $btneliminar = $_SESSION["id_usuario"] == 1 ? "<button class='btn btn-danger fa fa-trash' onClick='eliminar($id_variedad)'></button>" : "";
-            echo "
-    <tr class='text-center' style='cursor:pointer' x-codigo-tipo='$ww[codigo]' x-id-interno='$ww[id_interno]' x-dias-produccion='$ww[dias_produccion]' x-id='$id_variedad' x-id-tipo='$id_tipo' x-precio='$precio' x-precio-iva='$precio_iva' x-nombre='$variedad'>
-      <td class='clickable'>$tipo $ww[id_interno]</td>
-      <td class='clickable'>$variedad</td>
-      <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio</td>
-      <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio_iva</td>
-      <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ww[dias_produccion]</td>
 
-      <td class='text-center'>
-          $btneliminar
-      </td>
-    </tr>";
+            echo "
+            <tr class='text-center' style='cursor:pointer' x-codigo-tipo='$ww[codigo]' x-id-interno='$ww[id_interno]' x-dias-produccion='$ww[dias_produccion]' x-id='$id_variedad' x-id-tipo='$id_tipo' x-precio='$precio' x-precio-iva='$precio_iva' x-nombre='$variedad'>
+            <td class='clickable'>$tipo $ww[id_interno]</td>
+            <td class='clickable'>$variedad</td>";
+
+            if (!empty($atributos)) {
+                foreach ($atributos as $a) {
+                    $valor = $atributosValoresPorVariedad[$id_variedad][$a['id']] ?? ''; // Obtener el valor si existe
+                    echo "<td>$valor</td>";
+                }
+            }
+
+            echo "<td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio</td>
+                  <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio_iva</td>
+                  <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ww[dias_produccion]</td>
+                  <td class='text-center'>$btneliminar</td>
+                  </tr>";
         }
+
         echo "</tbody>";
         echo "</table>";
         echo "</div>";
@@ -69,7 +98,8 @@ if ($consulta == "busca_variedades") {
     } else {
         echo "<div class='callout callout-danger'><b>No se encontraron productos en la base de datos...</b></div>";
     }
-} else if ($consulta == "agregar_variedad") {
+}
+ else if ($consulta == "agregar_variedad") {
     $nombre = mysqli_real_escape_string($con, $_POST['nombre']);
     $codigo = mysqli_real_escape_string($con, $_POST['codigo']);
     $dias_produccion = $_POST["dias_produccion"] == null ? "NULL" : $_POST["dias_produccion"];
@@ -80,20 +110,55 @@ if ($consulta == "busca_variedades") {
         if (mysqli_num_rows($val) > 0) {
             echo "YA EXISTE UNA VARIEDAD CON ESE NOMBRE!";
         } else {
+            $errors = [];
             $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE id_tipo = $id_tipo AND id_interno = $codigo;");
             if (mysqli_num_rows($val) > 0) {
                 echo "EL CÓDIGO INGRESADO YA ESTÁ EN USO. ELIGE OTRO.";
             } else {
+                mysqli_autocommit($con, FALSE);
                 $query = "INSERT INTO variedades_producto (nombre, precio, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', '$id_tipo', '$codigo', $dias_produccion);";
                 if (mysqli_query($con, $query)) {
+                    $id_variedad = mysqli_insert_id($con);
+                    if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
+                        $atributos = json_decode($_POST["atributos"], true);
+
+                        foreach ($atributos as $atr) {
+                            if (isset($atr["valorSelect"])) {
+                                $item = $atr["valorSelect"];
+                                $query = "INSERT INTO atributos_valores_variedades (
+                                        id_variedad,
+                                        id_atributo_valor
+                                    ) VALUES (
+                                        $id_variedad,
+                                        $item
+                                    )";
+                                if (!mysqli_query($con, $query)) {
+                                    $errors[] = mysqli_error($con) . "-" . $query;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    $errors[] = mysqli_error($con) . "-" . $query;
+                }
+
+                if (mysqli_commit($con)) {
                     echo "success";
                 } else {
-                    print_r(mysqli_error($con));
+                    mysqli_rollback($con);
+                    if (count($errors) > 0) {
+                        foreach ($errors as $error) {
+                            echo $error . "<br>";
+                        }
+                    } else {
+                        echo "error:" . mysqli_error($con);
+                    }
                 }
+
             }
 
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         echo "error: " . $th;
     }
 } else if ($consulta == "editar_variedad") {
@@ -103,14 +168,55 @@ if ($consulta == "busca_variedades") {
     $dias_produccion = $_POST["dias_produccion"] == null ? "NULL" : $_POST["dias_produccion"];
 
     try {
+        $errors = [];
+        mysqli_autocommit($con, FALSE);
         $query = "UPDATE variedades_producto SET nombre = UPPER('$nombre'), precio = '$precio', dias_produccion = $dias_produccion WHERE id = $id_variedad";
         if (mysqli_query($con, $query)) {
+            if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
+                $query = "DELETE FROM atributos_valores_variedades WHERE id_variedad = $id_variedad;";
+                if (!mysqli_query($con, $query)) {
+                    $errors[] = mysqli_error($con) . "-" . $query;
+                }
+
+                $atributos = json_decode($_POST["atributos"], true);
+
+                foreach ($atributos as $atr) {
+                    // if (isset($atr["valorSelect"]) && count($atr["valorSelect"]) > 0) {
+                    //     foreach ($atr["valorSelect"] as $item) {
+                    if (isset($atr["valorSelect"])) {
+                        $item = $atr["valorSelect"];
+                        $query = "INSERT INTO atributos_valores_variedades (
+                                id_variedad,
+                                id_atributo_valor
+                            ) VALUES (
+                                $id_variedad,
+                                $item
+                            )";
+                        if (!mysqli_query($con, $query)) {
+                            $errors[] = mysqli_error($con) . "-" . $query;
+                        }
+                    }
+                    // }
+                }
+            }
+        } else {
+            $errors[] = mysqli_error($con) . "-" . $query;
+        }
+
+        if (mysqli_commit($con)) {
             echo "success";
         } else {
-            print_r(mysqli_error($con));
+            mysqli_rollback($con);
+            if (count($errors) > 0) {
+                foreach ($errors as $error) {
+                    echo $error . "<br>";
+                }
+            } else {
+                echo "error:" . mysqli_error($con);
+            }
         }
-    } catch (\Throwable$th) {
-        echo "error: " . $th;
+    } catch (\Throwable $th) {
+        echo "error: " . $th . " " . $query;
     }
 } else if ($consulta == "eliminar_variedad") {
     try {
@@ -120,7 +226,7 @@ if ($consulta == "busca_variedades") {
         } else {
             print_r(mysqli_error($con));
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error";
     }
@@ -137,7 +243,7 @@ if ($consulta == "busca_variedades") {
                 echo "<option x-precio='$re[precio]' x-codigo='$re[codigo]' x-nombre='$nombre' x-codigofull='$re[codigo]$id_interno' value='$re[id]'>$re[nombre] ($re[codigo]$id_interno) $precio</option>";
             }
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
     }
 } else if ($consulta == "busca_especies_select") {
@@ -150,7 +256,7 @@ if ($consulta == "busca_variedades") {
                 echo "<option x-nombre='$re[nombre]' value='$re[id]'>$re[nombre] ($re[id])</option>";
             }
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
     }
 } else if ($consulta == "agregar_especie") {
@@ -169,7 +275,7 @@ if ($consulta == "busca_variedades") {
                 print_r(mysqli_error($con));
             }
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         echo "error: " . $th;
     }
 } else if ($consulta == "cargar_dias_produccion") {
@@ -181,7 +287,7 @@ if ($consulta == "busca_variedades") {
             $re = mysqli_fetch_assoc($val);
             echo "dias:$re[dias_produccion]";
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         echo "error: " . $th;
     }
 } else if ($consulta == "exportar_variedades") {
@@ -268,7 +374,7 @@ if ($consulta == "busca_variedades") {
 
         try {
             $fp = fopen('file.csv', 'w');
-            $array = str_replace('"', '', $field);    
+            $array = str_replace('"', '', $field);
             //fputs($fp, implode(';', $array)."\n");
 
             while ($ww = mysqli_fetch_array($val)) {
@@ -279,18 +385,17 @@ if ($consulta == "busca_variedades") {
                 $precio_iva = number_format(round((float) $ww['precio'] * 1.19, 0, PHP_ROUND_HALF_UP), 2);
 
                 $producto = "";
-                if ($ww["codigo"] == "PT"){
-                    $producto = ucwords(strtolower(str_replace("/", "-",$ww["nombre_variedad"])));
-                }
-                else if ($ww["codigo"] == "E" || $ww["codigo"] == "S"){
+                if ($ww["codigo"] == "PT") {
+                    $producto = ucwords(strtolower(str_replace("/", "-", $ww["nombre_variedad"])));
+                } else if ($ww["codigo"] == "E" || $ww["codigo"] == "S") {
                     $producto = ucwords(strtolower(str_replace("/", "-", $ww["nombre_variedad"])));
                 }
                 $field = array(
                     $ww["id_variedad"],
                     1,
                     $producto,
-                    ucwords(strtolower($ww["nombre_tipo"])) ,
-                    (int)$ww["precio"],
+                    ucwords(strtolower($ww["nombre_tipo"])),
+                    (int) $ww["precio"],
                     1,
                     "",
                     0,
@@ -298,7 +403,7 @@ if ($consulta == "busca_variedades") {
                     "",
                     "",
                     "",
-                    $ww["codigo"].str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT),
+                    $ww["codigo"] . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT),
                     "", //Supplier reference #",
                     "", //Supplier",
                     "", //Manufacturer",
@@ -323,9 +428,9 @@ if ($consulta == "busca_variedades") {
                     "", //Summary",
                     "", //Description",
                     preg_replace('/\s+/', '-', strtolower($ww["nombre_tipo"])),
-                    "Meta title-".$ww["nombre_variedad"],
-                    "Meta keywords-".$ww["nombre_variedad"],
-                    "Meta description-".$ww["nombre_variedad"],
+                    "Meta title-" . $ww["nombre_variedad"],
+                    "Meta keywords-" . $ww["nombre_variedad"],
+                    "Meta description-" . $ww["nombre_variedad"],
                     "", //URL REWRITTEN
                     "En Stock",//Text when in stock",
                     "Reserva disponible",//Text when backorder allowed",
@@ -354,12 +459,12 @@ if ($consulta == "busca_variedades") {
                     0, //"Warehouse",
                     0,//"Acessories  (x,y,z...)",
                 );
-                $array = str_replace('"', '', $field);    
-                fputs($fp, implode(';', $array)."\n");
+                $array = str_replace('"', '', $field);
+                fputs($fp, implode(';', $array) . "\n");
             }
             fclose($fp);
             echo "success";
-        } catch (\Throwable$th) {
+        } catch (\Throwable $th) {
             throw $th;
         }
 

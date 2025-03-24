@@ -15,3 +15,5 @@ else{
   $dbname = "roel"; /* Database name */
   $dbpresta = "prestashop2";
 }
+
+?>

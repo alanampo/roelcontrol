@@ -12,7 +12,7 @@ $(document).ready(function () {
     $("#select-anio-top10").append(`<option value="${i}">${i}</option>`);
   }
   $(".selectpicker").selectpicker("refresh");
-  $("#select-anio-top10").val(["2022"]);
+  $("#select-anio-top10").val([anio.toString()]);
   $("#select-tipo-top10").val(["semillas"]);
   loadVariedadesEspeciesSelect();
   $("#select-filtro-top10").val(["bandejas"]);
@@ -67,11 +67,12 @@ function busca_entradas(tabName) {
   }
 }
 
-function loadTop(id_cliente) {
+function loadTop(asd) {
   const tipoPedido = $("#select-tipo-top10 option:selected").val(); //SEMILLAS - ESQUEJES
   const anio = $("#select-anio-top10 option:selected").val();
   const mes = $("#select-mes-top10 option:selected").val();
   const tipoFiltro = $("#select-filtro-top10 option:selected").val(); //PLANTAS - BAND - PEDIDOS
+  const id_cliente = $("#select-cliente-top10 option:selected").val();
   $.ajax({
     beforeSend: function () {
       $(".chart-container").html("<h4 class='ml-1'>Buscando, espere...</h4>");
@@ -247,10 +248,12 @@ function loadData(val) {
   }
 }
 
-function loadGeneral(id_cliente) {
+function loadGeneral(asd) {
   const tipoPedido = $("#select-tipo-top10 option:selected").val(); //SEMILLAS - ESQUEJES
   const anio = $("#select-anio-top10 option:selected").val();
   const tipoFiltro = $("#select-filtro-top10 option:selected").val(); //PLANTAS - BAND - PEDIDOS
+  const id_cliente = $("#select-cliente-top10 option:selected").val();
+
   $.ajax({
     beforeSend: function () {
       //$(".chart-container").html("<h4 class='ml-1'>Buscando, espere...</h4>");

@@ -7,11 +7,13 @@
     setcookie('roel-usuario', '', time() - 3600, '/');
     setcookie('roel-token', '', time() - 3600, '/');
     header("Location: index.php");
+    exit;
   }
 
   if($_SESSION["roel-token"] != $_COOKIE["roel-token"]){
     setcookie('roel-usuario', '', time() - 3600, '/');
     setcookie('roel-token', '', time() - 3600, '/');
     header("Location: index.php");
+    exit;
   }
 ?>

@@ -180,8 +180,8 @@ if ($consulta == "busca_top") {
     $tipo_pedido = $_POST["tipo_pedido"];
     $anio = $_POST["anio"];
     $limite = " LIMIT 5";
-    $id_cliente = $_POST["id_cliente"];
-    $wherecliente = strlen($id_cliente) > 0 ? " AND p.id_cliente = $id_cliente" : "";
+    $id_cliente = $_POST["id_cliente"] && !empty($_POST["id_cliente"]) ? $_POST["id_cliente"] : NULL;
+    $wherecliente = isset($id_cliente) ? " AND p.id_cliente = $id_cliente" : "";
 
     $arraymeses = array(
         "1" => array(),

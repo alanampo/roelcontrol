@@ -1,5 +1,7 @@
 <!-- jQuery 3.1.1 -->
-
+<?php
+	$version = 123;
+?>
 <script src="./js/jquery.min.js" type="text/javascript"></script> 
 <script src="./js/jquery-ui.min.js" type="text/javascript"></script> 
 <script src="./js/popper.min.js"></script>

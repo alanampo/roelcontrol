@@ -51,7 +51,7 @@ if (mysqli_num_rows($val) > 0) {
             $_SESSION['id_usuario'] = $r["id"];
             $_SESSION['nombre_real'] = $r["nombre_real"];
             $_SESSION['permisos'] = $r["modulos"];
-            $_SESSION["arraypermisos"] = implode(",", $r["modulos"]);
+            $_SESSION["arraypermisos"] = isset($r["modulos"]) ? implode(",", $r["modulos"]) : [];
             $nombre = $r['nombre'];
             $password = $r['password'];
             $token = sha1(uniqid("roel", TRUE));

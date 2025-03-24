@@ -72,6 +72,8 @@ if ($consulta == "busca_variedades") {
             $precio_iva = number_format(round((float) $ww['precio'] * 1.19, 0, PHP_ROUND_HALF_UP), 2);
             $btneliminar = $_SESSION["id_usuario"] == 1 ? "<button class='btn btn-danger fa fa-trash' onClick='eliminar($id_variedad)'></button>" : "";
 
+            $btneditar = "<button class='btn btn-primary fa fa-edit' onClick='editarVariedad(event, this)'></button>";
+
             echo "
             <tr class='text-center' style='cursor:pointer' x-codigo-tipo='$ww[codigo]' x-id-interno='$ww[id_interno]' x-dias-produccion='$ww[dias_produccion]' x-id='$id_variedad' x-id-tipo='$id_tipo' x-precio='$precio' x-precio-iva='$precio_iva' x-nombre='$variedad'>
             <td class='clickable'>$tipo $ww[id_interno]</td>
@@ -87,7 +89,12 @@ if ($consulta == "busca_variedades") {
             echo "<td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio</td>
                   <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio_iva</td>
                   <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ww[dias_produccion]</td>
-                  <td class='text-center'>$btneliminar</td>
+                  <td class='text-center'>
+                  <div class='d-flex flex-row justify-content-center' style='gap:5px;'>
+                  $btneliminar
+                  $btneditar
+                  </div>
+                  </td>
                   </tr>";
         }
 
@@ -123,7 +130,7 @@ if ($consulta == "busca_variedades") {
                         $atributos = json_decode($_POST["atributos"], true);
 
                         foreach ($atributos as $atr) {
-                            if (isset($atr["valorSelect"])) {
+                            if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
                                 $item = $atr["valorSelect"];
                                 $query = "INSERT INTO atributos_valores_variedades (
                                         id_variedad,
@@ -183,7 +190,7 @@ if ($consulta == "busca_variedades") {
                 foreach ($atributos as $atr) {
                     // if (isset($atr["valorSelect"]) && count($atr["valorSelect"]) > 0) {
                     //     foreach ($atr["valorSelect"] as $item) {
-                    if (isset($atr["valorSelect"])) {
+                    if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
                         $item = $atr["valorSelect"];
                         $query = "INSERT INTO atributos_valores_variedades (
                                 id_variedad,

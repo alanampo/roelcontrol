@@ -269,7 +269,9 @@ function getAtributosVariedad(id) {
                             input = `
                             <select class="selectpicker" data-dropup-auto="false"
                             title="Valor" data-container="body" data-size="5" data-style="btn-info" data-width="350px">`;
-                                        valores.forEach(function (e) {
+                            input+=`<option value='0'>Ninguno</option>`            
+                            
+                            valores.forEach(function (e) {
                                             input += `
                                 <option ${e.selected ? "selected" : ""} value='${e.id}'>${e.valor}</option>
                             `;
@@ -301,31 +303,7 @@ function getAtributosVariedad(id) {
         },
     });
 
-    $(".tr-add-row").first().before(`
-        <tr>
-          <td>
-            <input type='search' autocomplete="off" class="form-control" maxlength="20"/>
-          </td>
-          <td>
-            <select class="selectpicker" data-container="body" data-dropup-auto="false"
-            title="Tipo" data-style="btn-info">
-              <!--
-              <option value="VARCHAR">TEXTO CORTO</option>
-              <option value="TEXT">TEXTO LARGO / DESCRIPCION</option>
-              <option value="INT">NÚMERO ENTERO</option>
-              <option value="DECIMAL">NÚMERO DECIMAL</option>
-              
-              <option value="DATE">FECHA</option>
-              <option value="PRODUCTO">REF. OTRO PRODUCTO</option>
-              <option value="COLOR">COLOR SELECCIONABLE</option>
-              -->
-            </select>
-          </td>
-          <td class="text-center">
-            <button onclick="$(this).parent().parent().remove()" class="btn btn-secondary fa fa-trash btn-sm"></button>
-          </td>
-        </tr>
-      `);
+    
 
     $("#table-tipos-atributo .selectpicker").selectpicker("refresh");
 }

@@ -83,9 +83,9 @@ function busca_productos(filtro) {
           },
         },
       });
-      setClickevent();
+
       $("#tabla").on("draw.dt", function () {
-        setClickevent();
+
       });
     },
     error: function (jqXHR, estado, error) {
@@ -94,9 +94,9 @@ function busca_productos(filtro) {
   });
 }
 
-function setClickevent() {
-  $(".clickable").on("click", function (e) {
-    const row = $(this).parent();
+function editarVariedad(event, obj) {
+  event.preventDefault()
+    const row = $(obj).closest("tr");
     let id = $(row).attr("x-id");
     let nombre = $(row).attr("x-nombre");
     let precio = $(row).attr("x-precio");
@@ -113,7 +113,6 @@ function setClickevent() {
       codigo_tipo: codigo_tipo,
       dias_produccion: dias_produccion,
     });
-  });
 }
 
 function MostrarModalAgregarProducto(producto) {

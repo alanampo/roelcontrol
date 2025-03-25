@@ -1,8 +1,89 @@
 const phpFile = "data_atributos.php";
 
 function modalEditarValor(id, nombre, precio) {
+    $("#input-nombre-valor").val(nombre);
+    $("#input-precio-valor").val(precio && precio.length ? parseInt(precio) : "");
 
+    $("#modal-editar-valores").attr("x-id", id);
+    $("#modal-editar-valores").modal("show");
 }
+
+function editarValor() {
+    const nombre = $("#input-nombre-valor").val().trim().replace(/\s+/g, " ");
+    const precioExtra = $("#input-precio-valor").val().trim().replace(/\s+/g, "");
+    const id = $("#modal-editar-valores").attr("x-id");
+
+    if (!nombre || !nombre.length) {
+        swal("Ingresa el Nombre del Valor", "", "error");
+        return;
+    }
+
+    $.ajax({
+        beforeSend: function () {
+            $("#modal-editar-valores").modal("hide");
+        },
+        url: phpFile,
+        type: "POST",
+        data: {
+            consulta: "editar_valor",
+            id: id,
+            nombre: nombre.toUpperCase(),
+            precioExtra:
+                precioExtra && precioExtra.length && parseInt(precioExtra) > 0
+                    ? precioExtra
+                    : null,
+        },
+        success: function (x) {
+            console.log(x);
+            if (x.includes("success")) {
+                getTableAtributos();
+            } else {
+                swal("Ocurrió un error al editar el Valor", "", "error");
+            }
+        },
+        error: function (jqXHR, estado, error) { },
+    });
+}
+
+function modalEditarNombre(id, nombre) {
+    $("#input-editar-nombre-atributo").val(nombre);
+
+    $("#modal-editar-nombre").attr("x-id", id);
+    $("#modal-editar-nombre").modal("show");
+}
+
+function editarNombreAtributo() {
+    const nombre = $("#input-editar-nombre-atributo").val().trim().replace(/\s+/g, " ");
+    const id = $("#modal-editar-nombre").attr("x-id");
+
+    if (!nombre || !nombre.length) {
+        swal("Ingresa el Nombre del Atributo", "", "error");
+        return;
+    }
+
+    $.ajax({
+        beforeSend: function () {
+            $("#modal-editar-nombre").modal("hide");
+        },
+        url: phpFile,
+        type: "POST",
+        data: {
+            consulta: "editar_nombre_atributo",
+            id: id,
+            nombre: nombre.toUpperCase(),
+        },
+        success: function (x) {
+            console.log(x);
+            if (x.includes("success")) {
+                getTableAtributos();
+            } else {
+                swal("Ocurrió un error al editar el Nombre", "", "error");
+            }
+        },
+        error: function (jqXHR, estado, error) { },
+    });
+}
+
 function modalAtributos() {
     $("#modal-atributos input").val("");
     getTableAtributos();
@@ -269,15 +350,15 @@ function getAtributosVariedad(id) {
                             input = `
                             <select class="selectpicker" data-dropup-auto="false"
                             title="Valor" data-container="body" data-size="5" data-style="btn-info" data-width="350px">`;
-                            input+=`<option value='0'>Ninguno</option>`            
-                            
+                            input += `<option value='0'>Ninguno</option>`
+
                             valores.forEach(function (e) {
-                                            input += `
+                                input += `
                                 <option ${e.selected ? "selected" : ""} value='${e.id}'>${e.valor}</option>
                             `;
-                                        });
+                            });
 
-                                        input += `</select>
+                            input += `</select>
                             `;
                         }
 
@@ -289,7 +370,7 @@ function getAtributosVariedad(id) {
                             </td>
                             </tr>
                         `);
-              
+
 
                     });
 
@@ -303,7 +384,7 @@ function getAtributosVariedad(id) {
         },
     });
 
-    
+
 
     $("#table-tipos-atributo .selectpicker").selectpicker("refresh");
 }

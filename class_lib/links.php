@@ -1,5 +1,5 @@
 <?php
-    $version = 1111;
+    $version = 1;
 ?>
 
 <meta charset="utf-8">

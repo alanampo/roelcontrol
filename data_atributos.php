@@ -1156,7 +1156,7 @@ if ($consulta == "busca") {
             }
 
             echo "<tr class='text-center'>
-                <td>$ww[nombre]</td>
+                <td style='cursor:pointer;' onclick='modalEditarNombre($ww[id], \"$ww[nombre]\")'>$ww[nombre]</td>
                 <td>
                     <div class='d-flex flex-row'>
                         <input type='search' placeholder='Valor' onkeydown='handleKeyDown(event, this, $ww[id])' autocomplete='off' class='form-control input-value-$ww[id]' maxlength='30'/>
@@ -1389,7 +1389,7 @@ else if ($consulta == "get_atributos_select") {
         $nombre = mysqli_real_escape_string($con, test_input($_POST["nombre"]));
         $precioExtra = isset($_POST["precioExtra"]) && strlen($_POST["precioExtra"]) > 0 ? test_input($_POST["precioExtra"]) : "NULL";
 
-        if (mysqli_query($con, "UPDATE atributos_valores SET nombre = '$nombre', precio_extra = $precioExtra WHERE id = $id;")) {
+        if (mysqli_query($con, "UPDATE atributos_valores SET valor = '$nombre', precio_extra = $precioExtra WHERE id = $id;")) {
             echo "success";
         } else {
             print_r(mysqli_error($con));
@@ -1398,7 +1398,23 @@ else if ($consulta == "get_atributos_select") {
         //throw $th;
         echo "error";
     }
-} else if ($consulta == "get_viveros_select") {
+}
+else if ($consulta == "editar_nombre_atributo") {
+    try {
+        $id = $_POST["id"];
+        $nombre = mysqli_real_escape_string($con, test_input($_POST["nombre"]));
+        
+        if (mysqli_query($con, "UPDATE atributos SET nombre = '$nombre' WHERE id = $id;")) {
+            echo "success";
+        } else {
+            print_r(mysqli_error($con));
+        }
+    } catch (\Throwable $th) {
+        //throw $th;
+        echo "error";
+    }
+}
+else if ($consulta == "get_viveros_select") {
     $id_pos = $_POST["id_pos"];
     $esPos = $_POST["esPos"];
     $atributos = json_decode($_POST["atributos"], true);

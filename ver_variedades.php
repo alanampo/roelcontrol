@@ -103,6 +103,10 @@
 
   <?php
   include('modals/atributos.php');
+
+  include('modals/atributos_valores.php');
+  
+  include('modals/atributos_editar_nombre.php');
   ?>
 
   <div id="ModalAgregarProducto" class="modal">

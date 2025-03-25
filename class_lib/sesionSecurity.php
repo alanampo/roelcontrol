@@ -1,7 +1,7 @@
 <?php
   session_name("roel-control");session_start();
   date_default_timezone_set("America/Santiago");
-  $version = "57";
+  $version = 1;
   header('Content-type: text/html; charset=utf-8');
   if(!isset($_SESSION["roel-token"]) || !isset($_COOKIE["roel-token"])){
     setcookie('roel-usuario', '', time() - 3600, '/');

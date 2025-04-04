@@ -1,9 +1,31 @@
 <!-- jQuery 3.1.1 -->
 <?php
-	$version = 12;
+$version = 12;
+
+$filePath = $_SERVER['DOCUMENT_ROOT'] . '/.env';
+if (!file_exists($filePath)) {
+	throw new Exception("Archivo .env no encontrado.");
+}
+
+$lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+foreach ($lines as $line) {
+	if (strpos($line, '=') !== false) {
+		list($name, $value) = explode('=', $line, 2);
+		$name = trim($name);
+		$value = str_replace('"', '', trim($value));
+
+		if (!array_key_exists($name, $_ENV)) {
+			putenv("$name=$value");
+			$_ENV[$name] = $value;
+			$_SERVER[$name] = $value;
+		}
+	}
+}
+
+
 ?>
-<script src="./js/jquery.min.js" type="text/javascript"></script> 
-<script src="./js/jquery-ui.min.js" type="text/javascript"></script> 
+<script src="./js/jquery.min.js" type="text/javascript"></script>
+<script src="./js/jquery-ui.min.js" type="text/javascript"></script>
 <script src="./js/popper.min.js"></script>
 <script src="./js/toastr.min.js"></script>
 <script src="./js/bootstrap/bootstrap.min.js"></script>
@@ -24,9 +46,9 @@
 
 
 <script>
-	 $(document).ready(function(){
-		var fileName = location.href.split("/").slice(-1); 
-		if (!fileName.includes("inicio.php")){
+	$(document).ready(function () {
+		var fileName = location.href.split("/").slice(-1);
+		if (!fileName.includes("inicio.php")) {
 			$("body").addClass('sidebar-collapse').trigger('collapsed.pushMenu');
 		}
 	});

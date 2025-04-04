@@ -1137,7 +1137,7 @@ if ($consulta == "busca") {
         echo "error: " . mysqli_error($con) . " " . $query;
     }
 } else if ($consulta == "get_table_atributos") {
-    $query = "SELECT id, nombre FROM atributos ORDER BY id DESC";
+    $query = "SELECT id, nombre, visible_factura FROM atributos ORDER BY id DESC";
 
     $val = mysqli_query($con, $query);
 
@@ -1156,11 +1156,11 @@ if ($consulta == "busca") {
             }
 
             echo "<tr class='text-center'>
-                <td style='cursor:pointer;' onclick='modalEditarNombre($ww[id], \"$ww[nombre]\")'>$ww[nombre]</td>
+                <td style='cursor:pointer;' onclick='modalEditarNombre($ww[id], \"$ww[nombre]\", $ww[visible_factura])'>$ww[nombre]</td>
                 <td>
                     <div class='d-flex flex-row'>
                         <input type='search' placeholder='Valor' onkeydown='handleKeyDown(event, this, $ww[id])' autocomplete='off' class='form-control input-value-$ww[id]' maxlength='30'/>
-                        <input type='search' style='width:50%' placeholder='Precio Extra' autocomplete='off' class='form-control ml-2 input-int d-none' maxlength='9'/>
+                        <input type='search' style='width:50%' placeholder='Precio Extra' autocomplete='off' class='form-control ml-2 input-int' maxlength='9'/>
                         <button onclick='guardarValorAtributo($ww[id], this)' class='btn btn-sm ml-2 mr-3 btn-success fa fa-save'></button>
                     </div>
                     $valores
@@ -1403,8 +1403,9 @@ else if ($consulta == "editar_nombre_atributo") {
     try {
         $id = $_POST["id"];
         $nombre = mysqli_real_escape_string($con, test_input($_POST["nombre"]));
+        $visible_factura = $_POST["visible_factura"] == "true" ? 1 : 0;
         
-        if (mysqli_query($con, "UPDATE atributos SET nombre = '$nombre' WHERE id = $id;")) {
+        if (mysqli_query($con, "UPDATE atributos SET nombre = '$nombre', visible_factura = $visible_factura WHERE id = $id;")) {
             echo "success";
         } else {
             print_r(mysqli_error($con));

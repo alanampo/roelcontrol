@@ -15,6 +15,15 @@
                             id="input-editar-nombre-atributo" style="text-transform: uppercase" maxlength="40" />
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col form-group">
+
+                    <label class="control-label">Visible en Fact/Cot:</label> <input type="checkbox" class="form-check-input ml-2" id="check_visible_factura">
+                        <input type="search" autocomplete="off" placeholder="Nombre" class="form-control hidden"
+                            style="text-transform: uppercase" maxlength="40" />
+                    
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>

@@ -45,9 +45,9 @@ function editarValor() {
     });
 }
 
-function modalEditarNombre(id, nombre) {
+function modalEditarNombre(id, nombre, visible) {
     $("#input-editar-nombre-atributo").val(nombre);
-
+    $("#check_visible_factura").prop("checked", visible == "1");
     $("#modal-editar-nombre").attr("x-id", id);
     $("#modal-editar-nombre").modal("show");
 }
@@ -70,6 +70,7 @@ function editarNombreAtributo() {
         data: {
             consulta: "editar_nombre_atributo",
             id: id,
+            visible_factura: $("#check_visible_factura").is(":checked"),
             nombre: nombre.toUpperCase(),
         },
         success: function (x) {

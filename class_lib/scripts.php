@@ -1,6 +1,6 @@
 <!-- jQuery 3.1.1 -->
 <?php
-	$version = 1;
+	$version = 12;
 ?>
 <script src="./js/jquery.min.js" type="text/javascript"></script> 
 <script src="./js/jquery-ui.min.js" type="text/javascript"></script> 

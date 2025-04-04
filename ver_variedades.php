@@ -137,20 +137,20 @@
 
           <div class="form-group">
             <div class="row">
-              <div class="col">
+              <div class="col-md-4">
                 <label class="control-label">Código/ID: <span
                     class='label-codigo text-primary font-weight-bold'></span></label>
                 <input type="search" autocomplete="off" id="input-codigo" maxLength="6"
                   style="text-transform: uppercase" class="form-control" placeholder="SOLO NÚMEROS" />
               </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="row">
-              <div class="col">
-                <label class="control-label">Precio:</label>
-                <input type="search" autocomplete="off" id="input-precio" maxLength="9" style="font-weight: bold;"
+              <div class="col-md-4">
+                <label class="control-label">Precio Mayorista:</label>
+                <input type="search" autocomplete="off" id="input-precio" maxLength="10" style="font-weight: bold;"
+                  class="form-control" placeholder="0.00" />
+              </div>
+              <div class="col-md-4">
+                <label class="control-label">Precio Detalle:</label>
+                <input type="search" autocomplete="off" id="input-precio-detalle" maxLength="10" style="font-weight: bold;"
                   class="form-control" placeholder="0.00" />
               </div>
             </div>

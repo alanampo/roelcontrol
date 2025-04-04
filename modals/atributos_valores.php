@@ -14,7 +14,7 @@
                         <input type="search" autocomplete="off" placeholder="Nombre" class="form-control"
                             id="input-nombre-valor" style="text-transform: uppercase" maxlength="30" />
                     </div>
-                    <div class="col-md-6 form-group d-none">
+                    <div class="col-md-6 form-group">
                         <label class="control-label">Precio Extra:</label>
                         <input type="search" autocomplete="off" placeholder="Precio Extra" class="form-control"
                             id="input-precio-valor" maxlength="9" />

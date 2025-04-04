@@ -1,7 +1,7 @@
 let edit_mode = false;
 
 $(document).ready(() => {
-  $("#input-precio")
+  $("#input-precio,#input-precio-detalle")
     .on("keypress", function (evt) {
       let $txtBox = $(this);
       let charCode = evt.which ? evt.which : evt.keyCode;
@@ -100,6 +100,8 @@ function editarVariedad(event, obj) {
     let id = $(row).attr("x-id");
     let nombre = $(row).attr("x-nombre");
     let precio = $(row).attr("x-precio");
+    let precio_detalle = $(row).attr("x-precio-detalle");
+    let precio_detalle_iva = $(row).attr("x-precio-detalle-iva");
     let precio_iva = $(row).attr("x-precio-iva");
     let id_interno = $(row).attr("x-id-interno");
     let codigo_tipo = $(row).attr("x-codigo-tipo");
@@ -109,6 +111,8 @@ function editarVariedad(event, obj) {
       nombre: nombre,
       precio: precio,
       precio_iva: precio_iva,
+      precio_detalle: precio_detalle,
+      precio_detalle_iva: precio_detalle_iva,
       id_interno: id_interno,
       codigo_tipo: codigo_tipo,
       dias_produccion: dias_produccion,
@@ -123,6 +127,7 @@ function MostrarModalAgregarProducto(producto) {
     $("#select_tipo2").val("default").selectpicker("refresh");
     $("#input-nombre").val(producto.nombre);
     $("#input-precio").val(producto.precio);
+    $("#input-precio-detalle").val(producto.precio_detalle);
     $("#input-codigo").val(producto.id_interno).attr("disabled", true);
     $("#dias-produccion-variedad").val(
       producto.dias_produccion ? producto.dias_produccion : ""
@@ -141,7 +146,7 @@ function MostrarModalAgregarProducto(producto) {
   } else {
     //AGREGANDO
     $(
-      "#input-nombre, #input-precio, #input-codigo, #dias-produccion-variedad"
+      "#input-nombre, #input-precio, #input-precio-detalle, #input-codigo, #dias-produccion-variedad"
     ).val("");
     $("#select-dias-produccion").val("0");
     $("#input-codigo").removeAttr("disabled");
@@ -157,9 +162,6 @@ function MostrarModalAgregarProducto(producto) {
 
   $("#ModalAgregarProducto").modal("show");
   $("#input-nombre").focus();
-
-
-  
 }
 
 function CerrarModalProducto() {
@@ -170,6 +172,7 @@ function GuardarProducto() {
   const id_tipo = $("#select_tipo2 option:selected").val();
   const nombre = $("#input-nombre").val().trim().replace(/\s+/g, " ");
   const precio = $("#input-precio").val().trim();
+  const precio_detalle = $("#input-precio-detalle").val().trim();
   const codigo = $("#input-codigo").val().trim().replace(/\s+/g, "");
   const dias_produccion = $("#dias-produccion-variedad")
     .val()
@@ -192,7 +195,8 @@ function GuardarProducto() {
   } else if (!precio.length || isNaN(precio)) {
     swal("Debes ingresar el Precio!", "", "error");
     return;
-  } else if (
+  }
+  else if (
     (codigo_tipo == "E" || codigo_tipo == "S") &&
     (!dias_produccion.length ||
       isNaN(dias_produccion) ||
@@ -232,6 +236,7 @@ function GuardarProducto() {
         consulta: "agregar_variedad",
         nombre: nombre,
         precio: precio,
+        precio_detalle: precio_detalle && precio_detalle.length ? precio_detalle : null,
         id_tipo: id_tipo,
         codigo: codigo,
         atributos: atributos && atributos.length ? JSON.stringify(atributos) : null,
@@ -241,7 +246,7 @@ function GuardarProducto() {
       success: function (x) {
         if (x.trim() == "success") {
           busca_productos(null);
-          $("#input-nombre,#input-precio,#input-codigo").val("");
+          $("#input-nombre,#input-precio,#input-precio-detalle,#input-codigo").val("");
           $("#select_tipo2").val("default").selectpicker("refresh");
           $("#input-nombre").focus();
           swal("La Variedad se agregó correctamente!", "", "success");
@@ -265,6 +270,7 @@ function GuardarProducto() {
         id_variedad: $("#ModalAgregarProducto").attr("x-id-variedad"),
         nombre: nombre,
         precio: precio,
+        precio_detalle: precio_detalle && precio_detalle.length ? precio_detalle : null,
         atributos: atributos && atributos.length ? JSON.stringify(atributos) : null,
         dias_produccion:
           codigo_tipo == "E" || codigo_tipo == "S" ? dias_produccion : null,

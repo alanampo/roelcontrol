@@ -87,11 +87,11 @@ if ($consulta == "busca_variedades") {
                     echo "<td>$valor</td>";
                 }
             }
-            
+
             echo "<td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio</td>
                   <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ $precio_iva</td>
-                  <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>".($precio_detalle != "" ? "$ $precio_detalle" : "")."</td>
-                  <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>".($precio_detalle_iva != "" ? "$ $precio_detalle_iva" : "")."</td>
+                  <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>" . ($precio_detalle != "" ? "$ $precio_detalle" : "") . "</td>
+                  <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>" . ($precio_detalle_iva != "" ? "$ $precio_detalle_iva" : "") . "</td>
                   <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ww[dias_produccion]</td>
                   <td class='text-center'>
                   <div class='d-flex flex-row justify-content-center' style='gap:5px;'>
@@ -109,8 +109,7 @@ if ($consulta == "busca_variedades") {
     } else {
         echo "<div class='callout callout-danger'><b>No se encontraron productos en la base de datos...</b></div>";
     }
-}
- else if ($consulta == "agregar_variedad") {
+} else if ($consulta == "agregar_variedad") {
     $nombre = mysqli_real_escape_string($con, $_POST['nombre']);
     $codigo = mysqli_real_escape_string($con, $_POST['codigo']);
     $dias_produccion = $_POST["dias_produccion"] == null ? "NULL" : $_POST["dias_produccion"];
@@ -118,56 +117,56 @@ if ($consulta == "busca_variedades") {
     $precio_detalle = isset($_POST['precio_detalle']) && !empty($_POST["precio_detalle"]) ? $_POST['precio_detalle'] : "NULL";
     $id_tipo = $_POST["id_tipo"];
     try {
-        $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE nombre = UPPER('$nombre') AND id_tipo = $id_tipo;");
+        // $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE nombre = UPPER('$nombre') AND id_tipo = $id_tipo;");
+        // if (mysqli_num_rows($val) > 0) {
+        //     echo "YA EXISTE UNA VARIEDAD CON ESE NOMBRE!";
+        // } else {
+        $errors = [];
+        $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE id_tipo = $id_tipo AND id_interno = $codigo;");
         if (mysqli_num_rows($val) > 0) {
-            echo "YA EXISTE UNA VARIEDAD CON ESE NOMBRE!";
+            echo "EL CÓDIGO INGRESADO YA ESTÁ EN USO. ELIGE OTRO.";
         } else {
-            $errors = [];
-            $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE id_tipo = $id_tipo AND id_interno = $codigo;");
-            if (mysqli_num_rows($val) > 0) {
-                echo "EL CÓDIGO INGRESADO YA ESTÁ EN USO. ELIGE OTRO.";
-            } else {
-                mysqli_autocommit($con, FALSE);
-                $query = "INSERT INTO variedades_producto (nombre, precio, precio_detalle, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', $precio_detalle, '$id_tipo', '$codigo', $dias_produccion);";
-                if (mysqli_query($con, $query)) {
-                    $id_variedad = mysqli_insert_id($con);
-                    if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
-                        $atributos = json_decode($_POST["atributos"], true);
+            mysqli_autocommit($con, FALSE);
+            $query = "INSERT INTO variedades_producto (nombre, precio, precio_detalle, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', $precio_detalle, '$id_tipo', '$codigo', $dias_produccion);";
+            if (mysqli_query($con, $query)) {
+                $id_variedad = mysqli_insert_id($con);
+                if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
+                    $atributos = json_decode($_POST["atributos"], true);
 
-                        foreach ($atributos as $atr) {
-                            if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
-                                $item = $atr["valorSelect"];
-                                $query = "INSERT INTO atributos_valores_variedades (
+                    foreach ($atributos as $atr) {
+                        if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
+                            $item = $atr["valorSelect"];
+                            $query = "INSERT INTO atributos_valores_variedades (
                                         id_variedad,
                                         id_atributo_valor
                                     ) VALUES (
                                         $id_variedad,
                                         $item
                                     )";
-                                if (!mysqli_query($con, $query)) {
-                                    $errors[] = mysqli_error($con) . "-" . $query;
-                                }
+                            if (!mysqli_query($con, $query)) {
+                                $errors[] = mysqli_error($con) . "-" . $query;
                             }
                         }
                     }
-                } else {
-                    $errors[] = mysqli_error($con) . "-" . $query;
                 }
+            } else {
+                $errors[] = mysqli_error($con) . "-" . $query;
+            }
 
-                if (mysqli_commit($con)) {
-                    echo "success";
-                } else {
-                    mysqli_rollback($con);
-                    if (count($errors) > 0) {
-                        foreach ($errors as $error) {
-                            echo $error . "<br>";
-                        }
-                    } else {
-                        echo "error:" . mysqli_error($con);
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                if (count($errors) > 0) {
+                    foreach ($errors as $error) {
+                        echo $error . "<br>";
                     }
+                } else {
+                    echo "error:" . mysqli_error($con);
                 }
             }
         }
+        //}
     } catch (\Throwable $th) {
         echo "error: " . $th;
     }

@@ -58,29 +58,22 @@
           <div class="row">
             <div class="col-6">
               <div class="d-flex flex-row">
-                <label for="select_tipo" class="control-label"
-                  >Tipo de Usuario:</label
-                >
-                <select
-                  id="select_tipo"
-                  class="selectpicker mobile-device ml-3 w-75"
-                  title="Selecciona Tipo de Usuario"
-                  data-style="btn-info"
-                  onChange="busca_usuarios(this.value);"
-                >
-              <option value="0">Clientes</option>
-              <option value="1">Trabajadores de Roelplant</option>
-              </select>
+                <label for="select_tipo" class="control-label">Tipo de Usuario:</label>
+                <select id="select_tipo" class="selectpicker mobile-device ml-3 w-75" title="Selecciona Tipo de Usuario"
+                  data-style="btn-info" onChange="busca_usuarios(this.value);">
+                  <option value="0">Clientes</option>
+                  <option value="1">Trabajadores de Roelplant</option>
+                </select>
               </div>
             </div>
             <div class="col text-lg-right text-center">
               <button class="btn btn-success btn-round fa fa-plus-square" style="font-size: 1.3em"
-              onclick="MostrarModalAgregarUsuario();"></button>
+                onclick="MostrarModalAgregarUsuario();"></button>
             </div>
           </div>
 
 
-         
+
           <!-- Your Page Content Here -->
           <div class='row mt-2 mb-5'>
             <div class='col'>
@@ -119,8 +112,9 @@
                 <label for="select_cliente" class="control-label">Cliente:</label>
 
                 <select id="select_cliente" class="selectpicker mobile-device" title="Selecciona Cliente"
-                  data-style="btn-info" data-live-search="true"  data-dropup-auto="false" data-size="6" data-width="100%">
-                  
+                  data-style="btn-info" data-live-search="true" data-dropup-auto="false" data-size="6"
+                  data-width="100%">
+
                 </select>
               </div>
               <div class="form-usuario d-none">
@@ -137,14 +131,14 @@
                 </div>
 
                 <div class='form-group'>
-                    <label for="nombre_txt" class="control-label">Nombre Real:</label>
-                    
-                      <input autocomplete="false" maxlength="30" type="search" id="nombre_txt"
-                        style="text-transform:capitalize !important;" class="form-control">
-                    
-                  
+                  <label for="nombre_txt" class="control-label">Nombre Real:</label>
+
+                  <input autocomplete="false" maxlength="30" type="search" id="nombre_txt"
+                    style="text-transform:capitalize !important;" class="form-control">
+
+
                 </div>
-              </div>  
+              </div>
               <div class='form-group form-email d-none'>
                 <div>
                   <label for="input-email" class="control-label">E-Mail:</label>
@@ -163,7 +157,8 @@
                 </div>
                 <div>
                   <form autocomplete="new-password" method="post" action="">
-                    <input autocomplete="new-password" maxlength="20" type="password" id="password_txt" class="form-control">
+                    <input autocomplete="new-password" maxlength="20" type="password" id="password_txt"
+                      class="form-control">
                   </form>
                 </div>
               </div>
@@ -174,7 +169,8 @@
                 </div>
                 <div>
                   <form autocomplete="new-password" method="post" action="">
-                    <input autocomplete="new-password" maxlength="20" type="password" id="password2_txt" class="form-control">
+                    <input autocomplete="new-password" maxlength="20" type="password" id="password2_txt"
+                      class="form-control">
                   </form>
                 </div>
               </div>
@@ -198,7 +194,9 @@
                   <option value="cotizaciones">Cotizaciones</option>
                   <option value="facturacion">Facturación</option>
                   <option value="integracion">Integración</option>
-                  <option value="informes">informes</option>
+                  <option value="informes">Informes</option>
+                  <option value="inventario">Inventario</option>
+                  <option value="viveros">Viveros</option>
                 </select>
 
               </div>
@@ -206,8 +204,7 @@
               <div style="margin-top: 100px" align="right">
                 <button type="button" class="btn btn-modal-bottom fa fa-close" id="btn_cancel"
                   onClick="CerrarModal();"></button>
-                <button type="button" class="btn btn-modal-bottom ml-3 fa fa-save" id="btn-guardar-usuario"
-                  ></button>
+                <button type="button" class="btn btn-modal-bottom ml-3 fa fa-save" id="btn-guardar-usuario"></button>
               </div>
 
             </div>

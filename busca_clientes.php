@@ -13,7 +13,7 @@ if (!$con) {
 }
 mysqli_query($con,"SET NAMES 'utf8'");
 
-$cadena="SELECT c.id_cliente as id_cliente, UPPER(c.razon_social) as razon_social, c.nombre as nombre, c.domicilio as domicilio, c.telefono, c.mail as mail, c.rut as rut, com.ciudad as ciudad, com.nombre as comuna, com.id as id_comuna  
+$cadena="SELECT c.id_cliente as id_cliente, UPPER(c.razon_social) as razon_social, c.nombre as nombre, c.domicilio as domicilio, c.telefono, c.mail as mail, c.provincia, c.region, c.rut as rut, com.ciudad as ciudad, com.nombre as comuna, com.id as id_comuna  
 FROM clientes c 
 LEFT JOIN comunas com ON c.comuna = com.id
 ORDER BY nombre ASC;";
@@ -30,7 +30,7 @@ if (mysqli_num_rows($val)>0){
  echo "<tr>";
  $th_eliminar = ($_SESSION["id_usuario"] == 1 ? "<th></th>" :"");
 
- echo "<th>ID</th><th>Nombre</th><th>Razon Social</th><th>Domicilio</th><th>Teléfono</th><th>E-Mail</th><th>R.U.T</th><th>Ciudad</th><th>Comuna</th>$th_eliminar";
+ echo "<th>ID</th><th>Nombre</th><th>Razon Social</th><th>Domicilio</th><th>Teléfono</th><th>E-Mail</th><th>R.U.T</th><th>Ciudad</th><th>Comuna</th><th>Provincia</th><th>Región</th>$th_eliminar";
  echo "</tr>";
  echo "</thead>";
  echo "<tbody>";
@@ -53,6 +53,8 @@ if (mysqli_num_rows($val)>0){
    echo "<td style='text-align: center;'>$ww[rut]</td>";
    echo "<td style='text-align: center;'>$ww[ciudad]</td>";
    echo "<td style='text-align: center;'>$ww[comuna]</td>";
+   echo "<td class='td-provincia' style='text-align: center;'>$ww[provincia]</td>";
+   echo "<td class='td-region' style='text-align: center;'>$ww[region]</td>";
    
    if ($_SESSION["id_usuario"] == 1){
     echo "<td style='text-align: center;'>

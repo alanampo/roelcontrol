@@ -42,7 +42,8 @@ function GuardarCliente() {
   const razonSocial = $("#razonsocial_txt").val().trim();
   const mail = $("#mailcliente_txt").val().trim();
   const comuna = $("#select-comuna2 option:selected").val();
-
+  const provincia = $("#provinciacliente_txt").val().trim();
+  const region = $("#regioncliente_txt").val().trim();
   if (nombre.length < 3) {
     swal("Debes ingresar un nombre de al menos 3 letras", "", "error");
   } else if (domicilio.length < 3) {
@@ -67,6 +68,8 @@ function GuardarCliente() {
         razonSocial: razonSocial,
         mail: mail,
         comuna: comuna,
+        provincia: provincia,
+        region: region,
         id_cliente: edit_mode ? global_id_cliente : null,
       },
       success: function (x) {
@@ -137,7 +140,11 @@ function MostrarModalModificarCliente(id_cliente) {
     .text();
   let comuna = $("#" + id_cliente)
     .closest("tr").attr("x-id-comuna")
-  
+ 
+  const tr = $("#tabla")
+  .find("tr:eq(" + (parseInt(indice) + 1).toString() + ")");
+  const provincia = $(tr).find(".td-provincia").text();
+  const region = $(tr).find(".td-region").text();
   $("#select-comuna2").val("default").selectpicker("refresh");
   $("#ModalAgregarCliente").find("#titulo").html("Modificar Cliente");
   $("#nombrecliente_txt").val(nombre);
@@ -147,17 +154,18 @@ function MostrarModalModificarCliente(id_cliente) {
   $("#mailcliente_txt").val(mail);
   $("#rutcliente_txt").val(rut);
   $("#select-comuna2").val(comuna).selectpicker("refresh")
-
+  $("#provinciacliente_txt").val(provincia);
+  $("#regioncliente_txt").val(region);
   global_id_cliente = id;
   edit_mode = true;
   $("#ModalAgregarCliente").modal("show");
   document.getElementById("nombrecliente_txt").focus();
 }
 
-function setRazonSocial(){
+function setRazonSocial() {
   const nombre = $("#nombrecliente_txt").val().trim();
 
-  if (nombre && nombre.length){
+  if (nombre && nombre.length) {
     $("#razonsocial_txt").val(nombre);
   }
 }

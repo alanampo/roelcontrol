@@ -37,6 +37,7 @@ function MostrarModalAgregarCliente() {
 function GuardarCliente() {
   const nombre = $("#nombrecliente_txt").val().trim();
   const domicilio = $("#domiciliocliente_txt").val().trim();
+  const domicilio2 = $("#domiciliocliente2_txt").val().trim();
   const telefono = $("#telcliente_txt").val().trim();
   const rut = $("#rutcliente_txt").val().trim();
   const razonSocial = $("#razonsocial_txt").val().trim();
@@ -63,6 +64,7 @@ function GuardarCliente() {
         tipo: !edit_mode ? "agregar" : "editar",
         nombre: nombre,
         domicilio: domicilio,
+        domicilio2,
         telefono: telefono,
         rut: rut,
         razonSocial: razonSocial,
@@ -129,14 +131,17 @@ function MostrarModalModificarCliente(id_cliente) {
   let domicilio = $("#tabla")
     .find("tr:eq(" + (parseInt(indice) + 1).toString() + ") td:eq(3)")
     .text();
-  let telefono = $("#tabla")
+    let domicilio2 = $("#tabla")
     .find("tr:eq(" + (parseInt(indice) + 1).toString() + ") td:eq(4)")
     .text();
-  let mail = $("#tabla")
+  let telefono = $("#tabla")
     .find("tr:eq(" + (parseInt(indice) + 1).toString() + ") td:eq(5)")
     .text();
-  let rut = $("#tabla")
+  let mail = $("#tabla")
     .find("tr:eq(" + (parseInt(indice) + 1).toString() + ") td:eq(6)")
+    .text();
+  let rut = $("#tabla")
+    .find("tr:eq(" + (parseInt(indice) + 1).toString() + ") td:eq(7)")
     .text();
   let comuna = $("#" + id_cliente)
     .closest("tr").attr("x-id-comuna")
@@ -150,6 +155,7 @@ function MostrarModalModificarCliente(id_cliente) {
   $("#nombrecliente_txt").val(nombre);
   $("#razonsocial_txt").val(razon);
   $("#domiciliocliente_txt").val(domicilio);
+  $("#domiciliocliente2_txt").val(domicilio2);
   $("#telcliente_txt").val(telefono);
   $("#mailcliente_txt").val(mail);
   $("#rutcliente_txt").val(rut);

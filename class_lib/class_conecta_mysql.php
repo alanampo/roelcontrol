@@ -27,6 +27,7 @@ if (strpos($_SERVER['HTTP_HOST'], 'roelplant') !== false) {
   $dbpresta = getenv("DB_NAME_PRESTASHOP");  
   $dbuserpresta = getenv("DB_USER_PRESTASHOP");
   $dbpasspresta = getenv("DB_PASSWORD_PRESTASHOP");
+  $dbprestahost = getenv("DB_HOST_PRESTASHOP");
 }
 else{
   $host = getenv("DB_HOST_LOCAL");

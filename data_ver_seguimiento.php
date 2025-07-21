@@ -302,7 +302,7 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
             
             // OPERO EN LA DB DE PRESTASHOP
             
-            $con_tienda = mysqli_connect($host, $dbuserpresta, $dbpasspresta, $dbpresta);
+            $con_tienda = mysqli_connect($dbprestahost, $dbuserpresta, $dbpasspresta, $dbpresta);
             if (!$con_tienda) {
                 die("Connection failed: " . mysqli_connect_error());
             }

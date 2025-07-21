@@ -468,8 +468,8 @@ async function MostrarModalEstado(
               modalEntrega(id_artpedido, cant_plantas);
             });
           }
-          
-          if (id_cliente == 1 && (estado == 5 || estado == 6) && (codigo == "E" || codigo == "S" || codigo == "HE" || codigo == "HS")) {
+
+          if (id_cliente == 1 && (estado == 5 || estado == 6) && (codigo.startsWith("E") || codigo.startsWith("S") || codigo.startsWith("HE") || codigo.startsWith("HS"))) {
             // ETAPA 5 O ENTREGA PARCIAL
             $("#btn-enviar-stock").removeClass("d-none");
             $("#btn-enviar-stock").on("click", function (e) {

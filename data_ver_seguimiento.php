@@ -301,7 +301,11 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
             }
             
             // OPERO EN LA DB DE PRESTASHOP
-            
+            $dbprestahost = "127.0.0.1";  // o usar la variable de entorno
+            $dbuserpresta = "roeluser1_prestashop";
+            $dbpasspresta = "SergioPresta!1";
+            $dbpresta = "roeluser1_shops";
+
             $con_tienda = mysqli_connect($dbprestahost, $dbuserpresta, $dbpasspresta, $dbpresta);
             if (!$con_tienda) {
                 die("Connection failed: " . mysqli_connect_error());

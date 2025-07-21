@@ -7,6 +7,7 @@
     <?php include "./class_lib/scripts.php"; ?>
     <script src="dist/js/check_permisos.js?v=<?php echo $version ?>"></script>
     <script src="dist/js/ver_mesadas.js?v=<?php echo $version ?>"></script>
+
   </head>
   <body>
     <div id="miVentana">
@@ -108,7 +109,6 @@
                 <th class="text-center">Cliente</th>
                 <th class="text-center">Fecha Siembra</th>
                 <th class="text-center">Fecha Ingreso Mesada</th>
-                <th class="text-center">Entrega Solicitada</th>
                 <th class="text-center">Estado</th>
               </tr>
               </thead>
@@ -229,6 +229,5 @@
     var permisos = "<?php echo $_SESSION['permisos'] ?>"; 
     func_check(id_usuario, permisos.split(","));
     </script>
-   
   </body>
 </html>

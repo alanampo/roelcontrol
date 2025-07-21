@@ -2090,10 +2090,13 @@ function asignarMesada(id_artpedido, codigo_producto, nombre_cliente) {
   });
 }
 
-function click_mesada(id_mesada) {
-  $(".active2").removeClass("active2");
-  $(`.mesada-${id_mesada}`).addClass("active2");
+if (! location.href.includes("ver_mesadas")){
+  function click_mesada(id_mesada) {
+    $(".active2").removeClass("active2");
+    $(`.mesada-${id_mesada}`).addClass("active2");
+  }
 }
+
 
 function guardarEnMesada() {
   if (!$(".active2").length) {

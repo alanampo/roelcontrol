@@ -197,6 +197,7 @@
                   <option value="informes">Informes</option>
                   <option value="inventario">Inventario</option>
                   <option value="viveros">Viveros</option>
+                  <option value="reservas">Reservas</option>
                 </select>
 
               </div>

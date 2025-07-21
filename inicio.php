@@ -76,6 +76,9 @@
                       else if (array[i] == "cotizaciones"){
                         //pone_cotizaciones();
                       }
+                      else if (array[i] == "reservas") {
+                        pone_reservas();
+                      }
                       else if (array[i] == "productos"){
                         $("#contenedor_panel").html(
                           '<a href="#"><i class="fa fa-bars"></i> <span>Productos</span> <i class="fa fa-angle-left pull-right"></i></a> \

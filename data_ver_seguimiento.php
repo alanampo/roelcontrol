@@ -301,331 +301,327 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
             }
             
             // OPERO EN LA DB DE PRESTASHOP
-            $dbprestahost = "localhost";  // o usar la variable de entorno
-            $dbuserpresta = "roeluser1_prestashop";
-            $dbpasspresta = "SergioPresta!1";
-            $dbpresta = "roeluser1_shops";
-            $con_tienda = mysqli_connect($dbprestahost, $user, $password, $dbpresta);
-if (!$con_tienda) {
-    echo "Error de conexión: " . mysqli_connect_error();
-    echo "\nHost: $dbprestahost";
-    echo "\nUser: $dbuserpresta"; 
-    echo "\nDB: $dbpresta";
-    die();
-}
-            $con_tienda = mysqli_connect($dbprestahost, $dbuserpresta, $dbpasspresta, $dbpresta);
-            if (!$con_tienda) {
-                die("Connection failed: " . mysqli_connect_error());
-            }
-            if (!mysqli_query($con_tienda, "SET NAMES 'utf8'")){
-                die("Falló la Conexiíon, intenta de nuevo.");
-            }
+            
+            // $con_tienda = mysqli_connect($host, $user, $password, $dbpresta);
+            // if (!$con_tienda) {
+            //     die("Connection failed: " . mysqli_connect_error());
+            // }
+            // if (!mysqli_query($con_tienda, "SET NAMES 'utf8'")){
+            //     die("Falló la Conexiíon, intenta de nuevo.");
+            // }
 
-            $query = "SELECT * FROM ps_product WHERE reference = '$id_producto'";
-            $val2 = mysqli_query($con_tienda, $query);
-            mysqli_autocommit($con_tienda, false);
-            if ($val2){
-                if (mysqli_num_rows($val2) > 0){ // YA EXISTE EL PRODUCTO, HAY QUE ACTUALIZAR EL STOCK
-                    $query = "UPDATE ps_stock_available SET quantity = quantity + $re[cant_plantas], physical_quantity = physical_quantity + $re[cant_plantas] WHERE id_product = (SELECT id_product FROM ps_product WHERE reference = '$id_producto')";
-                    if (!mysqli_query($con_tienda, $query)) {
-                        $errors[] = mysqli_error($con_tienda) . $query;
-                    }
-                }
-                else{ 
+            // $query = "SELECT * FROM ps_product WHERE reference = '$id_producto'";
+            // $val2 = mysqli_query($con_tienda, $query);
+            // mysqli_autocommit($con_tienda, false);
+            // if ($val2){
+            //     if (mysqli_num_rows($val2) > 0){ // YA EXISTE EL PRODUCTO, HAY QUE ACTUALIZAR EL STOCK
+            //         $query = "UPDATE ps_stock_available SET quantity = quantity + $re[cant_plantas], physical_quantity = physical_quantity + $re[cant_plantas] WHERE id_product = (SELECT id_product FROM ps_product WHERE reference = '$id_producto')";
+            //         if (!mysqli_query($con_tienda, $query)) {
+            //             $errors[] = mysqli_error($con_tienda) . $query;
+            //         }
+            //     }
+            //     else{ 
 
-                    $nombre_producto = "Plantín de ".ucwords(strtolower($re["nombre_variedad"]));
-                    $friendly = clean(strtolower($nombre_producto))."-".strtolower($id_producto);
-                    $nombre_producto = $nombre_producto." (Stock)";
-                    $query = "INSERT INTO ps_product (  
-                        id_supplier,
-                        id_manufacturer,
-                        id_category_default,
-                        id_shop_default,
-                        id_tax_rules_group,
-                        on_sale,
-                        online_only,
-                        ean13,
-                        isbn,
-                        upc,
-                        mpn,
-                        ecotax,
-                        quantity,
-                        minimal_quantity,
-                        low_stock_threshold,
-                        low_stock_alert,
-                        price,
-                        wholesale_price,
-                        unity,
-                        unit_price_ratio,
-                        additional_shipping_cost,
-                        reference,
-                        supplier_reference,
-                        location,
-                        width,
-                        height,
-                        depth,
-                        weight,
-                        out_of_stock,
-                        additional_delivery_times,
-                        quantity_discount,
-                        customizable,
-                        uploadable_files,
-                        text_fields,
-                        active,
-                        redirect_type,
-                        id_type_redirected,
-                        available_for_order,
-                        available_date,
-                        show_condition,
-                        `condition`,
-                        show_price,
-                        indexed,
-                        visibility,
-                        cache_is_pack,
-                        cache_has_attachments,
-                        is_virtual,
-                        cache_default_attribute,
-                        date_add,
-                        date_upd,
-                        advanced_stock_management,
-                        pack_stock_type,
-                        state,
-                        product_type
-                    ) VALUES (
-                        0, 
-                        1,
-                        2,
-                        1,
-                        1,
-                        0,
-                        0,
-                        '',
-                        '',
-                        '',
-                        '',
-                        0.000000,
-                        0,
-                        '$re[tipo_bandeja]',
-                        NULL,
-                        0,
-                        '$re[precio]',
-                        '',
-                        0.000000,
-                        0.000000,
-                        13.000000,
-                        '$id_producto',
-                        '',
-                        '',
-                        0.000000,
-                        0.000000,
-                        0.000000,
-                        0.000000,
-                        2,
-                        2,
-                        0,
-                        0,
-                        0,
-                        0,
-                        1,
-                        404,
-                        0,
-                        1,
-                        0000-00-00,
-                        0,
-                        'new',
-                        1,
-                        1,
-                        'both',
-                        0,
-                        0,
-                        0,
-                        0,
-                        NOW(),
-                        NOW(),
-                        0,
-                        3,
-                        1,
-                        ''
-                    )";
+            //         $nombre_producto = "Plantín de ".ucwords(strtolower($re["nombre_variedad"]));
+            //         $friendly = clean(strtolower($nombre_producto))."-".strtolower($id_producto);
+            //         $nombre_producto = $nombre_producto." (Stock)";
+            //         $query = "INSERT INTO ps_product (  
+            //             id_supplier,
+            //             id_manufacturer,
+            //             id_category_default,
+            //             id_shop_default,
+            //             id_tax_rules_group,
+            //             on_sale,
+            //             online_only,
+            //             ean13,
+            //             isbn,
+            //             upc,
+            //             mpn,
+            //             ecotax,
+            //             quantity,
+            //             minimal_quantity,
+            //             low_stock_threshold,
+            //             low_stock_alert,
+            //             price,
+            //             wholesale_price,
+            //             unity,
+            //             unit_price_ratio,
+            //             additional_shipping_cost,
+            //             reference,
+            //             supplier_reference,
+            //             location,
+            //             width,
+            //             height,
+            //             depth,
+            //             weight,
+            //             out_of_stock,
+            //             additional_delivery_times,
+            //             quantity_discount,
+            //             customizable,
+            //             uploadable_files,
+            //             text_fields,
+            //             active,
+            //             redirect_type,
+            //             id_type_redirected,
+            //             available_for_order,
+            //             available_date,
+            //             show_condition,
+            //             `condition`,
+            //             show_price,
+            //             indexed,
+            //             visibility,
+            //             cache_is_pack,
+            //             cache_has_attachments,
+            //             is_virtual,
+            //             cache_default_attribute,
+            //             date_add,
+            //             date_upd,
+            //             advanced_stock_management,
+            //             pack_stock_type,
+            //             state,
+            //             product_type
+            //         ) VALUES (
+            //             0, 
+            //             1,
+            //             2,
+            //             1,
+            //             1,
+            //             0,
+            //             0,
+            //             '',
+            //             '',
+            //             '',
+            //             '',
+            //             0.000000,
+            //             0,
+            //             '$re[tipo_bandeja]',
+            //             NULL,
+            //             0,
+            //             '$re[precio]',
+            //             '',
+            //             0.000000,
+            //             0.000000,
+            //             13.000000,
+            //             '$id_producto',
+            //             '',
+            //             '',
+            //             0.000000,
+            //             0.000000,
+            //             0.000000,
+            //             0.000000,
+            //             2,
+            //             2,
+            //             0,
+            //             0,
+            //             0,
+            //             0,
+            //             1,
+            //             404,
+            //             0,
+            //             1,
+            //             0000-00-00,
+            //             0,
+            //             'new',
+            //             1,
+            //             1,
+            //             'both',
+            //             0,
+            //             0,
+            //             0,
+            //             0,
+            //             NOW(),
+            //             NOW(),
+            //             0,
+            //             3,
+            //             1,
+            //             ''
+            //         )";
 
-                    if (!mysqli_query($con_tienda, $query)) {
-                        $errors[] = mysqli_error($con_tienda) . $query;
-                    }
+            //         if (!mysqli_query($con_tienda, $query)) {
+            //             $errors[] = mysqli_error($con_tienda) . $query;
+            //         }
 
-                    $id_product = mysqli_insert_id($con_tienda);
+            //         $id_product = mysqli_insert_id($con_tienda);
 
-                    $query = "INSERT INTO ps_product_shop (              	
-                        id_product,
-                        id_shop,
-                        id_category_default,
-                        id_tax_rules_group,
-                        on_sale,
-                        online_only,
-                        ecotax,
-                        minimal_quantity,
-                        low_stock_threshold,
-                        low_stock_alert,
-                        price,
-                        wholesale_price,
-                        unity,
-                        unit_price_ratio,
-                        additional_shipping_cost,
-                        customizable,
-                        uploadable_files,
-                        text_fields,
-                        active,
-                        redirect_type,
-                        id_type_redirected,
-                        available_for_order,
-                        available_date,
-                        show_condition,
-                        `condition`,
-                        show_price,
-                        indexed,
-                        visibility,
-                        cache_default_attribute,
-                        advanced_stock_management,
-                        date_add,
-                        date_upd,
-                        pack_stock_type
-                    ) VALUES (
-                        $id_product,
-                        1,
-                        2,
-                        1,
-                        0,
-                        0,
-                        0.000000,
-                        '$re[tipo_bandeja]',
-                        NULL,
-                        0,
-                        '$re[precio]',
-                        0.000000,
-                        '',
-                        0.000000,
-                        13.000000,
-                        0,
-                        0,
-                        0,
-                        1,
-                        404,
-                        0,
-                        1,
-                        '0000-00-00',
-                        0,
-                        'new',
-                        1,
-                        1,
-                        'both',
-                        0,
-                        0,
-                        NOW(),
-                        NOW(),
-                        3
-                    )";
-                    if (!mysqli_query($con_tienda, $query)) {
-                        $errors[] = mysqli_error($con_tienda) . $query;
-                    }
+            //         $query = "INSERT INTO ps_product_shop (              	
+            //             id_product,
+            //             id_shop,
+            //             id_category_default,
+            //             id_tax_rules_group,
+            //             on_sale,
+            //             online_only,
+            //             ecotax,
+            //             minimal_quantity,
+            //             low_stock_threshold,
+            //             low_stock_alert,
+            //             price,
+            //             wholesale_price,
+            //             unity,
+            //             unit_price_ratio,
+            //             additional_shipping_cost,
+            //             customizable,
+            //             uploadable_files,
+            //             text_fields,
+            //             active,
+            //             redirect_type,
+            //             id_type_redirected,
+            //             available_for_order,
+            //             available_date,
+            //             show_condition,
+            //             `condition`,
+            //             show_price,
+            //             indexed,
+            //             visibility,
+            //             cache_default_attribute,
+            //             advanced_stock_management,
+            //             date_add,
+            //             date_upd,
+            //             pack_stock_type
+            //         ) VALUES (
+            //             $id_product,
+            //             1,
+            //             2,
+            //             1,
+            //             0,
+            //             0,
+            //             0.000000,
+            //             '$re[tipo_bandeja]',
+            //             NULL,
+            //             0,
+            //             '$re[precio]',
+            //             0.000000,
+            //             '',
+            //             0.000000,
+            //             13.000000,
+            //             0,
+            //             0,
+            //             0,
+            //             1,
+            //             404,
+            //             0,
+            //             1,
+            //             '0000-00-00',
+            //             0,
+            //             'new',
+            //             1,
+            //             1,
+            //             'both',
+            //             0,
+            //             0,
+            //             NOW(),
+            //             NOW(),
+            //             3
+            //         )";
+            //         if (!mysqli_query($con_tienda, $query)) {
+            //             $errors[] = mysqli_error($con_tienda) . $query;
+            //         }
 
-                    $query = "INSERT INTO ps_product_lang (                        	
-                        id_product,
-                        id_shop,
-                        id_lang,
-                        description,
-                        description_short,
-                        link_rewrite,
-                        meta_description,
-                        meta_keywords,
-                        meta_title,
-                        name,
-                        available_now,
-                        available_later,
-                        delivery_in_stock,
-                        delivery_out_stock
-                    ) VALUES (
-                        $id_product,
-                        1,
-                        1,
-                        '',
-                        '',
-                        '$friendly',
-                        '',
-                        '',
-                        '',
-                        '$nombre_producto',
-                        'En Stock',
-                        '',
-                        '30 días',
-                        '90 días'
-                    )";
+            //         $query = "INSERT INTO ps_product_lang (                        	
+            //             id_product,
+            //             id_shop,
+            //             id_lang,
+            //             description,
+            //             description_short,
+            //             link_rewrite,
+            //             meta_description,
+            //             meta_keywords,
+            //             meta_title,
+            //             name,
+            //             available_now,
+            //             available_later,
+            //             delivery_in_stock,
+            //             delivery_out_stock
+            //         ) VALUES (
+            //             $id_product,
+            //             1,
+            //             1,
+            //             '',
+            //             '',
+            //             '$friendly',
+            //             '',
+            //             '',
+            //             '',
+            //             '$nombre_producto',
+            //             'En Stock',
+            //             '',
+            //             '30 días',
+            //             '90 días'
+            //         )";
 
-                    if (!mysqli_query($con_tienda, $query)) {
-                        $errors[] = mysqli_error($con_tienda) . $query;
-                    }
+            //         if (!mysqli_query($con_tienda, $query)) {
+            //             $errors[] = mysqli_error($con_tienda) . $query;
+            //         }
 
-                    $query = "INSERT INTO ps_stock_available (
-                        id_product,
-                        id_product_attribute,
-                        id_shop,
-                        id_shop_group,
-                        quantity,
-                        physical_quantity,
-                        reserved_quantity,
-                        depends_on_stock,
-                        out_of_stock,
-                        `location`
-                    ) VALUES (
-                        $id_product,
-                        0,
-                        1,
-                        0,
-                        $re[cant_plantas],
-                        $re[cant_plantas],
-                        0,
-                        0,
-                        0,
-                        ''
-                    )";
+            //         $query = "INSERT INTO ps_stock_available (
+            //             id_product,
+            //             id_product_attribute,
+            //             id_shop,
+            //             id_shop_group,
+            //             quantity,
+            //             physical_quantity,
+            //             reserved_quantity,
+            //             depends_on_stock,
+            //             out_of_stock,
+            //             `location`
+            //         ) VALUES (
+            //             $id_product,
+            //             0,
+            //             1,
+            //             0,
+            //             $re[cant_plantas],
+            //             $re[cant_plantas],
+            //             0,
+            //             0,
+            //             0,
+            //             ''
+            //         )";
 
-                    if (!mysqli_query($con_tienda, $query)) {
-                        $errors[] = mysqli_error($con_tienda) . $query;
-                    }
+            //         if (!mysqli_query($con_tienda, $query)) {
+            //             $errors[] = mysqli_error($con_tienda) . $query;
+            //         }
 
-                    $query = "INSERT INTO ps_category_product (                	
-                        id_category,
-                        id_product,
-                        position
-                    ) VALUES (
-                        12, 
-                        $id_product,
-                        (SELECT * FROM (SELECT IFNULL(MAX(position),0)+1 FROM ps_category_product WHERE id_category = 12) t1)
-                    )";
+            //         $query = "INSERT INTO ps_category_product (                	
+            //             id_category,
+            //             id_product,
+            //             position
+            //         ) VALUES (
+            //             12, 
+            //             $id_product,
+            //             (SELECT * FROM (SELECT IFNULL(MAX(position),0)+1 FROM ps_category_product WHERE id_category = 12) t1)
+            //         )";
                     
-                    if (!mysqli_query($con_tienda, $query)) {
-                        $errors[] = mysqli_error($con_tienda) . $query;
-                    }
+            //         if (!mysqli_query($con_tienda, $query)) {
+            //             $errors[] = mysqli_error($con_tienda) . $query;
+            //         }
 
-                    // NO EXISTE EN PRESTASHOP, HAY QUE CREARLO Y ACTUALIZAR EL STOCK
-                    //INSERTAR EN ps_stock_available y en ps_category_product
-                }
+            //         // NO EXISTE EN PRESTASHOP, HAY QUE CREARLO Y ACTUALIZAR EL STOCK
+            //         //INSERTAR EN ps_stock_available y en ps_category_product
+            //     }
 
-                if (count($errors) === 0) {
-                    if (mysqli_commit($con) && mysqli_commit($con_tienda)) {
-                        echo "success";
-                    } else {
-                        mysqli_rollback($con);
-                        mysqli_rollback($con_tienda);
-                    }
-                } else {
-                    mysqli_rollback($con);
-                    mysqli_rollback($con_tienda);
-                    print_r($errors);
-                }
-            }
+            //     if (count($errors) === 0) {
+            //         if (mysqli_commit($con) && mysqli_commit($con_tienda)) {
+            //             echo "success";
+            //         } else {
+            //             mysqli_rollback($con);
+            //             mysqli_rollback($con_tienda);
+            //         }
+            //     } else {
+            //         mysqli_rollback($con);
+            //         mysqli_rollback($con_tienda);
+            //         print_r($errors);
+            //     }
+            // }
              // FIN - OPERO EN LA DB DE PRESTASHOP
         }
+        if (mysqli_commit($con)){
+            echo "success";
+        }
+        else{
+            mysqli_rollback($con);
+            
+        }
         mysqli_close($con);
-        mysqli_close($con_tienda);
+        //mysqli_close($con_tienda);
     } catch (\Throwable$th) {
         //throw $th;
         echo "error: $th";

@@ -305,7 +305,14 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
             $dbuserpresta = "roeluser1_prestashop";
             $dbpasspresta = "SergioPresta!1";
             $dbpresta = "roeluser1_shops";
-
+            $con_tienda = mysqli_connect($dbprestahost, $dbuserpresta, $dbpasspresta, $dbpresta);
+if (!$con_tienda) {
+    echo "Error de conexión: " . mysqli_connect_error();
+    echo "\nHost: $dbprestahost";
+    echo "\nUser: $dbuserpresta"; 
+    echo "\nDB: $dbpresta";
+    die();
+}
             $con_tienda = mysqli_connect($dbprestahost, $dbuserpresta, $dbpasspresta, $dbpresta);
             if (!$con_tienda) {
                 die("Connection failed: " . mysqli_connect_error());

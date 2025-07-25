@@ -19,6 +19,15 @@ function openTab(evt, tabName) {
   } else if (miTab == "tab-semillas") {
     loadSemillas();
   }
+  else if (miTab == "tab-interior") {
+    loadPedidos("interior");
+  }
+  else if (miTab == "tab-exterior") {
+    loadPedidos("exterior");
+  }
+  else if (miTab == "tab-vivero") {
+    loadPedidos("vivero");
+  }
 }
 
 $(document).ready(function () {
@@ -36,7 +45,7 @@ $(document).ready(function () {
                   <td></td>
                   </tr>`;
   }
-  $("#tabla-semillas,#tabla-esquejes").find("tbody").html(html2);
+  $("#tabla-semillas,#tabla-esquejes,#tabla-interior,#tabla-exterior,#tabla-vivero").find("tbody").html(html2);
 
   oncontextmenu = (e) => {
     if ($("#ModalVerEstado").css("display") == "block") return;
@@ -92,6 +101,45 @@ function loadEsquejes() {
                   .eq(index)
                   .find(`td:eq(${j})`)
                   .html(MakeBox(e, e.es_entrega_parcial ? 6 : j, "esqueje"));
+                index++;
+              }
+            });
+          }
+        }
+      }
+    },
+    error: function (jqXHR, estado, error) {},
+  });
+
+  DeseleccionarTodo();
+}
+
+function loadPedidos(tipo) {
+  const busqueda = $("#input-search").val().trim();
+  $.ajax({
+    beforeSend: function () {
+      $(`#tabla-${tipo} td`).html("");
+    },
+    url: "data_ver_seguimiento.php",
+    type: "POST",
+    data: { consulta: `cargar_pedidos`, tipo, busqueda: busqueda },
+    success: function (x) {
+      if (x.trim().length) {
+        const pedidos = JSON.parse(x);
+        if (pedidos.length) {
+          for (let j = 0; j < 6; j++) {
+            let index = 0;
+            pedidos.forEach(function (e, i) {
+              if (e.estado == 6) {
+                e.estado = 5;
+                e.es_entrega_parcial = true;
+              }
+              if (e.estado == j) {
+                $(`#tabla-${tipo} > tbody`)
+                  .find("tr")
+                  .eq(index)
+                  .find(`td:eq(${j})`)
+                  .html(MakeBox(e, e.es_entrega_parcial ? 6 : j, tipo));
                 index++;
               }
             });
@@ -266,6 +314,17 @@ function MakeBox(producto, index, tipo_producto) {
       "#F2C234",
       "#E0B42F",
       "#CEA62E",
+      "#FBF07D",
+    ];
+  }
+  else {
+    colores = [
+      "#D8EAD2",
+      "#B6D7A8",
+      "#A9D994",
+      "#A2D98A",
+      "#99D87D",
+      "#8AD868",
       "#FBF07D",
     ];
   }
@@ -2138,6 +2197,9 @@ function buscar() {
       loadEsquejes();
     } else if (miTab == "tab-semillas") {
       loadSemillas();
+    }
+    else if (miTab == "tab-interior" || miTab == "tab-exterior" || miTab == "tab-vivero"){
+      loadPedidos(miTab.replace("tab-", ""))
     }
   }
 }

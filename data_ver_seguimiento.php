@@ -74,7 +74,91 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
     } catch (\Throwable$th) {
         throw $th;
     }
-} else if ($consulta == "cargar_detalle_pedido") {
+} 
+else if ($consulta == "cargar_pedidos") {
+    $tipo = $_POST["tipo"];
+    try {
+        $busqueda = mysqli_escape_string($con, $_POST["busqueda"]);
+        $strbusqueda = strlen($busqueda) >= 3 ? " AND (v.nombre REGEXP '$busqueda' OR e.nombre REGEXP '$busqueda' OR c.nombre REGEXP '$busqueda')" : "";
+        $arraypedidos = array();
+        
+        // Determinar el valor del atributo según el tipo
+        $valor_atributo = "";
+        switch ($tipo) {
+            case "exterior":
+                $valor_atributo = "PLANTAS DE EXTERIOR";
+                break;
+            case "interior":
+                $valor_atributo = "PLANTAS DE INTERIOR";
+                break;
+            case "vivero":
+                $valor_atributo = "PLANTAS PARA JARDÍN";
+                break;
+            default:
+                $valor_atributo = "";
+        }
+        
+        // Condición para filtrar por atributo (normalizada para manejar acentos)
+        $condicion_atributo = "";
+        if ($valor_atributo != "") {
+            $condicion_atributo = " AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.nombre, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'TIPO DE PLANTA' 
+                                   AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(av.valor, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE('$valor_atributo', 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U'))";
+        }
+        
+        $cadenaselect = "SELECT t.nombre as nombre_tipo, v.nombre as nombre_variedad, c.nombre as nombre_cliente, p.fecha, p.id_pedido, ap.id as id_artpedido, ap.cant_plantas, ap.cant_bandejas, ap.tipo_bandeja, t.codigo, v.id_interno, ap.estado, p.id_interno as id_pedido_interno,
+        ap.problema, ap.observacionproblema, c.id_cliente, ap.observacion, u.iniciales, ap.id_especie, e.nombre as nombre_especie
+        FROM tipos_producto t
+        INNER JOIN variedades_producto v ON v.id_tipo = t.id
+        INNER JOIN articulospedidos ap ON ap.id_variedad = v.id
+        INNER JOIN pedidos p ON p.ID_PEDIDO = ap.id_pedido
+        INNER JOIN clientes c ON c.id_cliente = p.id_cliente
+        LEFT JOIN usuarios u ON u.id = p.id_usuario
+        LEFT JOIN especies_provistas e ON e.id = ap.id_especie
+        INNER JOIN atributos_valores_variedades avv ON avv.id_variedad = v.id
+        INNER JOIN atributos_valores av ON av.id = avv.id_atributo_valor
+        INNER JOIN atributos a ON a.id = av.id_atributo
+        WHERE ap.eliminado IS NULL AND ap.estado >= 0 AND ap.estado <= 6
+        $condicion_atributo
+        $strbusqueda
+        ORDER BY p.fecha ASC;
+        ";
+
+        $val = mysqli_query($con, $cadenaselect);
+
+        if (mysqli_num_rows($val) > 0) {
+            while ($re = mysqli_fetch_array($val)) {
+                array_push($arraypedidos, array(
+                    "nombre_tipo" => $re["nombre_tipo"],
+                    "nombre_variedad" => $re["nombre_variedad"],
+                    "nombre_cliente" => $re["nombre_cliente"],
+                    "nombre_especie" => $re["nombre_especie"],
+                    "fecha" => $re["fecha"],
+                    "cant_plantas" => $re["cant_plantas"],
+                    "cant_bandejas" => $re["cant_bandejas"],
+                    "tipo_bandeja" => $re["tipo_bandeja"],
+                    "codigo" => $re["codigo"],
+                    "id_interno" => $re["id_interno"],
+                    "estado" => $re["estado"],
+                    "id_pedido" => $re["id_pedido"],
+                    "id_artpedido" => $re["id_artpedido"],
+                    "id_pedido_interno" => $re["id_pedido_interno"],
+                    "problema" => $re["problema"],
+                    "observacionproblema" => $re["observacionproblema"],
+                    "observacion" => $re["observacion"],
+                    "iniciales" => $re["iniciales"],
+                    "id_especie" => $re["id_especie"],
+                    "id_cliente" => $re["id_cliente"],
+                    "query" => $cadenaselect
+                ));
+            }
+            $mijson = json_encode($arraypedidos);
+            echo $mijson;
+        }
+    } catch (\Throwable $th) {
+        throw $th;
+    }
+}
+else if ($consulta == "cargar_detalle_pedido") {
     $id_artpedido = $_POST['id_artpedido'];
 
     try {

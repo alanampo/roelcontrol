@@ -31,6 +31,7 @@
                     <h5>Pasó a ETAPA 3: <span class="label-etapa3"></span></h5>
                     <h5>Pasó a ETAPA 4: <span class="label-etapa4"></span></h5>
                     <h5>Pasó a ETAPA 5: <span class="label-etapa5"></span></h5>
+                    <h5>Pasó a ETAPA 6: <span class="label-etapa6"></span></h5>
                     <h5>Se entregó el Día: <span class="label-fecha-entrega"></span></h5>
                     <h5 class="text-success font-weight-bold">MESÓN: <span class="label-mesada text-primary"></span>
                       <button class='btn btn-success btn-sm d-none ml-2' id='btn-asignar-mesada'><i class='fa fa-table'></i>  Asignar Mesón</button>
@@ -117,6 +118,20 @@
                       <button id="btn-verfoto6" class="btn btn-sm btn-info ml-2 mb-1 d-none btn-verfoto"><i
                           class="fa fa-picture-o"></i> Ver Foto</button>
                       <button id="btn-eliminarfoto6"
+                        class="btn btn-sm btn-danger ml-2 mb-1 btn-verfoto fa fa-trash"></button>
+                    </div>
+
+                    <div class="d-flex flex-row align-items-center">
+                      <h5 class="text-primary">ETAPA 6: </h5>
+                      <button id="btn-control6" class="btn btn-sm btn-success ml-2 mb-1 btn-control"><i
+                          class="fa fa-search"></i> CONTROL</button>
+                      <button onClick="abrir('input-foto7')" class="btn btn-sm btn-primary ml-2 mb-1"><i
+                          class="fa fa-camera"></i> Cargar Foto</button>
+                      <input type='file' accept='.jpg, .jpeg' onchange='cambiofoto(7)' capture='camera'
+                        id='input-foto7' style='display:none' />
+                      <button id="btn-verfoto6" class="btn btn-sm btn-info ml-2 mb-1 d-none btn-verfoto"><i
+                          class="fa fa-picture-o"></i> Ver Foto</button>
+                      <button id="btn-eliminarfoto7"
                         class="btn btn-sm btn-danger ml-2 mb-1 btn-verfoto fa fa-trash"></button>
                     </div>
 

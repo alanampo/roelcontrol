@@ -56,6 +56,9 @@ function generarBoxEstado($estado, $codigo, $fullWidth){
 	else if ($estado == 5){
         return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:$colores[$estado]; padding:3px;'><div>ETAPA 5</div></div>";
     }
+	else if ($estado == 60){
+        return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:#5cb85c; padding:3px;'><div>ETAPA 6</div></div>";
+    }
     else if ($estado == 6){
        	return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:#FFFF00; padding:3px; cursor:pointer;'><div>ENTREGA PARCIAL</div></div>";
       	}

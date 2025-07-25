@@ -1,4 +1,5 @@
 let miTab;
+const phpViveroFile = "data_vivero.php";
 function openTab(evt, tabName) {
   let i, tabcontent, tablinks;
   // Get all elements with class="tabcontent" and hide them
@@ -11,27 +12,15 @@ function openTab(evt, tabName) {
   for (i = 0; i < tablinks.length; i++) {
     tablinks[i].className = tablinks[i].className.replace(" active", "");
   }
-  document.getElementById(tabName).style.display = "block";
+  document.getElementById("tab-pedidos").style.display = "block";
   evt.currentTarget.className += " active";
   $("#input-search").val("");
-  if (miTab == "tab-esquejes") {
-    loadEsquejes();
-  } else if (miTab == "tab-semillas") {
-    loadSemillas();
-  }
-  else if (miTab == "tab-interior") {
-    loadPedidos("interior");
-  }
-  else if (miTab == "tab-exterior") {
-    loadPedidos("exterior");
-  }
-  else if (miTab == "tab-vivero") {
-    loadPedidos("vivero");
-  }
+
+  loadPedidos(miTab.replace("tab-", ""));
 }
 
 $(document).ready(function () {
-  if (!document.location.href.includes("ver_seguimiento")) return;
+  if (!document.location.href.includes("vivero")) return;
 
   document.getElementById("defaultOpen").click();
   let html2 = "";
@@ -43,9 +32,10 @@ $(document).ready(function () {
                   <td></td>
                   <td></td>
                   <td></td>
+                  <td></td>
                   </tr>`;
   }
-  $("#tabla-semillas,#tabla-esquejes,#tabla-interior,#tabla-exterior,#tabla-vivero").find("tbody").html(html2);
+  $("#tabla-pedidos").find("tbody").html(html2);
 
   oncontextmenu = (e) => {
     if ($("#ModalVerEstado").css("display") == "block") return;
@@ -69,117 +59,43 @@ $(document).ready(function () {
                         <p onclick='cambiarEtapa(3)'>Pasar a Etapa 3</p>
                         <p onclick='cambiarEtapa(4)'>Pasar a Etapa 4</p>
                         <p onclick='cambiarEtapa(5)'>Pasar a Etapa 5</p>
+                        <p onclick='cambiarEtapa(6)'>Pasar a Etapa 6</p>
                         <p onclick='cambiarEtapa(-10)'>DEVOLVER A PENDIENTES</p>
                         `;
     document.body.appendChild(menu);
   };
 });
 
-function loadEsquejes() {
-  const busqueda = $("#input-search").val().trim();
-  $.ajax({
-    beforeSend: function () {
-      $("#tabla-esquejes td").html("");
-    },
-    url: "data_ver_seguimiento.php",
-    type: "POST",
-    data: { consulta: "cargar_esquejes", busqueda: busqueda },
-    success: function (x) {
-      if (x.trim().length) {
-        const pedidos = JSON.parse(x);
-        if (pedidos.length) {
-          for (let j = 0; j < 6; j++) {
-            let index = 0;
-            pedidos.forEach(function (e, i) {
-              if (e.estado == 6) {
-                e.estado = 5;
-                e.es_entrega_parcial = true;
-              }
-              if (e.estado == j) {
-                $("#tabla-esquejes > tbody")
-                  .find("tr")
-                  .eq(index)
-                  .find(`td:eq(${j})`)
-                  .html(MakeBox(e, e.es_entrega_parcial ? 6 : j, "esqueje"));
-                index++;
-              }
-            });
-          }
-        }
-      }
-    },
-    error: function (jqXHR, estado, error) {},
-  });
-
-  DeseleccionarTodo();
-}
-
 function loadPedidos(tipo) {
   const busqueda = $("#input-search").val().trim();
   $.ajax({
     beforeSend: function () {
-      $(`#tabla-${tipo} td`).html("");
+      $(`#tabla-pedidos td`).html("");
     },
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     type: "POST",
     data: { consulta: `cargar_pedidos`, tipo, busqueda: busqueda },
     success: function (x) {
       if (x.trim().length) {
         const pedidos = JSON.parse(x);
         if (pedidos.length) {
-          for (let j = 0; j < 6; j++) {
+          for (let j = 0; j < 7; j++) {
             let index = 0;
             pedidos.forEach(function (e, i) {
+              
               if (e.estado == 6) {
-                e.estado = 5;
+                e.estado = 6;
                 e.es_entrega_parcial = true;
               }
+              if (e.estado == 60){
+                e.estado = 6;
+              } 
               if (e.estado == j) {
-                $(`#tabla-${tipo} > tbody`)
+                $(`#tabla-pedidos > tbody`)
                   .find("tr")
                   .eq(index)
                   .find(`td:eq(${j})`)
-                  .html(MakeBox(e, e.es_entrega_parcial ? 6 : j, tipo));
-                index++;
-              }
-            });
-          }
-        }
-      }
-    },
-    error: function (jqXHR, estado, error) {},
-  });
-
-  DeseleccionarTodo();
-}
-
-function loadSemillas() {
-  const busqueda = $("#input-search").val().trim();
-  $.ajax({
-    beforeSend: function () {
-      $("#tabla-semillas td").html("");
-    },
-    url: "data_ver_seguimiento.php",
-    type: "POST",
-    data: { consulta: "cargar_semillas", busqueda: busqueda },
-    success: function (x) {
-      console.log(x)
-      if (x.trim().length) {
-        const pedidos = JSON.parse(x);
-        if (pedidos.length) {
-          for (let j = 0; j < 6; j++) {
-            let index = 0;
-            pedidos.forEach(function (e, i) {
-              if (e.estado == 6) {
-                e.estado = 5;
-                e.es_entrega_parcial = true;
-              }
-              if (e.estado == j) {
-                $("#tabla-semillas > tbody")
-                  .find("tr")
-                  .eq(index)
-                  .find(`td:eq(${j})`)
-                  .html(MakeBox(e, e.es_entrega_parcial ? 6 : j, "semilla"));
+                  .html(MakeBox(e, e.es_entrega_parcial ? 7 : j, tipo));
                 index++;
               }
             });
@@ -251,7 +167,7 @@ function cambiarEtapa(etapa) {
 
         $.ajax({
           type: "POST",
-          url: "data_ver_seguimiento.php",
+          url: phpViveroFile,
           data: {
             consulta: "cambiar_etapa",
             productos: JSON.stringify(productos),
@@ -264,9 +180,7 @@ function cambiarEtapa(etapa) {
                 "",
                 "success"
               );
-              if (!miTab || miTab == "tab-esquejes") loadEsquejes();
-              else if (miTab == "tab-semillas") loadSemillas();
-              else loadPedidos(miTab.replace("tab-",""))
+              loadPedidos(miTab.replace("tab-", ""))
             } else {
               swal(
                 "Ocurrió un error cambiar los productos de Etapa",
@@ -288,16 +202,7 @@ function cambiarEtapa(etapa) {
 }
 
 function MakeBox(producto, index, tipo_producto) {
-  let colores = [
-    "#ffffff",
-    "#ffffff",
-    "#ffffff",
-    "#ffffff",
-    "#ffffff",
-    "#ffffff",
-    "#ffffff",
-  ];
-  if (tipo_producto == "esqueje") {
+  let
     colores = [
       "#D8EAD2",
       "#B6D7A8",
@@ -306,29 +211,10 @@ function MakeBox(producto, index, tipo_producto) {
       "#99D87D",
       "#8AD868",
       "#FBF07D",
+      "#5cb85c"
     ];
-  } else if (tipo_producto == "semilla") {
-    colores = [
-      "#FFF2CD",
-      "#FFE59A",
-      "#FED966",
-      "#F2C234",
-      "#E0B42F",
-      "#CEA62E",
-      "#FBF07D",
-    ];
-  }
-  else {
-    colores = [
-      "#D8EAD2",
-      "#B6D7A8",
-      "#A9D994",
-      "#A2D98A",
-      "#99D87D",
-      "#8AD868",
-      "#FBF07D",
-    ];
-  }
+  
+  
   const date = moment(producto.fecha);
   const fecha = date.format("DD/MM/YY HH:mm");
 
@@ -433,7 +319,7 @@ async function MostrarModalEstado(
   $(".btn-verfoto").addClass("d-none");
 
   $.ajax({
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     type: "POST",
     data: { id_artpedido: id_artpedido, consulta: "cargar_detalle_pedido" },
     success: function (x) {
@@ -461,6 +347,7 @@ async function MostrarModalEstado(
             fecha_etapa3,
             fecha_etapa4,
             fecha_etapa5,
+            fecha_etapa6,
             fecha_ingreso,
             mesada,
             cant_semillas,
@@ -580,6 +467,9 @@ async function MostrarModalEstado(
           );
           $(".label-etapa5").html(
             fecha_etapa5 ? moment(fecha_etapa5).format("DD/MM/YY HH:mm") : "-"
+          );
+          $(".label-etapa6").html(
+            fecha_etapa6 ? moment(fecha_etapa6).format("DD/MM/YY HH:mm") : "-"
           );
 
           $(".label-fecha-entrega").html(
@@ -1116,7 +1006,7 @@ function guardarControl(etapa, id_artpedido, tr, id_interno) {
     const observacion = $(tr).find(".input-observacion").first().val().trim();
     $.ajax({
       type: "POST",
-      url: "data_ver_seguimiento.php",
+      url: phpViveroFile,
       data: {
         consulta: "guardar_control_0",
         fecha_siembra: fecha_siembra,
@@ -1157,7 +1047,7 @@ function guardarControl(etapa, id_artpedido, tr, id_interno) {
     const observacion = $(tr).find(".input-observacion").first().val().trim();
     $.ajax({
       type: "POST",
-      url: "data_ver_seguimiento.php",
+      url: phpViveroFile,
       data: {
         consulta: `guardar_control_1_a_3`,
         etapa: etapa,
@@ -1203,7 +1093,7 @@ function guardarControl(etapa, id_artpedido, tr, id_interno) {
     const observacion = $(tr).find(".input-observacion").first().val().trim();
     $.ajax({
       type: "POST",
-      url: "data_ver_seguimiento.php",
+      url: phpViveroFile,
       data: {
         consulta: "guardar_control_4",
         fecha_repique: fecha_repique,
@@ -1245,7 +1135,7 @@ function guardarControl(etapa, id_artpedido, tr, id_interno) {
     const observacion = $(tr).find(".input-observacion").first().val().trim();
     $.ajax({
       type: "POST",
-      url: "data_ver_seguimiento.php",
+      url: phpViveroFile,
       data: {
         consulta: "guardar_control_5",
         fecha_disponibilidad: fecha_disponibilidad,
@@ -1273,7 +1163,7 @@ function loadControl(id_artpedido, etapa) {
   $("#ModalControl .loading-wrapper").removeClass("d-none").show();
   $.ajax({
     type: "POST",
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     data: {
       consulta: `cargar_control_${etapa}`,
       etapa: etapa,
@@ -1534,7 +1424,7 @@ function modalEntrega(id_art, cantidad_original) {
   $("#ModalEntrega").attr("x-falta-entregar", null);
   $.ajax({
     type: "POST",
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     data: { consulta: "cargar_plantas_entregadas", id_artpedido: id_art },
     success: function (data) {
       if (data.includes("entregado:")) {
@@ -1582,7 +1472,7 @@ function marcarComoEntregado(id_art){
 
   $.ajax({
     type: "POST",
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     data: {
       consulta: "marcar_entregado",
       id_artpedido: id_art,      
@@ -1591,9 +1481,7 @@ function marcarComoEntregado(id_art){
       if (data.trim() == "success") {
         swal("El pedido ya había sido entregado!", "Se actualizó el estado a ENTREGADO COMPLETAMENTE", "success");
         MostrarModalEstado(id_art, codigo, nombre_cliente, id_cliente);
-        if (!miTab || miTab == "tab-esquejes") loadEsquejes();
-        else if (miTab == "tab-semillas") loadSemillas();
-        else loadPedidos(miTab.replace("tab-",""))
+        loadPedidos(miTab.replace("tab-", ""))
       } else {
         swal("Ocurrió un error al marcar el Pedido como Entregado", data, "error");
       }
@@ -1619,7 +1507,7 @@ function guardarEntrega() {
     $("#ModalEntrega").modal("hide");
     $.ajax({
       type: "POST",
-      url: "data_ver_seguimiento.php",
+      url: phpViveroFile,
       data: {
         consulta: "guardar_entrega",
         id_artpedido: id_artpedido,
@@ -1630,9 +1518,7 @@ function guardarEntrega() {
         if (data.trim() == "success") {
           swal("Guardaste la Entrega correctamente!", "", "success");
           MostrarModalEstado(id_artpedido, codigo, nombre_cliente, id_cliente);
-          if (!miTab || miTab == "tab-esquejes") loadEsquejes();
-          else if (miTab == "tab-semillas") loadSemillas();
-          else loadPedidos(miTab.replace("tab-",""))
+          loadPedidos(miTab.replace("tab-", ""))
         } else {
           swal("Ocurrió un error al entregar el Producto", data, "error");
         }
@@ -1660,7 +1546,7 @@ function cancelarPedido(id_art, codigo, nombre_cliente, id_cliente) {
       case "catch":
         $.ajax({
           type: "POST",
-          url: "data_ver_seguimiento.php",
+          url: phpViveroFile,
           data: { consulta: "cancelar_pedido", id_artpedido: id_art },
           success: function (data) {
             if (data.trim() == "success") {
@@ -1699,7 +1585,7 @@ function eliminarPedido(id_art, codigo, nombre_cliente, id_cliente) {
       case "catch":
         $.ajax({
           type: "POST",
-          url: "data_ver_seguimiento.php",
+          url: phpViveroFile,
           data: { consulta: "eliminar_pedido", id_artpedido: id_art },
           success: function (data) {
             if (data.trim() == "success") {
@@ -1739,7 +1625,7 @@ function guardarObs() {
     .replace(/\s+/g, " ");
   $.ajax({
     beforeSend: function () {},
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     type: "POST",
     data: {
       id_artpedido: id_artpedido,
@@ -1753,9 +1639,7 @@ function guardarObs() {
         swal("Guardaste la Observación correctamente!", "", "success");
         $("#input-observaciones").attr("disabled", true);
         $("#btn-guardar-obs").attr("disabled", true);
-        if (!miTab || miTab == "tab-esquejes") loadEsquejes();
-        else if (miTab == "tab-semillas") loadSemillas();
-        else loadPedidos(miTab.replace("tab-",""));
+        loadPedidos(miTab.replace("tab-", ""))
       }
     },
     error: function (jqXHR, estado, error) {},
@@ -1767,7 +1651,7 @@ function guardarProblema() {
   const problema = $("#input-problema").val().trim().replace(/\s+/g, " ");
   $.ajax({
     beforeSend: function () {},
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     type: "POST",
     data: {
       id_artpedido: id_artpedido,
@@ -1787,9 +1671,7 @@ function guardarProblema() {
           $("#btn-solucionado").attr("disabled", false);
         }
 
-        if (!miTab || miTab == "tab-esquejes") loadEsquejes();
-        else if (miTab == "tab-semillas") loadSemillas();
-        else loadPedidos(miTab.replace("tab-",""));
+        loadPedidos(miTab.replace("tab-", ""))
       }
     },
     error: function (jqXHR, estado, error) {},
@@ -1800,7 +1682,7 @@ function solucionarProblema() {
   const id_artpedido = $("#ModalVerEstado").attr("x-id-artpedido");
   $.ajax({
     beforeSend: function () {},
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     type: "POST",
     data: { id_artpedido: id_artpedido, consulta: "solucionar_problema" },
     success: function (x) {
@@ -1810,9 +1692,7 @@ function solucionarProblema() {
         swal("Marcaste el Problema como Solucionado!", "", "success");
         $("#btn-solucionado").addClass("d-none");
         $("#btn-solucionado").attr("disabled", true);
-        if (!miTab || miTab == "tab-esquejes") loadEsquejes();
-        else if (miTab == "tab-semillas") loadSemillas();
-        else loadPedidos(miTab.replace("tab-",""))
+        loadPedidos(miTab.replace("tab-", ""))
       }
     },
     error: function (jqXHR, estado, error) {},
@@ -2013,7 +1893,11 @@ function generaBoxEstado(estado, fullWidth, codigo) {
     return `<div class='d-inline-block cajita ${w100}' style='background-color:${colores[estado]}; padding:5px;'>ETAPA 4</div>`;
   } else if (estado == 5) {
     return `<div class='d-inline-block cajita ${w100}' style='text-align:center;background-color:${colores[estado]}; padding:3px;'><div>ETAPA 5</div></div>`;
-  } else if (estado == 6) {
+  }
+  else if (estado == 60) {
+    return `<div class='d-inline-block cajita ${w100}' style='text-align:center;background-color:	#5cb85c; padding:3px;'><div>ETAPA 6</div></div>`;
+  }
+  else if (estado == 6) {
     return `<div class='d-inline-block cajita ${w100}' style='text-align:center;background-color:#FFFF00; padding:3px; cursor:pointer;'><div>ENTREGA PARCIAL</div></div>`;
   } else if (estado == 7) {
     return `<div class='d-inline-block cajita ${w100}' style='text-align:center;background-color:#A9F5BC; padding:3px; cursor:pointer;'><div>ENTREGA COMPLETA</div></div>`;
@@ -2052,7 +1936,7 @@ function GuardarCambioCantidad() {
     CerrarModalCantidad();
     $.ajax({
       beforeSend: function () {},
-      url: "data_ver_seguimiento.php",
+      url: phpViveroFile,
       type: "POST",
       data: {
         consulta: "modificar_cantidad",
@@ -2063,9 +1947,7 @@ function GuardarCambioCantidad() {
         if (x.trim() == "success") {
           swal("La cantidad fue modificada correctamente!", "", "success");
           MostrarModalEstado(id_artpedido, codigo, nombre_cliente, id_cliente);
-          if (!miTab || miTab == "tab-esquejes") loadEsquejes();
-          else if (miTab == "tab-semillas") loadSemillas();
-          else loadPedidos(miTab.replace("tab-",""))
+          loadPedidos(miTab.replace("tab-", ""))
         } else {
           swal("Ocurrió un error al modificar la cantidad", x, "error");
         }
@@ -2200,14 +2082,7 @@ function guardarEnMesada() {
 function buscar() {
   const busqueda = $("#input-search").val().trim();
   if (!busqueda.length || busqueda.length >= 3) {
-    if (miTab == "tab-esquejes") {
-      loadEsquejes();
-    } else if (miTab == "tab-semillas") {
-      loadSemillas();
-    }
-    else if (miTab == "tab-interior" || miTab == "tab-exterior" || miTab == "tab-vivero"){
       loadPedidos(miTab.replace("tab-", ""))
-    }
   }
 }
 
@@ -2230,21 +2105,14 @@ function enviarStock(id_artpedido, codigo, nombre_cliente) {
       case "catch":
         $.ajax({
           type: "POST",
-          url: "data_ver_seguimiento.php",
+          url: phpViveroFile,
           data: { consulta: "enviar_stock", id_artpedido: id_artpedido },
           success: function (data) {
             if (data.trim() == "success") {
               swal("Enviaste el Pedido a Stock!", "", "success");
               MostrarModalEstado(id_artpedido, codigo, nombre_cliente, 1);
-              if (location.href.includes("ver_seguimiento")){
-                if (miTab == "tab-esquejes") {
-                  loadEsquejes();
-                } else if (miTab == "tab-semillas") {
-                  loadSemillas();
-                }
-                else{
-                 loadPedidos(miTab.replace("tab-",""))
-                }
+              if (location.href.includes("vivero")){
+                loadPedidos(miTab.replace("tab-", ""))
               }
               else{
                 busca_entradas(currentTab)
@@ -2304,7 +2172,7 @@ function guardarCambioCliente(){
   $("#modal-modificar-cliente").modal("hide");
 
   $.ajax({
-    url: "data_ver_seguimiento.php",
+    url: phpViveroFile,
     type: "POST",
     data: {
       consulta: "modificar_cliente",

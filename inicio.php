@@ -31,6 +31,7 @@
           pone_tendencias();
           pone_bonos();
           pone_informes();
+          pone_vivero();
           $("#contenedor_panel").html(`<a href="#"><i class="fa fa-bars"></i> <span>Panel de Control</span> <i class="fa fa-angle-left pull-right"></i></a>
                           <ul class="treeview-menu menu-open" style="display:block;"> 
                             <li><a href="ver_variedades.php"><i class="fa fa-arrow-circle-right"></i> Variedades</a></li> 
@@ -54,6 +55,9 @@
                       }
                       else if (array[i] == "mesadas"){
                         pone_mesadas();
+                      }
+                      else if (array[i] == "vivero"){
+                        pone_vivero();
                       }
                       else if (array[i] == "historialentregas"){
                         pone_historialentregas();
@@ -149,6 +153,9 @@
             </div>
 
             <div class="col-6 col-md-3 col-planificacion d-none">
+            </div>
+
+            <div class="col-6 col-md-3 col-vivero d-none">
             </div>
 
             <div class="col-6 col-md-3 col-reservas d-none">

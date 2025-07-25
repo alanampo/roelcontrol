@@ -38,6 +38,22 @@ if ($tipo == "seguimiento") {
             </div>
         </a>
     ";
+}
+else if ($tipo == "vivero") {
+    echo "
+        <a href=\"vivero.php\">
+            <div class=\"small-box bg-blue\">
+                <div class=\"inner\">
+                    <p>Seguimiento Vivero</p>
+                </div>
+                <div class=\"icon\">
+                    <i class=\"ion ion-calendar\"></i>
+                </div>
+                <h3 style=\"visibility:hidden;\">0</h3>
+                <span class=\"small-box-footer\">Ver Seguimiento <i class=\"fa fa-arrow-circle-right\"></i></span>
+            </div>
+        </a>
+    ";
 } else if ($tipo == "pedidos") {
     $i = "0";
     $consulta = "SELECT  (SELECT COUNT(*)

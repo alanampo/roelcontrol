@@ -81,6 +81,20 @@ function pone_planificacionpedidos() {
   });
 }
 
+function pone_vivero() {
+  $.ajax({
+    url: "pone_boxes.php",
+    type: "POST",
+    data: {tipo: "vivero"},
+    success: function (x) {
+      $(".col-vivero").html(x).removeClass("d-none");
+      $("#contenedor_modulos").append(
+        '<li><a href="vivero.php"><i class="fa fa-arrow-circle-right"></i> Seguimiento Vivero</a></li>'
+      );
+    },
+  });
+}
+
 function pone_mesadas() {
   $.ajax({
     url: "pone_boxes.php",

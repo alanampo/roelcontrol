@@ -82,14 +82,14 @@ function loadPedidos(tipo) {
           for (let j = 0; j < 7; j++) {
             let index = 0;
             pedidos.forEach(function (e, i) {
-              
+
               if (e.estado == 6) {
                 e.estado = 6;
                 e.es_entrega_parcial = true;
               }
-              if (e.estado == 60){
+              if (e.estado == 60) {
                 e.estado = 6;
-              } 
+              }
               if (e.estado == j) {
                 $(`#tabla-pedidos > tbody`)
                   .find("tr")
@@ -103,7 +103,7 @@ function loadPedidos(tipo) {
         }
       }
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 
   DeseleccionarTodo();
@@ -182,11 +182,25 @@ function cambiarEtapa(etapa) {
               );
               loadPedidos(miTab.replace("tab-", ""))
             } else {
-              swal(
-                "Ocurrió un error cambiar los productos de Etapa",
-                x,
-                "error"
-              );
+              try {
+                const json = JSON.parse(data);
+                if (json && json.errors) {
+                  const erroresConcatenados = json.errors.join('. ');
+                  swal(
+                    "Ocurrió un error cambiar los productos de Etapa",
+                    erroresConcatenados,
+                    "error"
+                  );
+                }
+              } catch (error) {
+                swal(
+                  "Ocurrió un error cambiar los productos de Etapa",
+                  x,
+                  "error"
+                );
+              }
+
+
             }
             $(".selected").removeClass("selected");
             $("td").css({ "background-color": "" });
@@ -213,8 +227,8 @@ function MakeBox(producto, index, tipo_producto) {
       "#FBF07D",
       "#5cb85c"
     ];
-  
-  
+
+
   const date = moment(producto.fecha);
   const fecha = date.format("DD/MM/YY HH:mm");
 
@@ -237,47 +251,39 @@ function MakeBox(producto, index, tipo_producto) {
   let observacionproblema = "";
   let observacion = "";
   if (producto.observacionproblema && producto.problema) {
-    observacionproblema = `<div  style="font-size: 0.8em; word-wrap: break-all;"  class='bg-light text-danger ml-1 mr-1 mb-1'>${
-      producto.observacionproblema.length > 20
+    observacionproblema = `<div  style="font-size: 0.8em; word-wrap: break-all;"  class='bg-light text-danger ml-1 mr-1 mb-1'>${producto.observacionproblema.length > 20
         ? producto.observacionproblema.substring(0, 17) + "..."
         : producto.observacionproblema
-    }</div>`;
+      }</div>`;
   }
 
   if (producto.observacion) {
-    observacion = `<div  style="font-size: 0.8em; word-wrap: break-all;"  class='bg-light text-primary ml-1 mr-1 mb-1'>${
-      producto.observacion.length > 20
+    observacion = `<div  style="font-size: 0.8em; word-wrap: break-all;"  class='bg-light text-primary ml-1 mr-1 mb-1'>${producto.observacion.length > 20
         ? producto.observacion.substring(0, 17) + "..."
         : producto.observacion
-    }</div>`;
+      }</div>`;
   }
   let especie = "";
   if (producto.id_especie) {
-    especie = `<span class='${
-      producto.problema ? "text-light" : "text-primary"
-    }'>${producto.nombre_especie}</span><br>`;
+    especie = `<span class='${producto.problema ? "text-light" : "text-primary"
+      }'>${producto.nombre_especie}</span><br>`;
   }
 
-  let html = `<div x-id-real="${
-    producto.id_artpedido
-  }" x-id="${codigo}" x-estado='${producto.estado}' x-parcial='${
-    producto.es_entrega_parcial ? 1 : 0
-  }' class='cajita' onClick='toggleSelection(this)' style='word-wrap: break-word;touch-action: none;cursor:pointer;background-color:${
-    producto.problema ? "#DA6E6B" : colores[index]
-  };font-size:1.0em;'
-      ondblclick='MostrarModalEstado(${producto.id_artpedido}, "${codigo}", "${
-    producto.nombre_cliente
-  }", ${producto.id_cliente})'>
+  let html = `<div x-id-real="${producto.id_artpedido
+    }" x-id="${codigo}" x-estado='${producto.estado}' x-parcial='${producto.es_entrega_parcial ? 1 : 0
+    }' class='cajita' onClick='toggleSelection(this)' style='word-wrap: break-word;touch-action: none;cursor:pointer;background-color:${producto.problema ? "#DA6E6B" : colores[index]
+    };font-size:1.0em;'
+      ondblclick='MostrarModalEstado(${producto.id_artpedido}, "${codigo}", "${producto.nombre_cliente
+    }", ${producto.id_cliente})'>
       <span>${codigo}<br></span>
       <span style='font-weight:bold;'>${producto.nombre_variedad}<br>
       ${especie}
       ${producto.nombre_cliente}<br>Cant. Plantas: ${producto.cant_plantas}
-        ${
-          producto.cant_bandejas
-            ? `<br>
+        ${producto.cant_bandejas
+      ? `<br>
         <small>(${producto.cant_bandejas} band. de ${producto.tipo_bandeja})</small>`
-            : ""
-        }
+      : ""
+    }
         <br>
         <span style="font-size: 0.7em">
         ${fecha}</span>
@@ -361,13 +367,10 @@ async function MostrarModalEstado(
           if (semillas && semillas.length) {
             semillas.forEach(function (e, i) {
               strsemillas += `
-                <span style="font-size:12px" class="text-primary">${
-                  e.cantidad
-                } de ${
-                e.id_cliente == 1 || e.id_cliente == "1" ? "ROEL-" : ""
-              }${e.codigo ? e.codigo.toUpperCase() : ""} [${e.marca} - ${
-                e.proveedor
-              } - ${e.porcentaje}%]</span><br>
+                <span style="font-size:12px" class="text-primary">${e.cantidad
+                } de ${e.id_cliente == 1 || e.id_cliente == "1" ? "ROEL-" : ""
+                }${e.codigo ? e.codigo.toUpperCase() : ""} [${e.marca} - ${e.proveedor
+                } - ${e.porcentaje}%]</span><br>
               `;
             });
           }
@@ -425,8 +428,7 @@ async function MostrarModalEstado(
           }
 
           $(".label-producto").html(
-            `${nombre_variedad} ${
-              nombre_especie ? nombre_especie : ""
+            `${nombre_variedad} ${nombre_especie ? nombre_especie : ""
             } (${codigo}${id_interno.padStart(2, "0")})`
           );
           const cant_bandejas_reales =
@@ -434,12 +436,11 @@ async function MostrarModalEstado(
           $(".label-cantidad").html(cant_plantas);
           $(".label-band-pedidas").html(`(${cant_bandejas} Band.)`);
           $(".label-band-sembradas").html(
-            `${
-              estado >= 0
-                ? cant_bandejas_reales > 0
-                  ? cant_bandejas_reales
-                  : cant_bandejas
-                : 0
+            `${estado >= 0
+              ? cant_bandejas_reales > 0
+                ? cant_bandejas_reales
+                : cant_bandejas
+              : 0
             }`
           );
 
@@ -524,7 +525,7 @@ async function MostrarModalEstado(
 
           $("#input-observaciones").val(observacion ? observacion : "");
           $("#input-observaciones-pedido").val(observacion_pedido ? observacion_pedido : "");
-          
+
           $("#input-problema").val(
             observacionproblema ? observacionproblema : ""
           );
@@ -679,7 +680,7 @@ async function MostrarModalEstado(
         }
       }
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 
   let modal = document.getElementById("ModalVerEstado");
@@ -937,7 +938,7 @@ function generarTabla(etapa, id_artpedido) {
       Readonly: true,
       minDate: -90,
       dateFormat: "dd/mm/yy",
-      onSelect: function (dateText, inst) {},
+      onSelect: function (dateText, inst) { },
     })
     .attr("readonly", "readonly");
 
@@ -1439,33 +1440,33 @@ function modalEntrega(id_art, cantidad_original) {
           cantidad_original - entregado
         );
 
-        if ((cantidad_original - entregado) <= 0){
+        if ((cantidad_original - entregado) <= 0) {
           marcarComoEntregado(id_art)
         }
-        else{
+        else {
           $("#input-cantidad-entrega").attr("max", cantidad_original - entregado);
           document.getElementById("input-cantidad-entrega").oninput =
-          function () {
-            let max = parseInt(this.max);
+            function () {
+              let max = parseInt(this.max);
 
-            if (parseInt(this.value) > max) {
-              this.value = max;
-            }
-            if (/^\s+$/.test(this.value)) {
-              this.value = this.value.replace(/\s/g, "");
-            }
-          };
+              if (parseInt(this.value) > max) {
+                this.value = max;
+              }
+              if (/^\s+$/.test(this.value)) {
+                this.value = this.value.replace(/\s/g, "");
+              }
+            };
           $("#ModalEntrega").modal("show");
         }
 
         $("#btn-entregar").prop("disabled", false);
-        
+
       }
     },
   });
 }
 
-function marcarComoEntregado(id_art){
+function marcarComoEntregado(id_art) {
   const codigo = $("#ModalVerEstado").attr("x-codigo");
   const nombre_cliente = $("#ModalVerEstado").attr("x-nombre-cliente");
   const id_cliente = $("#ModalVerEstado").attr("x-id-cliente");
@@ -1475,7 +1476,7 @@ function marcarComoEntregado(id_art){
     url: phpViveroFile,
     data: {
       consulta: "marcar_entregado",
-      id_artpedido: id_art,      
+      id_artpedido: id_art,
     },
     success: function (data) {
       if (data.trim() == "success") {
@@ -1624,7 +1625,7 @@ function guardarObs() {
     .trim()
     .replace(/\s+/g, " ");
   $.ajax({
-    beforeSend: function () {},
+    beforeSend: function () { },
     url: phpViveroFile,
     type: "POST",
     data: {
@@ -1642,7 +1643,7 @@ function guardarObs() {
         loadPedidos(miTab.replace("tab-", ""))
       }
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 }
 
@@ -1650,7 +1651,7 @@ function guardarProblema() {
   const id_artpedido = $("#ModalVerEstado").attr("x-id-artpedido");
   const problema = $("#input-problema").val().trim().replace(/\s+/g, " ");
   $.ajax({
-    beforeSend: function () {},
+    beforeSend: function () { },
     url: phpViveroFile,
     type: "POST",
     data: {
@@ -1674,14 +1675,14 @@ function guardarProblema() {
         loadPedidos(miTab.replace("tab-", ""))
       }
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 }
 
 function solucionarProblema() {
   const id_artpedido = $("#ModalVerEstado").attr("x-id-artpedido");
   $.ajax({
-    beforeSend: function () {},
+    beforeSend: function () { },
     url: phpViveroFile,
     type: "POST",
     data: { id_artpedido: id_artpedido, consulta: "solucionar_problema" },
@@ -1695,7 +1696,7 @@ function solucionarProblema() {
         loadPedidos(miTab.replace("tab-", ""))
       }
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 }
 
@@ -1783,7 +1784,7 @@ function cambiofoto(tipo) {
       dataType: "script",
       contentType: false,
       processData: false,
-      beforeSend: function () {},
+      beforeSend: function () { },
       success: function (x) {
         if (x.includes("error")) {
           swal("Ocurrió un error al subir la imagen", x.toString(), "error");
@@ -1820,10 +1821,10 @@ function verFoto(id, index) {
         <div class="col-md-12">
           <div align="center">
             <img id='current-foto' style="max-height: 80vh; width: auto;" src="imagenes/` +
-      nombrefoto +
-      `.jpg?t=` +
-      new Date().getTime() +
-      `"></img>
+    nombrefoto +
+    `.jpg?t=` +
+    new Date().getTime() +
+    `"></img>
           </div>
         </div>
       </div>
@@ -1935,7 +1936,7 @@ function GuardarCambioCantidad() {
   if (cantidad.length && !isNaN(cantidad) && parseInt(cantidad) > 0) {
     CerrarModalCantidad();
     $.ajax({
-      beforeSend: function () {},
+      beforeSend: function () { },
       url: phpViveroFile,
       type: "POST",
       data: {
@@ -1952,7 +1953,7 @@ function GuardarCambioCantidad() {
           swal("Ocurrió un error al modificar la cantidad", x, "error");
         }
       },
-      error: function (jqXHR, estado, error) {},
+      error: function (jqXHR, estado, error) { },
     });
   } else {
     swal("ERROR", "La cantidad debe ser mayor a cero", "error");
@@ -1969,7 +1970,7 @@ function asignarMesada(id_artpedido, codigo_producto, nombre_cliente) {
   let tipo_consulta = "cargar_mesadas";
   $(".tabla-mesadas > tbody").html("");
   $.ajax({
-    beforeSend: function () {},
+    beforeSend: function () { },
     url: "data_ver_mesadas.php",
     type: "POST",
     data: { consulta: tipo_consulta },
@@ -2034,11 +2035,11 @@ function asignarMesada(id_artpedido, codigo_producto, nombre_cliente) {
         }
       }
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 }
 
-if (! location.href.includes("ver_mesadas")){
+if (!location.href.includes("ver_mesadas")) {
   function click_mesada(id_mesada) {
     $(".active2").removeClass("active2");
     $(`.mesada-${id_mesada}`).addClass("active2");
@@ -2060,7 +2061,7 @@ function guardarEnMesada() {
   $("#ModalAsignarMesada").modal("hide");
 
   $.ajax({
-    beforeSend: function () {},
+    beforeSend: function () { },
     url: "data_ver_mesadas.php",
     type: "POST",
     data: {
@@ -2082,7 +2083,7 @@ function guardarEnMesada() {
 function buscar() {
   const busqueda = $("#input-search").val().trim();
   if (!busqueda.length || busqueda.length >= 3) {
-      loadPedidos(miTab.replace("tab-", ""))
+    loadPedidos(miTab.replace("tab-", ""))
   }
 }
 
@@ -2111,13 +2112,13 @@ function enviarStock(id_artpedido, codigo, nombre_cliente) {
             if (data.trim() == "success") {
               swal("Enviaste el Pedido a Stock!", "", "success");
               MostrarModalEstado(id_artpedido, codigo, nombre_cliente, 1);
-              if (location.href.includes("vivero")){
+              if (location.href.includes("vivero")) {
                 loadPedidos(miTab.replace("tab-", ""))
               }
-              else{
+              else {
                 busca_entradas(currentTab)
               }
-              
+
             } else {
               swal(
                 "Ocurrió un error al Enviar el Pedido a Stock",
@@ -2136,7 +2137,7 @@ function enviarStock(id_artpedido, codigo, nombre_cliente) {
   });
 }
 
-function modalModificarCliente(id_artpedido){
+function modalModificarCliente(id_artpedido) {
   $("#modal-modificar-cliente").attr("x-id-artpedido", id_artpedido)
   pone_clientes_modificar();
   $("#modal-modificar-cliente").modal("show");
@@ -2156,15 +2157,15 @@ function pone_clientes_modificar() {
       $(".selectpicker").selectpicker({});
       $("#select-nuevo-cliente").html(x).selectpicker("refresh");
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 }
 
-function guardarCambioCliente(){
+function guardarCambioCliente() {
   const id_cliente = $("#select-nuevo-cliente option:selected").val();
   const nombre_cliente = $("#select-nuevo-cliente option:selected").attr("x-nombre");
   const id_artpedido = $("#modal-modificar-cliente").attr("x-id-artpedido");
-  if (!id_cliente || !id_cliente.length || !id_artpedido){
+  if (!id_cliente || !id_cliente.length || !id_artpedido) {
     swal("Selecciona un Cliente!", "", "error")
     return;
   }
@@ -2180,17 +2181,17 @@ function guardarCambioCliente(){
       id_nuevo_cliente: id_cliente
     },
     success: function (x) {
-      if (x.includes("success")){
+      if (x.includes("success")) {
         swal("Modificaste el Cliente correctamente!", "", "success")
         MostrarModalEstado(id_artpedido, "", nombre_cliente, id_cliente);
-        if (document.location.href.includes("ver_pedidos")){
+        if (document.location.href.includes("ver_pedidos")) {
           busca_entradas(currentTab)
         }
       }
-      else{
+      else {
         swal("Ocurrió un error al Modificar el Cliente", x, "error")
       }
     },
-    error: function (jqXHR, estado, error) {},
+    error: function (jqXHR, estado, error) { },
   });
 }

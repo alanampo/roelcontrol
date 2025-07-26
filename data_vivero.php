@@ -727,33 +727,99 @@ else if ($consulta == "cargar_detalle_pedido") {
     $productos = json_decode($_POST["productos"], true);
     $etapa = $_POST["etapa"];
     $errors = array();
+    
+    // Función para validar transición de estados
+    function validarTransicion($estado_actual, $nueva_etapa) {
+        // Convertir a enteros para comparación
+        $actual = (int)$estado_actual;
+        $nueva = (int)$nueva_etapa;
+        
+        // Estados especiales que siempre se permiten
+        if ($nueva == -10 || $nueva == 0) {
+            return true;
+        }
+        
+        // Validar transiciones normales (1-5) y especial (60)
+        switch ($actual) {
+            case -10:
+            case 0:
+                // Desde pendientes solo puede ir a 1
+                return ($nueva == 1);
+            case 1:
+                // Desde 1 puede ir a 2 o volver a 0/-10
+                return ($nueva == 2 || $nueva == 0 || $nueva == -10);
+            case 2:
+                // Desde 2 puede ir a 3 o volver a 1
+                return ($nueva == 3 || $nueva == 1);
+            case 3:
+                // Desde 3 puede ir a 4 o volver a 2
+                return ($nueva == 4 || $nueva == 2);
+            case 4:
+                // Desde 4 puede ir a 5 o volver a 3
+                return ($nueva == 5 || $nueva == 3);
+            case 5:
+                // Desde 5 puede ir a 60 (usando etapa 6) o volver a 4
+                return ($nueva == 6 || $nueva == 60 || $nueva == 4);
+            case 60:
+                // Desde 60 solo puede volver a 5
+                return ($nueva == 5);
+            default:
+                return false;
+        }
+    }
+    
     mysqli_autocommit($con, false);
+    
+    // Validar transiciones antes de hacer cambios
     for ($i = 0; $i < count($productos); $i++) {
-        if ($etapa == -10 || $etapa == "-10") { //DEVOLVER A PENDIENTES (DESDE PRODUCCION)
-            $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
-        } else if ($etapa == 0 || $etapa == "0") {
-            $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
+        // Obtener estado actual del producto
+        $query_estado = "SELECT estado FROM articulospedidos WHERE id = " . $productos[$i];
+        $resultado = mysqli_query($con, $query_estado);
+        
+        if ($fila = mysqli_fetch_array($resultado)) {
+            $estado_actual = $fila['estado'];
+            
+            // Validar si la transición es permitida
+            if (!validarTransicion($estado_actual, $etapa)) {
+                $errors[] = "Transición no válida para el producto ID " . $productos[$i] . 
+                           ": del estado $estado_actual al estado $etapa no está permitida";
+                break; // Salir del bucle si hay error de validación
+            }
         } else {
-            if ($etapa == 6){
-                $query = "UPDATE articulospedidos SET estado = 60, fecha_etapa6 = NOW() WHERE id = $productos[$i];";
-            }
-            else{
-                $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa$etapa = NOW() WHERE id = $productos[$i];";
-            }
+            $errors[] = "No se pudo obtener el estado actual del producto ID " . $productos[$i];
+            break;
         }
-        if (!mysqli_query($con, $query)) {
-            $errors[] = mysqli_error($con);
-        }
-        if ($etapa == -10 || $etapa == "-10") { //DEVOLVER A PENDIENTES
-            $query = "DELETE FROM stock_bandejas_retiros WHERE id_artpedido = $productos[$i];";
+    }
+    
+    // Si no hay errores de validación, proceder con las actualizaciones
+    if (count($errors) === 0) {
+        for ($i = 0; $i < count($productos); $i++) {
+            if ($etapa == -10 || $etapa == "-10") { //DEVOLVER A PENDIENTES (DESDE PRODUCCION)
+                $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
+            } else if ($etapa == 0 || $etapa == "0") {
+                $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
+            } else {
+                if ($etapa == 6){
+                    $query = "UPDATE articulospedidos SET estado = 60, fecha_etapa6 = NOW() WHERE id = $productos[$i];";
+                }
+                else{
+                    $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa$etapa = NOW() WHERE id = $productos[$i];";
+                }
+            }
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con);
             }
-        }
-        if ($etapa == -10 || $etapa == "-10") { //DEVOLVER A PENDIENTES
-            $query = "DELETE FROM stock_semillas_retiros WHERE id_artpedido = $productos[$i];";
-            if (!mysqli_query($con, $query)) {
-                $errors[] = mysqli_error($con);
+            if ($etapa == -10 || $etapa == "-10") { //DEVOLVER A PENDIENTES
+                $query = "DELETE FROM stock_bandejas_retiros WHERE id_artpedido = $productos[$i];";
+                if (!mysqli_query($con, $query)) {
+                    $errors[] = mysqli_error($con);
+                }
+            }
+            if ($etapa == -10 || $etapa == "-10") { //DEVOLVER A PENDIENTES
+                $query = "DELETE FROM stock_semillas_retiros WHERE id_artpedido = $productos[$i];";
+                if (!mysqli_query($con, $query)) {
+                    $errors[] = mysqli_error($con);
+                }
             }
         }
     }
@@ -766,7 +832,9 @@ else if ($consulta == "cargar_detalle_pedido") {
         }
     } else {
         mysqli_rollback($con);
-        print_r($errors);
+        echo json_encode([
+            "errors" => $errors,
+        ]);
     }
     mysqli_close($con);
 } else if ($consulta == "cancelar_pedido") {

@@ -419,8 +419,8 @@ async function MostrarModalEstado(
             });
           }
 
-          if (id_cliente == 1 && (estado == 60 || estado == 6)) {
-            // ETAPA 5 O ENTREGA PARCIAL
+          if (estado == 60 || estado == 6) {
+            // ETAPA 6 O ENTREGA PARCIAL
             $("#btn-enviar-stock").removeClass("d-none");
             $("#btn-enviar-stock").on("click", function (e) {
               enviarStock(id_artpedido, codigo, nombre_cliente);

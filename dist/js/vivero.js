@@ -411,15 +411,15 @@ async function MostrarModalEstado(
 
           $("#btn-entregar,#btn-enviar-stock").addClass("d-none");
           $("#btn-entregar").unbind("click");
-          if ((estado == 5 || estado == 6)) {
-            // ETAPA 5 O ENTREGA PARCIAL
+          if ((estado == 60 || estado == 6)) {
+            // ETAPA 6 O ENTREGA PARCIAL
             $("#btn-entregar").removeClass("d-none");
             $("#btn-entregar").on("click", function (e) {
               modalEntrega(id_artpedido, cant_plantas);
             });
           }
 
-          if (id_cliente == 1 && (estado == 5 || estado == 6) && (codigo.startsWith("E") || codigo.startsWith("S") || codigo.startsWith("HE") || codigo.startsWith("HS"))) {
+          if (id_cliente == 1 && (estado == 60 || estado == 6)) {
             // ETAPA 5 O ENTREGA PARCIAL
             $("#btn-enviar-stock").removeClass("d-none");
             $("#btn-enviar-stock").on("click", function (e) {
@@ -1853,8 +1853,7 @@ function generaBoxEstado(estado, fullWidth, codigo) {
   if (fullWidth == true) {
     w100 = "w-100";
   }
-  let colores;
-  if (codigo == "E" || codigo == "HE") {
+  let
     colores = [
       "#D8EAD2",
       "#B6D7A8",
@@ -1863,25 +1862,7 @@ function generaBoxEstado(estado, fullWidth, codigo) {
       "#99D87D",
       "#8AD868",
     ];
-  } else if (codigo == "S" || codigo == "HS") {
-    colores = [
-      "#FFF2CD",
-      "#FFE59A",
-      "#FED966",
-      "#F2C234",
-      "#E0B42F",
-      "#CEA62E",
-    ];
-  } else {
-    colores = [
-      "#ffffff",
-      "#ffffff",
-      "#ffffff",
-      "#ffffff",
-      "#ffffff",
-      "#ffffff",
-    ];
-  }
+  
   if (estado == 0) {
     return `<div class='d-inline-block cajita ${w100}' style='background-color:${colores[estado]}; padding:5px;'>ETAPA 0</div>`;
   } else if (estado == 1) {

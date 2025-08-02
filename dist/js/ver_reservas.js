@@ -1,6 +1,8 @@
 let currentTab;
 let max = null;
 let currentReserva = null;
+
+let phpFile = "data_ver_reservas.php"
 $(document).ready(function () {
   
   $("#input-cantidad").on(
@@ -36,7 +38,7 @@ function busca_entradas(tabName) {
     beforeSend: function () {
       $("#tabla_entradas").html("Buscando, espere...");
     },
-    url: "data_ver_reservas.php",
+    url: phpFile,
     type: "POST",
     data: {
       consulta: tabName == "reservas" ? "busca_reservas" : "busca_stock_actual"
@@ -71,7 +73,11 @@ function busca_entradas(tabName) {
         },
       });
     },
-    error: function (jqXHR, estado, error) {
+    error: function (jqXHR, estado, error) {url: "data_ver_reservas.php"
+    url: "data_ver_reservas.php"
+    url: "data_ver_reservas.php"
+    url: "data_ver_reservas.php"
+    url: "data_ver_reservas.php"
       $("#tabla_entradas").html(
         "Ocurrió un error al cargar los datos: " + estado + " " + error
       );
@@ -99,7 +105,7 @@ function cancelarReserva(id_reserva) {
       case "catch":
         $.ajax({
           type: "POST",
-          url: "data_ver_reservas.php",
+          url: phpFile,
           data: { consulta: "cancelar_reserva", id_reserva: id_reserva },
           success: function (data) {
             console.log(data)
@@ -153,7 +159,7 @@ function guardarEntrega(){
 
   $.ajax({
     type: "POST",
-    url: "data_ver_reservas.php",
+    url: phpFile,
     data: { 
       consulta: "guardar_entrega", 
       comentario: comentario,
@@ -190,7 +196,7 @@ function guardarEntrega(){
 function marcarVisto(id_reserva){
   $.ajax({
     type: "POST",
-    url: "data_ver_reservas.php",
+    url: phpFile,
     data: { consulta: "marcar_visto", id_reserva: id_reserva },
     success: function (data) {
       if (data.trim() == "success") {
@@ -219,7 +225,7 @@ function marcarEnProceso(id_reserva) {
       case "catch":
         $.ajax({
           type: "POST",
-          url: "data_ver_reservas.php",
+          url: phpFile,
           data: { consulta: "marcar_en_proceso", id_reserva: id_reserva },
           success: function (data) {
             if (data.trim() == "success") {
@@ -241,3 +247,98 @@ function marcarEnProceso(id_reserva) {
     }
   });
 }
+
+
+function modalEditStock(id_variedad) {
+  $.ajax({
+    beforeSend: function () {
+      $("#tabla-editar-stock tbody").html("Cargando productos...");
+    },
+    url: phpFile,
+    type: "POST",
+    data: { consulta: "get_stock_variedad", id_variedad },
+    success: function (x) {
+      $("#tabla-editar-stock tbody").html(x);
+      $("#modal-edit-stock").css({ display: "block" });
+    },
+    error: function (jqXHR, estado, error) {},
+  });
+}
+
+// Función para guardar el stock de un artículo específico
+function guardarStockArticulo(id_artpedido, id_variedad) {
+  const inputElement = document.getElementById(`stock-input-${id_artpedido}`);
+  const nuevaCantidad = inputElement.value.trim();
+
+  // Validaciones
+  if (!nuevaCantidad || nuevaCantidad.length === 0 || isNaN(nuevaCantidad)) {
+      swal("Ingresa una cantidad válida", "", "error");
+      return;
+  }
+
+  if (parseInt(nuevaCantidad) < 0) {
+      swal("La cantidad no puede ser negativa", "", "error");
+      return;
+  }
+
+  // Deshabilitar el botón mientras se procesa
+  const botonGuardar = inputElement.nextElementSibling;
+  const textoOriginal = botonGuardar.innerHTML;
+  botonGuardar.disabled = true;
+  botonGuardar.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+
+  $.ajax({
+      type: "POST",
+      url: phpFile, // Asegúrate de que phpFile esté definido
+      data: { 
+          consulta: "actualizar_stock_articulo", 
+          id_artpedido: id_artpedido,
+          id_variedad: id_variedad,
+          nueva_cantidad: parseInt(nuevaCantidad)
+      },
+      success: function (response) {
+          console.log(response);
+          
+          // Rehabilitar el botón
+          botonGuardar.disabled = false;
+          botonGuardar.innerHTML = textoOriginal;
+          
+          if (response.trim() === "success") {
+              swal("Stock actualizado correctamente!", "", "success");
+              
+              // Opcional: Actualizar la tabla principal de stock si está visible
+              // Si tienes una función para refrescar la tabla principal, puedes llamarla aquí
+              // busca_stock_actual(); // Por ejemplo
+              busca_entradas("actual")
+              modalEditStock(id_variedad);
+          } else if (response.trim().includes("error:")) {
+              const errorMsg = response.trim().replace("error:", "");
+              swal("Error al actualizar el stock", errorMsg, "error");
+          } else {
+              swal("Ocurrió un error al actualizar el stock", "", "error");
+              console.log("Respuesta del servidor:", response);
+          }
+      },
+      error: function() {
+          // Rehabilitar el botón en caso de error
+          botonGuardar.disabled = false;
+          botonGuardar.innerHTML = textoOriginal;
+          
+          swal("Error de conexión", "No se pudo conectar con el servidor", "error");
+      }
+  });
+}
+
+// Función opcional para guardar con Enter
+$(document).on('keypress', '[id^="stock-input-"]', function(e) {
+  if (e.which === 13) { // Enter key
+      const inputId = this.id;
+      const id_artpedido = inputId.replace('stock-input-', '');
+      // Necesitarías pasar también el id_variedad, podrías agregarlo como data attribute
+      const id_variedad = $(this).closest('tr').data('id-variedad'); 
+      
+      if (id_variedad) {
+          guardarStockArticulo(id_artpedido, id_variedad);
+      }
+  }
+});

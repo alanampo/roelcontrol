@@ -52,7 +52,7 @@ if ($consulta == "busca_stock_actual") {
         echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>Producto</th><th>Stock Real</th><th>Disponible para Reservar</th>";
+        echo "<th>Producto</th><th>Stock Real</th><th>Disponible para Reservar</th><th></th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
@@ -70,6 +70,9 @@ if ($consulta == "busca_stock_actual") {
                   <td>$ww[nombre_variedad] ($ww[codigo]$ww[id_interno])</td>
                   <td>$cantidad</td>
                   <td>$cantidad2</td>
+                  <td>
+                    <button onclick='modalEditStock($ww[id_variedad])' class='btn btn-primary btn-sm'><i class='fa fa-edit'></i></button>
+                  </td>
                 </tr>";
             }
         }
@@ -389,5 +392,166 @@ if ($consulta == "busca_stock_actual") {
             "id_reserva" => $ww["id_reserva"],
         )
         );
+    }
+}
+else if ($consulta == "get_stock_variedad"){
+    $id_variedad = $_POST["id_variedad"];
+
+    $query = "SELECT
+        p.id_interno as id_pedido_interno,
+        t.nombre as nombre_tipo,
+        v.nombre as nombre_variedad,
+        c.nombre as nombre_cliente,
+        t.id as id_tipo,
+        c.id_cliente,
+        p.fecha,
+        p.id_pedido,
+        ap.id as id_artpedido,
+        ap.cant_plantas,
+        ap.cant_bandejas,
+        ap.tipo_bandeja,
+        t.codigo,
+        v.id_interno,
+        ap.estado,
+        DATE_FORMAT(p.fecha, '%m/%d') AS mes_dia,
+        u.iniciales,
+        e.nombre as nombre_especie,
+        ap.id_especie,
+        DATE_FORMAT(ap.fecha_entrega, '%d/%m/%y') as fecha_entrega_solicitada,
+        mp.cantidad as cantidad_mesada,
+        s.cantidad as stock_actual
+        FROM articulospedidos ap 
+        LEFT JOIN mesadas_productos mp ON mp.id_artpedido = ap.id
+        LEFT JOIN stock_productos s ON s.id_artpedido = ap.id
+        INNER JOIN variedades_producto v ON v.id = ap.id_variedad
+        INNER JOIN tipos_producto t ON t.id = v.id_tipo
+        INNER JOIN pedidos p ON p.ID_PEDIDO = ap.id_pedido
+        INNER JOIN clientes c ON c.id_cliente = p.id_cliente
+        LEFT JOIN usuarios u ON u.id = p.id_usuario
+        LEFT JOIN especies_provistas e ON e.id = ap.id_especie
+        WHERE v.id = $id_variedad
+        AND ap.estado = 8
+       
+        ORDER BY p.id_pedido, ap.id";
+
+    $val = mysqli_query($con, $query);
+    if (mysqli_num_rows($val) > 0) {
+        
+        while ($ww = mysqli_fetch_array($val)) {
+            $id_cliente = $ww['id_cliente'];
+            $id_pedido = $ww['id_pedido'];
+            $id_artpedido = $ww['id_artpedido'];
+
+            // Generar ID del producto
+            $especie = $ww["nombre_especie"] ? $ww["nombre_especie"] : "";
+            $id_especie = $ww["id_especie"] ? "-" . str_pad($ww["id_especie"], 2, '0', STR_PAD_LEFT) : "";
+            $id_producto = "$ww[iniciales]$ww[id_pedido_interno]/M$ww[mes_dia]/$ww[codigo]" . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT) . $id_especie . "/$ww[cant_plantas]/" . str_pad($ww["id_cliente"], 2, '0', STR_PAD_LEFT);
+
+            // Nombre del producto con especie
+            $producto = "$ww[nombre_variedad] ($ww[codigo]" . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT) . ")";
+            if($especie) {
+                $producto .= " <span class='text-primary'>$especie</span>";
+            }
+
+            $cliente = $ww['nombre_cliente'] . " ($id_cliente)";
+            $estado = generarBoxEstado($ww["estado"], $ww["codigo"], true);
+            
+            // Usar stock actual en lugar de cantidad_info
+            $stock_actual = $ww['stock_actual'] ? $ww['stock_actual'] : 0;
+            
+            // Crear input editable para el stock
+            $stock_input = "
+                <div class='d-flex align-items-center justify-content-center'>
+                    <input type='number' 
+                           id='stock-input-$id_artpedido' 
+                           class='form-control form-control-sm text-center' 
+                           style='width: 80px; margin-right: 5px;' 
+                           value='$stock_actual' 
+                           min='0'>
+                    <button onclick='guardarStockArticulo($id_artpedido, $id_variedad)' 
+                            class='btn btn-success btn-sm' 
+                            title='Guardar stock'>
+                        <i class='fa fa-save'></i>
+                    </button>
+                </div>";
+
+            $onclick = "onClick='MostrarModalEstado($ww[id_artpedido], \"$id_producto\", \"$ww[nombre_cliente]\", $id_cliente)'";
+
+            echo "<tr style='cursor:pointer;' x-codigo='$id_producto' x-etapa='$ww[estado]' x-id-artpedido='$id_artpedido'>";
+            
+            // Columnas según el header de tu tabla HTML:
+            // Orden
+            echo "<td $onclick style='text-align: center;color:#1F618D; font-weight:bold; font-size:1.0em'>$id_producto</td>";
+            
+            // Producto
+            echo "<td $onclick>$producto</td>";
+            
+            // Stock Actual (input editable) - Esta columna no tiene onclick para permitir edición
+            echo "<td style='text-align: center;'>$stock_input</td>";
+            
+            // Cliente
+            echo "<td $onclick>$cliente</td>";
+            
+            echo "</tr>";
+        }
+    } else {
+        echo "<tr><td colspan='4' class='text-center'><div class='callout callout-danger'><b>No se encontraron productos en esta mesada.</b></div></td></tr>";
+    }
+}
+else if ($consulta == "actualizar_stock_articulo") {
+    $id_artpedido = $_POST["id_artpedido"];
+    $id_variedad = $_POST["id_variedad"];
+    $nueva_cantidad = $_POST["nueva_cantidad"];
+
+    // Validaciones del servidor
+    if (!is_numeric($id_artpedido) || !is_numeric($id_variedad) || !is_numeric($nueva_cantidad)) {
+        echo "error:Datos inválidos";
+        exit;
+    }
+
+    if ($nueva_cantidad < 0) {
+        echo "error:La cantidad no puede ser negativa";
+        exit;
+    }
+
+    // Verificar que el artículo existe y está en estado correcto
+    $check_query = "SELECT ap.id, ap.estado 
+                    FROM articulospedidos ap 
+                    WHERE ap.id = $id_artpedido 
+                    AND ap.id_variedad = $id_variedad 
+                    AND ap.estado = 8";
+    
+    $check_result = mysqli_query($con, $check_query);
+    
+    if (mysqli_num_rows($check_result) == 0) {
+        echo "error:El artículo no existe o no está en estado de stock";
+        exit;
+    }
+
+    // Verificar si ya existe un registro en stock_productos para este artículo
+    $stock_check = "SELECT id FROM stock_productos WHERE id_artpedido = $id_artpedido";
+    $stock_result = mysqli_query($con, $stock_check);
+    
+    if (mysqli_num_rows($stock_result) > 0) {
+        // Actualizar registro existente
+        $update_query = "UPDATE stock_productos 
+                        SET cantidad = $nueva_cantidad 
+                        WHERE id_artpedido = $id_artpedido";
+        
+        if (mysqli_query($con, $update_query)) {
+            echo "success";
+        } else {
+            echo "error:Error al actualizar en la base de datos - " . mysqli_error($con);
+        }
+    } else {
+        // Crear nuevo registro si no existe
+        $insert_query = "INSERT INTO stock_productos (id_artpedido, cantidad) 
+                        VALUES ($id_artpedido, $nueva_cantidad)";
+        
+        if (mysqli_query($con, $insert_query)) {
+            echo "success";
+        } else {
+            echo "error:Error al insertar en la base de datos - " . mysqli_error($con);
+        }
     }
 }

@@ -25,7 +25,7 @@
       <!-- Left side column. contains the logo and sidebar -->
       <aside class="main-sidebar">
         <!-- sidebar: style can be found in sidebar.less -->
-        <?php include('class_lib/sidebar.php');?>
+        <?php include('class_lib/sidebar.php'); ?>
         <!-- /.sidebar -->
       </aside>
 
@@ -48,10 +48,10 @@
           <div class="row">
             <div class="col">
               <div class="tab">
-              <button id="defaultOpen" class="tablinks" onclick="abrirTab(event, 'reservas');">RESERVAS</button>
-                <button  class="tablinks" onclick="abrirTab(event, 'actual');">PRODUCTOS EN
+                <button id="defaultOpen" class="tablinks" onclick="abrirTab(event, 'reservas');">RESERVAS</button>
+                <button class="tablinks" onclick="abrirTab(event, 'actual');">PRODUCTOS EN
                   STOCK</button>
-                
+
               </div>
             </div>
           </div>
@@ -89,32 +89,66 @@
             </div>
             <div class="col-md-4 form-group">
               <label class="col-form-label text-primary" for="input-cantidad-disponible">Cantidad Disponible:</label>
-              <input type="search" autocomplete="off" class="form-control font-weight-bold" name="input-cantidad-disponible" id="input-cantidad-disponible"
-                maxlength="20" readonly />
+              <input type="search" autocomplete="off" class="form-control font-weight-bold"
+                name="input-cantidad-disponible" id="input-cantidad-disponible" maxlength="20" readonly />
             </div>
           </div>
           <div class="row">
             <div class="col-md-12 form-group">
               <label class="col-form-label" for="input-comentario">Comentario:</label>
-              <input type="search" autocomplete="off" class="form-control" name="input-comentario"
-                id="input-comentario" maxlength="100" />
+              <input type="search" autocomplete="off" class="form-control" name="input-comentario" id="input-comentario"
+                maxlength="100" />
             </div>
           </div>
           <div class="row mt-2">
             <div class="col">
-              <button onclick="guardarEntrega()" class="btn btn-success pull-right"><i class="fa fa-save"></i> CONFIRMAR ENTREGA</button>
+              <button onclick="guardarEntrega()" class="btn btn-success pull-right"><i class="fa fa-save"></i> CONFIRMAR
+                ENTREGA</button>
             </div>
           </div>
 
 
         </div>
       </div> <!-- MODAL FIN -->
+
+
+
     </div>
+
+
+    <div id="modal-edit-stock" class="modal">
+      <div id="modal-edit-stockContent" class="modal-content-verpedido">
+        <div class='box box-primary'>
+          <div class='box-header with-border'>
+            <h4 class='box-title'>Editar Stock</h4>
+            <button class="btn fa fa-close pull-right btn-modal-top" onClick="$('#modal-edit-stock').css({display:'none'});"></button>
+          </div>
+          <div id="tablita">
+            <div class='box-body'>
+              <table id="tabla-editar-stock" class="table table-bordered table-responsive w-100 d-block d-md-table"
+                role="grid">
+                <thead>
+                  <tr role="row">
+                    <th class="text-center">Orden</th>
+                    <th class="text-center">Producto</th>
+                    <th class="text-center">Cantidad<br>Bandejas</th>
+                    <th class="text-center">Cliente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- FIN MODAL VER -->
+
 
     <!-- Main Footer -->
     <?php
-      include('class_lib/main_footer.php');
-      ?>
+    include('class_lib/main_footer.php');
+    ?>
 
 
     <!-- Add the sidebar's background. This div must be placed

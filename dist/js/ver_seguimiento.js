@@ -464,6 +464,7 @@ async function MostrarModalEstado(
             fecha_ingreso,
             mesada,
             cant_semillas,
+            cantidad_entregada,
             semillas,
           } = data;
           const date = moment(fecha_ingreso).format("DD/MM/YY");
@@ -533,7 +534,7 @@ async function MostrarModalEstado(
             // ETAPA 5 O ENTREGA PARCIAL
             $("#btn-enviar-stock").removeClass("d-none");
             $("#btn-enviar-stock").on("click", function (e) {
-              enviarStock(id_artpedido, codigo, nombre_cliente);
+              enviarStock(id_artpedido, codigo, nombre_cliente, cantidad_entregada, cant_plantas);
             });
           }
 
@@ -2211,30 +2212,73 @@ function buscar() {
   }
 }
 
-function enviarStock(id_artpedido, codigo, nombre_cliente) {
-  swal(
-    "Enviar el Pedido a Stock?",
-    "Estará disponible para que los clientes puedan reservarlo.",
-    {
-      icon: "info",
-      buttons: {
-        cancel: "Cancelar",
-        catch: {
-          text: "SI, ENVIAR",
-          value: "catch",
-        },
+
+function enviarStock(id_artpedido, codigo, nombre_cliente, cantidad_entregada, cant_plantas) {
+  const cantidad_disponible = cant_plantas - cantidad_entregada;
+  
+  swal({
+    title: "Enviar el Pedido a Stock",
+    text: "Estará disponible para que los clientes puedan reservarlo.",
+    content: {
+      element: "div",
+      attributes: {
+        innerHTML: `
+          <div class="form-group" style="margin-top: 15px;">
+            <label for="cantidad-stock-input" style="display: block; margin-bottom: 8px; font-weight: bold;">
+              Cantidad a enviar a stock:
+            </label>
+            <input 
+              id="cantidad-stock-input" 
+              type="number" 
+              class="form-control" 
+              value="${cantidad_disponible}" 
+              min="0" 
+              max="${cantidad_disponible}"
+              style="text-align: center; font-size: 16px; font-weight: bold;"
+            >
+            <small class="text-muted" style="display: block; margin-top: 5px;">
+              Disponible: ${cantidad_disponible} (${cant_plantas} plantas - ${cantidad_entregada} entregadas)
+            </small>
+          </div>
+        `
+      }
+    },
+    icon: "info",
+    buttons: {
+      cancel: "Cancelar",
+      catch: {
+        text: "SI, ENVIAR",
+        value: "catch",
       },
-    }
-  ).then((value) => {
+    },
+  }).then((value) => {
     switch (value) {
       case "catch":
+        const cantidadInput = document.getElementById("cantidad-stock-input");
+        const cantidadAEnviar = parseInt(cantidadInput.value);
+        
+        // Validaciones
+        if (!cantidadAEnviar || isNaN(cantidadAEnviar) || cantidadAEnviar <= 0) {
+          swal("Error", "Ingresa una cantidad válida mayor a 0", "error");
+          return;
+        }
+        
+        if (cantidadAEnviar > cantidad_disponible) {
+          swal("Error", `La cantidad no puede ser mayor a ${cantidad_disponible}`, "error");
+          return;
+        }
+        
         $.ajax({
           type: "POST",
           url: "data_ver_seguimiento.php",
-          data: { consulta: "enviar_stock", id_artpedido: id_artpedido },
+          data: { 
+            consulta: "enviar_stock", 
+            id_artpedido: id_artpedido,
+            cantidad_enviar: cantidadAEnviar
+          },
           success: function (data) {
             if (data.trim() == "success") {
-              swal("Enviaste el Pedido a Stock!", "", "success");
+              swal("Enviaste el Pedido a Stock!", `Cantidad enviada: ${cantidadAEnviar}`, "success");
               MostrarModalEstado(id_artpedido, codigo, nombre_cliente, 1);
               if (location.href.includes("ver_seguimiento")){
                 if (miTab == "tab-esquejes") {
@@ -2267,6 +2311,7 @@ function enviarStock(id_artpedido, codigo, nombre_cliente) {
     }
   });
 }
+
 
 function modalModificarCliente(id_artpedido){
   $("#modal-modificar-cliente").attr("x-id-artpedido", id_artpedido)

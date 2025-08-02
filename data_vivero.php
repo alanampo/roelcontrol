@@ -199,11 +199,11 @@ else if ($consulta == "cargar_detalle_pedido") {
         ap.fecha_etapa3,
         ap.fecha_etapa4,
         ap.fecha_etapa5,
-        ap.fecha_etapa6,
         ap.fecha_entrega_real,
         ap.fecha_ingreso,
         u.iniciales,
         e.nombre as nombre_especie,
+        (SELECT IFNULL(SUM(e.cantidad), 0) FROM entregas e WHERE e.id_artpedido = ap.id) as cantidad_entregada,
         (select * from (SELECT
                 CONCAT(id_tipo, '', id_interno) as mesada
                 FROM mesadas_productos mp
@@ -283,13 +283,13 @@ else if ($consulta == "cargar_detalle_pedido") {
                 "fecha_etapa3" => $re["fecha_etapa3"],
                 "fecha_etapa4" => $re["fecha_etapa4"],
                 "fecha_etapa5" => $re["fecha_etapa5"],
-                "fecha_etapa6" => $re["fecha_etapa6"],
                 "fecha_entrega_real" => $re["fecha_entrega_real"],
                 "fecha_ingreso" => $re["fecha_ingreso"],
                 "mesada" => $re["mesa"],
                 "cant_semillas" => $re["cant_semillas"],
                 "semillas" => $datasemillas,
-            );
+                "cantidad_entregada" => $re["cantidad_entregada"],
+                    );
             echo json_encode($arraypedido);
         } else {
             echo "nodata";
@@ -358,8 +358,9 @@ else if ($consulta == "cargar_detalle_pedido") {
     }
 } else if ($consulta == "enviar_stock") {
     $id_artpedido = $_POST["id_artpedido"];
+    $cantidad_enviar = isset($_POST["cantidad_enviar"]) ? (int)$_POST["cantidad_enviar"] : null;
+    
     try { 
-
         $val = mysqli_query($con, "SELECT v.nombre as nombre_variedad, v.precio, v.id_interno as id_variedad, t.codigo, ap.cant_plantas,
                                 (SELECT IFNULL(MIN(ape.tipo_bandeja), 162) FROM articulospedidos ape WHERE ape.id_variedad = ap.id_variedad) as tipo_bandeja,
                                 (SELECT IFNULL(SUM(e.cantidad), 0) FROM entregas e WHERE e.id_artpedido = ap.id) as cantidad_entregada
@@ -375,23 +376,44 @@ else if ($consulta == "cargar_detalle_pedido") {
             $errors = array();
             mysqli_autocommit($con, false);
 
-            // Calcular la cantidad restante (total - entregada)
-            $cantidad_restante = $re["cant_plantas"] - $re["cantidad_entregada"];
+            // Calcular la cantidad disponible (total - entregada)
+            $cantidad_disponible = $re["cant_plantas"] - $re["cantidad_entregada"];
             
-            // Validar que la cantidad restante sea mayor a 0
-            if ($cantidad_restante <= 0) {
-                echo "error: No hay cantidad restante para enviar a stock";
+            // Validar que haya cantidad disponible
+            if ($cantidad_disponible <= 0) {
+                echo "error: No hay cantidad disponible para enviar a stock";
+                mysqli_close($con);
+                return;
+            }
+
+            // Si no se especifica cantidad_enviar, usar toda la disponible
+            if ($cantidad_enviar === null) {
+                $cantidad_enviar = $cantidad_disponible;
+            }
+
+            // Validar que la cantidad a enviar no exceda la disponible
+            if ($cantidad_enviar > $cantidad_disponible) {
+                echo "error: La cantidad a enviar ($cantidad_enviar) excede la disponible ($cantidad_disponible)";
+                mysqli_close($con);
+                return;
+            }
+
+            // Validar que la cantidad a enviar sea mayor a 0
+            if ($cantidad_enviar <= 0) {
+                echo "error: La cantidad a enviar debe ser mayor a 0";
                 mysqli_close($con);
                 return;
             }
 
             $id_producto = $re["codigo"].str_pad($re["id_variedad"], 2, '0', STR_PAD_LEFT);
 
+            // Actualizar estado del artículo
             $query = "UPDATE articulospedidos SET estado = 8, fecha_stock = NOW() WHERE id = $id_artpedido;";
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con);
             }
 
+            // Insertar en stock_productos con la cantidad especificada
             $query = "INSERT INTO stock_productos (
                 id_artpedido,
                 fecha,
@@ -400,11 +422,30 @@ else if ($consulta == "cargar_detalle_pedido") {
             ) VALUES (
                 $id_artpedido,
                 NOW(),
-                $cantidad_restante,
-                $cantidad_restante
+                $cantidad_enviar,
+                $cantidad_enviar
             )";
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con) . $query;
+            }
+
+            // Si la cantidad enviada es menor a la disponible, registrar el resto como entregado
+            if ($cantidad_enviar < $cantidad_disponible) {
+                $cantidad_restante = $cantidad_disponible - $cantidad_enviar;
+                $query_entrega = "INSERT INTO entregas (
+                    id_artpedido,
+                    cantidad,
+                    fecha,
+                    comentario
+                ) VALUES (
+                    $id_artpedido,
+                    $cantidad_restante,
+                    NOW(),
+                    'Cantidad no enviada a stock - Enviado: $cantidad_enviar de $cantidad_disponible disponibles'
+                )";
+                if (!mysqli_query($con, $query_entrega)) {
+                    $errors[] = "Error al registrar cantidad restante: " . mysqli_error($con);
+                }
             }
             
             if (count($errors) === 0) {

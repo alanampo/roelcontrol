@@ -357,6 +357,7 @@ async function MostrarModalEstado(
             fecha_ingreso,
             mesada,
             cant_semillas,
+            cantidad_entregada,
             semillas,
           } = data;
           const date = moment(fecha_ingreso).format("DD/MM/YY");
@@ -423,7 +424,7 @@ async function MostrarModalEstado(
             // ETAPA 6 O ENTREGA PARCIAL
             $("#btn-enviar-stock").removeClass("d-none");
             $("#btn-enviar-stock").on("click", function (e) {
-              enviarStock(id_artpedido, codigo, nombre_cliente);
+              enviarStock(id_artpedido, codigo, nombre_cliente, cantidad_entregada, cant_plantas);
             });
           }
 

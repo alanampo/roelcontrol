@@ -29,6 +29,7 @@ function openTab(evt, tabName) {
     loadPedidos("vivero");
   }
   else if (miTab == "tab-packs") {
+    alert("KAKAKA")
     loadPedidos("packs");
   }
 }

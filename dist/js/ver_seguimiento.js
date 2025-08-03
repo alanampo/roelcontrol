@@ -28,6 +28,9 @@ function openTab(evt, tabName) {
   else if (miTab == "tab-vivero") {
     loadPedidos("vivero");
   }
+  else if (miTab == "tab-packs") {
+    loadPedidos("packs");
+  }
 }
 
 $(document).ready(function () {
@@ -45,7 +48,7 @@ $(document).ready(function () {
                   <td></td>
                   </tr>`;
   }
-  $("#tabla-semillas,#tabla-esquejes,#tabla-interior,#tabla-exterior,#tabla-vivero").find("tbody").html(html2);
+  $("#tabla-semillas,#tabla-esquejes,#tabla-interior,#tabla-exterior,#tabla-vivero,#tabla-packs").find("tbody").html(html2);
 
   oncontextmenu = (e) => {
     if ($("#ModalVerEstado").css("display") == "block") return;
@@ -2206,7 +2209,7 @@ function buscar() {
     } else if (miTab == "tab-semillas") {
       loadSemillas();
     }
-    else if (miTab == "tab-interior" || miTab == "tab-exterior" || miTab == "tab-vivero"){
+    else if (miTab == "tab-interior" || miTab == "tab-exterior" || miTab == "tab-vivero" || miTab == "tab-packs"){
       loadPedidos(miTab.replace("tab-", ""))
     }
   }

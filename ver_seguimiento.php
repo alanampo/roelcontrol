@@ -57,6 +57,7 @@
                 <button class="tablinks" onclick="openTab(event, 'tab-interior');">Interior</button>
                 <button class="tablinks" onclick="openTab(event, 'tab-exterior');">Exterior</button>
                 <button class="tablinks" onclick="openTab(event, 'tab-vivero');">Vivero</button>
+                <button class="tablinks" onclick="openTab(event, 'tab-packs');">Packs</button>
               </div>
             </div>
             <div class="col-md-3">
@@ -137,6 +138,23 @@
 
           <div id="tab-vivero" class="tabcontent">
             <table class="table table-responsive mt-3 w-100 d-block d-md-table" id="tabla-vivero">
+              <thead style="background-color: rgb(200, 84, 139);color: white;">
+                <tr class="text-center">
+                  <th>ETAPA 0</th>
+                  <th>ETAPA 1</th>
+                  <th>ETAPA 2</th>
+                  <th>ETAPA 3</th>
+                  <th>ETAPA 4</th>
+                  <th>ETAPA 5</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="tab-packs" class="tabcontent">
+            <table class="table table-responsive mt-3 w-100 d-block d-md-table" id="tabla-packs">
               <thead style="background-color: rgb(200, 84, 139);color: white;">
                 <tr class="text-center">
                   <th>ETAPA 0</th>

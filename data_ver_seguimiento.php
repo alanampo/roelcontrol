@@ -71,17 +71,16 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
             $mijson = json_encode($arraypedidos);
             echo $mijson;
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         throw $th;
     }
-} 
-else if ($consulta == "cargar_pedidos") {
+} else if ($consulta == "cargar_pedidos") {
     $tipo = $_POST["tipo"];
     try {
         $busqueda = mysqli_escape_string($con, $_POST["busqueda"]);
         $strbusqueda = strlen($busqueda) >= 3 ? " AND (v.nombre REGEXP '$busqueda' OR e.nombre REGEXP '$busqueda' OR c.nombre REGEXP '$busqueda')" : "";
         $arraypedidos = array();
-        
+
         // Determinar el valor del atributo según el tipo
         $valor_atributo = "";
         switch ($tipo) {
@@ -94,17 +93,24 @@ else if ($consulta == "cargar_pedidos") {
             case "vivero":
                 $valor_atributo = "PLANTAS PARA JARDÍN";
                 break;
+            case "packs":
+                $valor_atributo = "PACKS";
+                break;
             default:
                 $valor_atributo = "";
         }
-        
+
         // Condición para filtrar por atributo (normalizada para manejar acentos)
         $condicion_atributo = "";
         if ($valor_atributo != "") {
-            $condicion_atributo = " AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.nombre, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'TIPO DE PLANTA' 
+            if ($valor_atributo == "PACKS") {
+                $condicion_atributo = " AND a.nombre = 'TIPO DE PLANTA' AND av.valor IN ('PACKS INTERIOR', 'PACKS EXTERIOR') ";
+            } else {
+                $condicion_atributo = " AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.nombre, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'TIPO DE PLANTA' 
                                    AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(av.valor, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE('$valor_atributo', 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U'))";
+            }
         }
-        
+
         $cadenaselect = "SELECT t.nombre as nombre_tipo, v.nombre as nombre_variedad, c.nombre as nombre_cliente, p.fecha, p.id_pedido, ap.id as id_artpedido, ap.cant_plantas, ap.cant_bandejas, ap.tipo_bandeja, t.codigo, v.id_interno, ap.estado, p.id_interno as id_pedido_interno,
         ap.problema, ap.observacionproblema, c.id_cliente, ap.observacion, u.iniciales, ap.id_especie, e.nombre as nombre_especie
         FROM tipos_producto t
@@ -157,8 +163,7 @@ else if ($consulta == "cargar_pedidos") {
     } catch (\Throwable $th) {
         throw $th;
     }
-}
-else if ($consulta == "cargar_detalle_pedido") {
+} else if ($consulta == "cargar_detalle_pedido") {
     $id_artpedido = $_POST['id_artpedido'];
 
     try {
@@ -279,12 +284,12 @@ else if ($consulta == "cargar_detalle_pedido") {
                 "cant_semillas" => $re["cant_semillas"],
                 "semillas" => $datasemillas,
                 "cantidad_entregada" => $re["cantidad_entregada"],
-                    );
+            );
             echo json_encode($arraypedido);
         } else {
             echo "nodata";
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         throw $th;
     }
 } else if ($consulta == "guardar_observaciones") {
@@ -298,7 +303,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         } else {
             print_r(mysqli_error($con));
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -316,7 +321,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         } else {
             print_r(mysqli_error($con));
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -329,7 +334,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         } else {
             print_r(mysqli_error($con));
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -342,15 +347,15 @@ else if ($consulta == "cargar_detalle_pedido") {
         } else {
             print_r(mysqli_error($con));
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
 } else if ($consulta == "enviar_stock") {
     $id_artpedido = $_POST["id_artpedido"];
-    $cantidad_enviar = isset($_POST["cantidad_enviar"]) ? (int)$_POST["cantidad_enviar"] : null;
-    
-    try { 
+    $cantidad_enviar = isset($_POST["cantidad_enviar"]) ? (int) $_POST["cantidad_enviar"] : null;
+
+    try {
         $val = mysqli_query($con, "SELECT v.nombre as nombre_variedad, v.precio, v.id_interno as id_variedad, t.codigo, ap.cant_plantas,
                                 (SELECT IFNULL(MIN(ape.tipo_bandeja), 162) FROM articulospedidos ape WHERE ape.id_variedad = ap.id_variedad) as tipo_bandeja,
                                 (SELECT IFNULL(SUM(e.cantidad), 0) FROM entregas e WHERE e.id_artpedido = ap.id) as cantidad_entregada
@@ -368,7 +373,7 @@ else if ($consulta == "cargar_detalle_pedido") {
 
             // Calcular la cantidad disponible (total - entregada)
             $cantidad_disponible = $re["cant_plantas"] - $re["cantidad_entregada"];
-            
+
             // Validar que haya cantidad disponible
             if ($cantidad_disponible <= 0) {
                 echo "error: No hay cantidad disponible para enviar a stock";
@@ -395,7 +400,7 @@ else if ($consulta == "cargar_detalle_pedido") {
                 return;
             }
 
-            $id_producto = $re["codigo"].str_pad($re["id_variedad"], 2, '0', STR_PAD_LEFT);
+            $id_producto = $re["codigo"] . str_pad($re["id_variedad"], 2, '0', STR_PAD_LEFT);
 
             // Actualizar estado del artículo
             $query = "UPDATE articulospedidos SET estado = 8, fecha_stock = NOW() WHERE id = $id_artpedido;";
@@ -437,12 +442,11 @@ else if ($consulta == "cargar_detalle_pedido") {
                     $errors[] = "Error al registrar cantidad restante: " . mysqli_error($con);
                 }
             }
-            
+
             if (count($errors) === 0) {
-                if (mysqli_commit($con)){
+                if (mysqli_commit($con)) {
                     echo "success";
-                }
-                else{
+                } else {
                     mysqli_rollback($con);
                     echo "error: No se pudo confirmar la transacción";
                 }
@@ -453,7 +457,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         } else {
             echo "error: No se encontró el artículo del pedido";
         }
-        
+
         mysqli_close($con);
     } catch (\Throwable $th) {
         mysqli_rollback($con);
@@ -527,7 +531,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         }
         mysqli_close($con);
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -557,7 +561,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         }
         mysqli_close($con);
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -570,7 +574,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         } else {
             print_r(mysqli_error($con));
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -584,7 +588,7 @@ else if ($consulta == "cargar_detalle_pedido") {
             echo "entregado:$re[cantidad]";
         }
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -626,7 +630,7 @@ else if ($consulta == "cargar_detalle_pedido") {
         }
         mysqli_close($con);
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -695,7 +699,7 @@ else if ($consulta == "cargar_detalle_pedido") {
                 print_r(mysqli_error($con));
             }
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         echo "error: $th";
     }
 } else if ($consulta == "cargar_control_0") {
@@ -720,7 +724,7 @@ else if ($consulta == "cargar_detalle_pedido") {
             echo json_encode($arraycontroles);
         }
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -799,7 +803,7 @@ else if ($consulta == "cargar_detalle_pedido") {
             }
         }
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -827,7 +831,7 @@ else if ($consulta == "cargar_detalle_pedido") {
             echo json_encode($arraycontroles);
         }
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -903,7 +907,7 @@ else if ($consulta == "cargar_detalle_pedido") {
             }
         }
 
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -930,7 +934,7 @@ else if ($consulta == "cargar_detalle_pedido") {
             }
             echo json_encode($arraycontroles);
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -996,7 +1000,7 @@ else if ($consulta == "cargar_detalle_pedido") {
                 print_r(mysqli_error($con));
             }
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -1020,7 +1024,7 @@ else if ($consulta == "cargar_detalle_pedido") {
             }
             echo json_encode($arraycontroles);
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error: $th";
     }
@@ -1071,7 +1075,7 @@ else if ($consulta == "cargar_detalle_pedido") {
                 echo "Error al guardar el pedido. Intentalo de nuevo";
             }
         }
-    } catch (\Throwable$th) {
+    } catch (\Throwable $th) {
         //throw $th;
         echo "error";
     }
@@ -1086,9 +1090,10 @@ else if ($consulta == "cargar_detalle_pedido") {
 }
 
 
-function clean($string) {
+function clean($string)
+{
     $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
     $string = preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
- 
+
     return preg_replace('/-+/', '-', $string); // Replaces multiple hyphens with single one.
- }
+}

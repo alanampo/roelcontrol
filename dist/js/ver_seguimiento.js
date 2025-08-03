@@ -32,7 +32,6 @@ function openTab(evt, tabName) {
     
     loadPedidos("packs");
   }
-  alert("KAKAKA")
 }
 
 $(document).ready(function () {

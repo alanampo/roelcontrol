@@ -10,6 +10,92 @@
   <script src="dist/js/check_permisos.js?v=<?php echo $version ?>"></script>
   <script src="dist/js/ver_variedades.js?v=<?php echo $version ?>"></script>
   <script src="dist/js/atributos.js?v=<?php echo $version ?>"></script>
+
+  <style>
+    .imagen-preview-container {
+      position: relative;
+      margin-bottom: 15px;
+    }
+
+    .imagen-preview {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #dee2e6;
+      transition: all 0.3s ease;
+    }
+
+    .imagen-preview:hover {
+      border-color: #007bff;
+      transform: scale(1.02);
+    }
+
+    .btn-eliminar-imagen {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 25px;
+      height: 25px;
+      padding: 0;
+      border-radius: 50%;
+      background-color: #dc3545;
+      border: none;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .btn-eliminar-imagen:hover {
+      background-color: #c82333;
+    }
+
+    .imagen-existente {
+      position: relative;
+    }
+
+    .overlay-cambios {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 123, 255, 0.8);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .imagen-marcada-eliminar {
+      opacity: 0.5;
+      position: relative;
+    }
+
+    .imagen-marcada-eliminar::after {
+      content: 'ELIMINAR';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(220, 53, 69, 0.8);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 12px;
+    }
+  </style>
 </head>
 
 <body onload="chequear_permisos();busca_productos(null);pone_tipos();getAtributosSelect()">
@@ -55,9 +141,9 @@
               </div>
             </div>
             <div class="col-3">
-            <select id="select_filtro_atributos" class="selectpicker mobile-device ml-3"
-                  title="Selecciona Atributos" data-style="btn-info" data-live-search="true"
-                  onChange="busca_productos();" data-width="100%" multiple></select>
+              <select id="select_filtro_atributos" class="selectpicker mobile-device ml-3" title="Selecciona Atributos"
+                data-style="btn-info" data-live-search="true" onChange="busca_productos();" data-width="100%"
+                multiple></select>
             </div>
             <div class="col text-right">
               <div class="d-flex flex-row justify-content-end" style="gap:5px">
@@ -105,7 +191,7 @@
   include('modals/atributos.php');
 
   include('modals/atributos_valores.php');
-  
+
   include('modals/atributos_editar_nombre.php');
   ?>
 
@@ -150,8 +236,8 @@
               </div>
               <div class="col-md-4">
                 <label class="control-label">Precio Detalle:</label>
-                <input type="search" autocomplete="off" id="input-precio-detalle" maxLength="10" style="font-weight: bold;"
-                  class="form-control" placeholder="0.00" />
+                <input type="search" autocomplete="off" id="input-precio-detalle" maxLength="10"
+                  style="font-weight: bold;" class="form-control" placeholder="0.00" />
               </div>
             </div>
           </div>
@@ -195,6 +281,37 @@
                   <tbody></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+
+          <!-- Agregar esto dentro del modal de variedad, después de los campos existentes -->
+          <div class="form-group">
+            <label for="imagenes-variedad">Imágenes del Producto (máximo 3)</label>
+            <div class="row">
+              <div class="col-12">
+                <input type="file" id="imagenes-variedad" name="imagenes[]" multiple accept="image/*"
+                  class="form-control-file" style="display: none;">
+                <button type="button" id="btn-seleccionar-imagenes" class="btn btn-outline-primary btn-sm">
+                  <i class="fa fa-camera"></i> Seleccionar Imágenes
+                </button>
+                <small class="text-muted d-block mt-1">
+                  Formatos: JPG, PNG, GIF. Tamaño máximo: 5MB por imagen.
+                </small>
+              </div>
+            </div>
+
+            <!-- Contenedor para mostrar las imágenes -->
+            <div id="contenedor-imagenes-preview" class="row mt-3" style="display: none;">
+              <!-- Las imágenes se mostrarán aquí dinámicamente -->
+            </div>
+
+            <!-- Contenedor para imágenes existentes (modo edición) -->
+            <div id="contenedor-imagenes-existentes" class="row mt-3" style="display: none;">
+              <div class="col-12 mb-2">
+                <h6 class="text-primary">Imágenes Actuales:</h6>
+              </div>
+              <!-- Las imágenes existentes se mostrarán aquí -->
             </div>
           </div>
 

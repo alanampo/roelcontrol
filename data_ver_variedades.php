@@ -109,126 +109,7 @@ if ($consulta == "busca_variedades") {
     } else {
         echo "<div class='callout callout-danger'><b>No se encontraron productos en la base de datos...</b></div>";
     }
-} else if ($consulta == "agregar_variedad") {
-    $nombre = mysqli_real_escape_string($con, $_POST['nombre']);
-    $codigo = mysqli_real_escape_string($con, $_POST['codigo']);
-    $dias_produccion = $_POST["dias_produccion"] == null ? "NULL" : $_POST["dias_produccion"];
-    $precio = $_POST['precio'];
-    $precio_detalle = isset($_POST['precio_detalle']) && !empty($_POST["precio_detalle"]) ? $_POST['precio_detalle'] : "NULL";
-    $id_tipo = $_POST["id_tipo"];
-    try {
-        // $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE nombre = UPPER('$nombre') AND id_tipo = $id_tipo;");
-        // if (mysqli_num_rows($val) > 0) {
-        //     echo "YA EXISTE UNA VARIEDAD CON ESE NOMBRE!";
-        // } else {
-        $errors = [];
-        $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE id_tipo = $id_tipo AND id_interno = $codigo;");
-        if (mysqli_num_rows($val) > 0) {
-            echo "EL CÓDIGO INGRESADO YA ESTÁ EN USO. ELIGE OTRO.";
-        } else {
-            mysqli_autocommit($con, FALSE);
-            $query = "INSERT INTO variedades_producto (nombre, precio, precio_detalle, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', $precio_detalle, '$id_tipo', '$codigo', $dias_produccion);";
-            if (mysqli_query($con, $query)) {
-                $id_variedad = mysqli_insert_id($con);
-                if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
-                    $atributos = json_decode($_POST["atributos"], true);
-
-                    foreach ($atributos as $atr) {
-                        if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
-                            $item = $atr["valorSelect"];
-                            $query = "INSERT INTO atributos_valores_variedades (
-                                        id_variedad,
-                                        id_atributo_valor
-                                    ) VALUES (
-                                        $id_variedad,
-                                        $item
-                                    )";
-                            if (!mysqli_query($con, $query)) {
-                                $errors[] = mysqli_error($con) . "-" . $query;
-                            }
-                        }
-                    }
-                }
-            } else {
-                $errors[] = mysqli_error($con) . "-" . $query;
-            }
-
-            if (mysqli_commit($con)) {
-                echo "success";
-            } else {
-                mysqli_rollback($con);
-                if (count($errors) > 0) {
-                    foreach ($errors as $error) {
-                        echo $error . "<br>";
-                    }
-                } else {
-                    echo "error:" . mysqli_error($con);
-                }
-            }
-        }
-        //}
-    } catch (\Throwable $th) {
-        echo "error: " . $th;
-    }
-} else if ($consulta == "editar_variedad") {
-    $id_variedad = $_POST['id_variedad'];
-    $nombre = $_POST["nombre"];
-    $precio = $_POST["precio"];
-    $precio_detalle = isset($_POST['precio_detalle']) && !empty($_POST["precio_detalle"]) ? $_POST['precio_detalle'] : "NULL";
-    $dias_produccion = $_POST["dias_produccion"] == null ? "NULL" : $_POST["dias_produccion"];
-
-    try {
-        $errors = [];
-        mysqli_autocommit($con, FALSE);
-        $query = "UPDATE variedades_producto SET nombre = UPPER('$nombre'), precio = '$precio', precio_detalle = $precio_detalle, dias_produccion = $dias_produccion WHERE id = $id_variedad";
-        if (mysqli_query($con, $query)) {
-            if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
-                $query = "DELETE FROM atributos_valores_variedades WHERE id_variedad = $id_variedad;";
-                if (!mysqli_query($con, $query)) {
-                    $errors[] = mysqli_error($con) . "-" . $query;
-                }
-
-                $atributos = json_decode($_POST["atributos"], true);
-
-                foreach ($atributos as $atr) {
-                    // if (isset($atr["valorSelect"]) && count($atr["valorSelect"]) > 0) {
-                    //     foreach ($atr["valorSelect"] as $item) {
-                    if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
-                        $item = $atr["valorSelect"];
-                        $query = "INSERT INTO atributos_valores_variedades (
-                                id_variedad,
-                                id_atributo_valor
-                            ) VALUES (
-                                $id_variedad,
-                                $item
-                            )";
-                        if (!mysqli_query($con, $query)) {
-                            $errors[] = mysqli_error($con) . "-" . $query;
-                        }
-                    }
-                    // }
-                }
-            }
-        } else {
-            $errors[] = mysqli_error($con) . "-" . $query;
-        }
-
-        if (mysqli_commit($con)) {
-            echo "success";
-        } else {
-            mysqli_rollback($con);
-            if (count($errors) > 0) {
-                foreach ($errors as $error) {
-                    echo $error . "<br>";
-                }
-            } else {
-                echo "error:" . mysqli_error($con);
-            }
-        }
-    } catch (\Throwable $th) {
-        echo "error: " . $th . " " . $query;
-    }
-} else if ($consulta == "eliminar_variedad") {
+}  else if ($consulta == "eliminar_variedad") {
     try {
         $id_variedad = $_POST["id_variedad"];
         if (mysqli_query($con, "UPDATE variedades_producto SET eliminada = 1 WHERE id = $id_variedad;")) {
@@ -478,5 +359,430 @@ if ($consulta == "busca_variedades") {
             throw $th;
         }
 
+    }
+}
+// Agregar estas consultas al archivo data_ver_variedades.php
+
+else if ($consulta == "obtener_imagenes_variedad") {
+    $id_variedad = $_POST["id_variedad"];
+    
+    try {
+        $query = "SELECT id, nombre_archivo, fecha_subida 
+                  FROM imagenes_variedades 
+                  WHERE id_variedad = $id_variedad 
+                  ORDER BY fecha_subida ASC";
+        
+        $result = mysqli_query($con, $query);
+        $imagenes = [];
+        
+        if ($result && mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $imagenes[] = $row;
+            }
+        }
+        
+        echo json_encode($imagenes);
+        
+    } catch (\Throwable $th) {
+        echo json_encode([]);
+    }
+}
+
+else if ($consulta == "eliminar_imagen_variedad") {
+    $id_imagen = $_POST["id_imagen"];
+    
+    try {
+        // Obtener información de la imagen
+        $query = "SELECT nombre_archivo FROM imagenes_variedades WHERE id = $id_imagen";
+        $result = mysqli_query($con, $query);
+        
+        if ($result && mysqli_num_rows($result) > 0) {
+            $imagen = mysqli_fetch_assoc($result);
+            $ruta_archivo = "uploads/variedades/" . $imagen['nombre_archivo'];
+            
+            // Eliminar archivo físico
+            if (file_exists($ruta_archivo)) {
+                unlink($ruta_archivo);
+            }
+            
+            // Eliminar registro de base de datos
+            $query = "DELETE FROM imagenes_variedades WHERE id = $id_imagen";
+            if (mysqli_query($con, $query)) {
+                echo "success";
+            } else {
+                echo "error: " . mysqli_error($con);
+            }
+        } else {
+            echo "error: Imagen no encontrada";
+        }
+        
+    } catch (\Throwable $th) {
+        echo "error: " . $th->getMessage();
+    }
+}
+
+// Modificar la función agregar_variedad existente
+else if ($consulta == "agregar_variedad") {
+    $nombre = mysqli_real_escape_string($con, $_POST['nombre']);
+    $codigo = mysqli_real_escape_string($con, $_POST['codigo']);
+    $dias_produccion = $_POST["dias_produccion"] == null || $_POST["dias_produccion"] == '' ? "NULL" : $_POST["dias_produccion"];
+    $precio = $_POST['precio'];
+    $precio_detalle = isset($_POST['precio_detalle']) && !empty($_POST["precio_detalle"]) ? $_POST['precio_detalle'] : "NULL";
+    $id_tipo = $_POST["id_tipo"];
+    
+    try {
+        $errors = [];
+        
+        // Verificar código único
+        $val = mysqli_query($con, "SELECT * FROM variedades_producto WHERE id_tipo = $id_tipo AND id_interno = $codigo;");
+        if (mysqli_num_rows($val) > 0) {
+            echo "EL CÓDIGO INGRESADO YA ESTÁ EN USO. ELIGE OTRO.";
+            return;
+        }
+        
+        mysqli_autocommit($con, FALSE);
+        
+        // Insertar variedad
+        $query = "INSERT INTO variedades_producto (nombre, precio, precio_detalle, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', $precio_detalle, '$id_tipo', '$codigo', $dias_produccion);";
+        
+        if (mysqli_query($con, $query)) {
+            $id_variedad = mysqli_insert_id($con);
+            
+            // Procesar atributos
+            if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
+                $atributos = json_decode($_POST["atributos"], true);
+                foreach ($atributos as $atr) {
+                    if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
+                        $item = $atr["valorSelect"];
+                        $query = "INSERT INTO atributos_valores_variedades (id_variedad, id_atributo_valor) VALUES ($id_variedad, $item)";
+                        if (!mysqli_query($con, $query)) {
+                            $errors[] = mysqli_error($con) . "-" . $query;
+                        }
+                    }
+                }
+            }
+            
+            // Procesar imágenes
+            if (isset($_FILES['imagenes']) && !empty($_FILES['imagenes']['name'][0])) {
+                $resultado_imagenes = procesarImagenesVariedad($con, $id_variedad, $_FILES['imagenes']);
+                if (!$resultado_imagenes['success']) {
+                    $errors = array_merge($errors, $resultado_imagenes['errors']);
+                }
+            }
+            
+        } else {
+            $errors[] = mysqli_error($con) . "-" . $query;
+        }
+
+        if (count($errors) === 0 && mysqli_commit($con)) {
+            echo "success";
+        } else {
+            mysqli_rollback($con);
+            if (count($errors) > 0) {
+                echo "error: " . implode("<br>", $errors);
+            } else {
+                echo "error: " . mysqli_error($con);
+            }
+        }
+        
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    }
+}
+
+// Modificar la función editar_variedad existente
+else if ($consulta == "editar_variedad") {
+    $id_variedad = $_POST['id_variedad'];
+    $nombre = mysqli_real_escape_string($con, $_POST["nombre"]);
+    $precio = $_POST["precio"];
+    $precio_detalle = isset($_POST['precio_detalle']) && !empty($_POST["precio_detalle"]) ? $_POST['precio_detalle'] : "NULL";
+    $dias_produccion = $_POST["dias_produccion"] == null || $_POST["dias_produccion"] == '' ? "NULL" : $_POST["dias_produccion"];
+
+    try {
+        $errors = [];
+        mysqli_autocommit($con, FALSE);
+        
+        // Actualizar variedad
+        $query = "UPDATE variedades_producto SET nombre = UPPER('$nombre'), precio = '$precio', precio_detalle = $precio_detalle, dias_produccion = $dias_produccion WHERE id = $id_variedad";
+        
+        if (mysqli_query($con, $query)) {
+            
+            // Procesar atributos
+            if (isset($_POST["atributos"]) && strlen($_POST["atributos"]) > 0) {
+                $query = "DELETE FROM atributos_valores_variedades WHERE id_variedad = $id_variedad;";
+                if (!mysqli_query($con, $query)) {
+                    $errors[] = mysqli_error($con) . "-" . $query;
+                }
+
+                $atributos = json_decode($_POST["atributos"], true);
+                foreach ($atributos as $atr) {
+                    if (isset($atr["valorSelect"]) && $atr["valorSelect"] != "0") {
+                        $item = $atr["valorSelect"];
+                        $query = "INSERT INTO atributos_valores_variedades (id_variedad, id_atributo_valor) VALUES ($id_variedad, $item)";
+                        if (!mysqli_query($con, $query)) {
+                            $errors[] = mysqli_error($con) . "-" . $query;
+                        }
+                    }
+                }
+            }
+            
+            // Eliminar imágenes marcadas para eliminar
+            if (isset($_POST["imagenes_eliminar"]) && !empty($_POST["imagenes_eliminar"])) {
+                $imagenes_eliminar = json_decode($_POST["imagenes_eliminar"], true);
+                foreach ($imagenes_eliminar as $id_imagen) {
+                    $resultado = eliminarImagenVariedad($con, $id_imagen);
+                    if (!$resultado['success']) {
+                        $errors[] = $resultado['error'];
+                    }
+                }
+            }
+            
+            // Procesar nuevas imágenes
+            if (isset($_FILES['imagenes']) && !empty($_FILES['imagenes']['name'][0])) {
+                $resultado_imagenes = procesarImagenesVariedad($con, $id_variedad, $_FILES['imagenes']);
+                if (!$resultado_imagenes['success']) {
+                    $errors = array_merge($errors, $resultado_imagenes['errors']);
+                }
+            }
+            
+        } else {
+            $errors[] = mysqli_error($con) . "-" . $query;
+        }
+
+        if (count($errors) === 0 && mysqli_commit($con)) {
+            echo "success";
+        } else {
+            mysqli_rollback($con);
+            if (count($errors) > 0) {
+                echo "error: " . implode("<br>", $errors);
+            } else {
+                echo "error: " . mysqli_error($con);
+            }
+        }
+        
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    }
+}
+
+// Función auxiliar para procesar imágenes
+function procesarImagenesVariedad($con, $id_variedad, $files) {
+    $errors = [];
+    $success = true;
+    $max_imagenes = 3;
+    $max_size = 5 * 1024 * 1024; // 5MB
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+    
+    // Crear directorio si no existe
+    $upload_dir = "uploads/variedades/";
+    if (!file_exists($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+    
+    // Verificar límite de imágenes
+    $query = "SELECT COUNT(*) as total FROM imagenes_variedades WHERE id_variedad = $id_variedad";
+    $result = mysqli_query($con, $query);
+    $current_count = 0;
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        $current_count = $row['total'];
+    }
+    
+    $files_count = count(array_filter($files['name']));
+    if ($current_count + $files_count > $max_imagenes) {
+        return [
+            'success' => false,
+            'errors' => ["Máximo $max_imagenes imágenes permitidas. Actualmente tienes $current_count."]
+        ];
+    }
+    
+    for ($i = 0; $i < count($files['name']); $i++) {
+        if (empty($files['name'][$i])) continue;
+        
+        $file_name = $files['name'][$i];
+        $file_tmp = $files['tmp_name'][$i];
+        $file_size = $files['size'][$i];
+        $file_type = $files['type'][$i];
+        $file_error = $files['error'][$i];
+        
+        // Validaciones
+        if ($file_error !== UPLOAD_ERR_OK) {
+            $errors[] = "Error al subir $file_name";
+            continue;
+        }
+        
+        if (!in_array($file_type, $allowed_types)) {
+            $errors[] = "Tipo de archivo no válido para $file_name";
+            continue;
+        }
+        
+        if ($file_size > $max_size) {
+            $errors[] = "El archivo $file_name es muy grande (máximo 5MB)";
+            continue;
+        }
+        
+        // Generar nombre único
+        $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        $nuevo_nombre = "variedad_" . $id_variedad . "_" . uniqid() . "." . $extension;
+        $ruta_destino = $upload_dir . $nuevo_nombre;
+        
+        // Comprimir y redimensionar imagen
+        $resultado_compresion = comprimirYRedimensionarImagen($file_tmp, $ruta_destino, $file_type);
+        
+        if ($resultado_compresion['success']) {
+            // Guardar en base de datos
+            $query = "INSERT INTO imagenes_variedades (id_variedad, nombre_archivo, fecha_subida) 
+                      VALUES ($id_variedad, '$nuevo_nombre', NOW())";
+            
+            if (!mysqli_query($con, $query)) {
+                $errors[] = "Error al guardar $file_name en base de datos: " . mysqli_error($con);
+                // Eliminar archivo si no se pudo guardar en BD
+                if (file_exists($ruta_destino)) {
+                    unlink($ruta_destino);
+                }
+                $success = false;
+            }
+        } else {
+            $errors[] = "Error al procesar $file_name: " . $resultado_compresion['error'];
+            $success = false;
+        }
+    }
+    
+    return [
+        'success' => $success && count($errors) === 0,
+        'errors' => $errors
+    ];
+}
+
+// Función auxiliar para eliminar imagen
+function eliminarImagenVariedad($con, $id_imagen) {
+    try {
+        // Obtener información de la imagen
+        $query = "SELECT nombre_archivo FROM imagenes_variedades WHERE id = $id_imagen";
+        $result = mysqli_query($con, $query);
+        
+        if ($result && mysqli_num_rows($result) > 0) {
+            $imagen = mysqli_fetch_assoc($result);
+            $ruta_archivo = "uploads/variedades/" . $imagen['nombre_archivo'];
+            
+            // Eliminar archivo físico
+            if (file_exists($ruta_archivo)) {
+                unlink($ruta_archivo);
+            }
+            
+            // Eliminar registro de base de datos
+            $query = "DELETE FROM imagenes_variedades WHERE id = $id_imagen";
+            if (mysqli_query($con, $query)) {
+                return ['success' => true];
+            } else {
+                return ['success' => false, 'error' => mysqli_error($con)];
+            }
+        } else {
+            return ['success' => false, 'error' => 'Imagen no encontrada'];
+        }
+        
+    } catch (\Throwable $th) {
+        return ['success' => false, 'error' => $th->getMessage()];
+    }
+}
+
+// Función para comprimir y redimensionar imágenes
+function comprimirYRedimensionarImagen($archivo_origen, $ruta_destino, $tipo_mime) {
+    try {
+        $max_ancho = 600;
+        $calidad_jpg = 85; // Calidad para JPEG (0-100)
+        $calidad_png = 8;  // Nivel de compresión para PNG (0-9)
+        
+        // Obtener dimensiones originales
+        $info_imagen = getimagesize($archivo_origen);
+        if (!$info_imagen) {
+            return ['success' => false, 'error' => 'No se pudo leer la imagen'];
+        }
+        
+        $ancho_original = $info_imagen[0];
+        $alto_original = $info_imagen[1];
+        
+        // Calcular nuevas dimensiones manteniendo proporción
+        if ($ancho_original <= $max_ancho) {
+            // Si la imagen ya es menor o igual al ancho máximo, solo comprimir
+            $nuevo_ancho = $ancho_original;
+            $nuevo_alto = $alto_original;
+        } else {
+            // Redimensionar manteniendo proporción
+            $nuevo_ancho = $max_ancho;
+            $nuevo_alto = round(($alto_original * $max_ancho) / $ancho_original);
+        }
+        
+        // Crear imagen desde archivo según el tipo
+        switch ($tipo_mime) {
+            case 'image/jpeg':
+            case 'image/jpg':
+                $imagen_origen = imagecreatefromjpeg($archivo_origen);
+                break;
+            case 'image/png':
+                $imagen_origen = imagecreatefrompng($archivo_origen);
+                break;
+            case 'image/gif':
+                $imagen_origen = imagecreatefromgif($archivo_origen);
+                break;
+            default:
+                return ['success' => false, 'error' => 'Tipo de imagen no soportado'];
+        }
+        
+        if (!$imagen_origen) {
+            return ['success' => false, 'error' => 'No se pudo crear la imagen desde el archivo'];
+        }
+        
+        // Crear nueva imagen con las dimensiones calculadas
+        $imagen_nueva = imagecreatetruecolor($nuevo_ancho, $nuevo_alto);
+        
+        // Preservar transparencia para PNG y GIF
+        if ($tipo_mime == 'image/png' || $tipo_mime == 'image/gif') {
+            imagealphablending($imagen_nueva, false);
+            imagesavealpha($imagen_nueva, true);
+            $transparente = imagecolorallocatealpha($imagen_nueva, 255, 255, 255, 127);
+            imagefill($imagen_nueva, 0, 0, $transparente);
+        }
+        
+        // Redimensionar imagen
+        imagecopyresampled(
+            $imagen_nueva, 
+            $imagen_origen, 
+            0, 0, 0, 0, 
+            $nuevo_ancho, 
+            $nuevo_alto, 
+            $ancho_original, 
+            $alto_original
+        );
+        
+        // Guardar imagen según el tipo
+        $resultado = false;
+        switch ($tipo_mime) {
+            case 'image/jpeg':
+            case 'image/jpg':
+                $resultado = imagejpeg($imagen_nueva, $ruta_destino, $calidad_jpg);
+                break;
+            case 'image/png':
+                $resultado = imagepng($imagen_nueva, $ruta_destino, $calidad_png);
+                break;
+            case 'image/gif':
+                $resultado = imagegif($imagen_nueva, $ruta_destino);
+                break;
+        }
+        
+        // Liberar memoria
+        imagedestroy($imagen_origen);
+        imagedestroy($imagen_nueva);
+        
+        if ($resultado) {
+            return ['success' => true];
+        } else {
+            return ['success' => false, 'error' => 'No se pudo guardar la imagen procesada'];
+        }
+        
+    } catch (\Throwable $th) {
+        return ['success' => false, 'error' => 'Error al procesar imagen: ' . $th->getMessage()];
     }
 }

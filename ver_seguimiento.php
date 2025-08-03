@@ -57,7 +57,7 @@
                 <button class="tablinks" onclick="openTab(event, 'tab-interior');">Interior</button>
                 <button class="tablinks" onclick="openTab(event, 'tab-exterior');">Exterior</button>
                 <button class="tablinks" onclick="openTab(event, 'tab-vivero');">Vivero</button>
-                <button class="tablinks" onclick="openTab(event, 'tab-packs');">Packss</button>
+                <button class="tablinks" onclick="openTab(event, 'tab-packs');">Packs</button>
               </div>
             </div>
             <div class="col-md-3">

@@ -215,13 +215,13 @@ a {
 }
 
 
-.modal-content-adminpedido {
+.modal-content-adminpedido, .modal-reservar {
   background-color: #fefefe;
-  margin: 10% 28%; /* 15% from the top and centered */
+  margin: 5% 28%; /* 15% from the top and centered */
   padding: 10px;
   border: 1px solid #888;
   width: 45%; /* Could be more or less, depending on screen size */
-  height: 40%;
+  height: 60%;
   overflow-y: auto;
   overflow-x: hidden;
   border-radius: 20px;

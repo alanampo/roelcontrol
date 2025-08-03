@@ -115,13 +115,67 @@
 
     </div>
 
+    <div id="modal-reservar" class="modal">
+      <div class="modal-reservar">
+        <div class='box box-primary'>
+          <div class='box-header with-border'>
+            <h3 class='box-title'>Reservar Producto</h3>
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
+        <div class='box-body'>
+          <div class="row">
+            <div class="col-md-6">
+              <label for="select-cliente" class="control-label">Cliente:</label>
+              <select id="select-cliente" data-size="10" data-live-search="true" title="Cliente" class="selectpicker"
+                data-style="btn-info" data-width="100%">
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 form-group">
+              <label class="col-form-label" for="input-cantidad-reserva">Cantidad a Reservar:</label>
+              <input type="search" placeholder="Plantas" autocomplete="off" class="form-control" name="input-cantidad"
+                id="input-cantidad-reserva" maxlength="20" />
+            </div>
+            <div class="col-md-4">
+
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="col-form-label text-primary" for="input-cantidad-disponible2">Cantidad Disponible:</label>
+              <input type="search" autocomplete="off" class="form-control font-weight-bold"
+                name="input-cantidad-disponible2" id="input-cantidad-disponible2" maxlength="20" readonly />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12 form-group">
+              <label class="col-form-label" for="input-comentario">Comentario:</label>
+              <input type="search" autocomplete="off" class="form-control" name="input-comentario" id="input-comentario"
+                maxlength="100" />
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col">
+              <button onclick="guardarReserva()" class="btn btn-success pull-right"><i class="fa fa-save"></i> CONFIRMAR
+                RESERVA</button>
+            </div>
+          </div>
+
+
+        </div>
+      </div> <!-- MODAL FIN -->
+    </div>
+
 
     <div id="modal-edit-stock" class="modal">
       <div id="modal-edit-stockContent" class="modal-content-verpedido">
         <div class='box box-primary'>
           <div class='box-header with-border'>
             <h4 class='box-title'>Editar Stock</h4>
-            <button class="btn fa fa-close pull-right btn-modal-top" onClick="$('#modal-edit-stock').css({display:'none'});"></button>
+            <button class="btn fa fa-close pull-right btn-modal-top"
+              onClick="$('#modal-edit-stock').css({display:'none'});"></button>
           </div>
           <div id="tablita">
             <div class='box-body'>

@@ -8,7 +8,7 @@
   <?php include "./class_lib/links.php"; ?>
   <?php include "./class_lib/scripts.php"; ?>
   <script src="dist/js/check_permisos.js?v=<?php echo $version ?>"></script>
-  <script src="dist/js/ver_seguimiento.js?v=<?php echo $version ?>"></script>
+  <script src="dist/js/ver_seguimiento.js?v=123"></script>
 </head>
 
 <body>

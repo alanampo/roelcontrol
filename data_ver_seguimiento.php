@@ -111,6 +111,10 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
             }
         }
 
+        if ($tipo == "invitro"){
+            $condicion_atributo.=" AND t.nombre = 'INVITRO'";
+        }
+
         $cadenaselect = "SELECT t.nombre as nombre_tipo, v.nombre as nombre_variedad, c.nombre as nombre_cliente, p.fecha, p.id_pedido, ap.id as id_artpedido, ap.cant_plantas, ap.cant_bandejas, ap.tipo_bandeja, t.codigo, v.id_interno, ap.estado, p.id_interno as id_pedido_interno,
         ap.problema, ap.observacionproblema, c.id_cliente, ap.observacion, u.iniciales, ap.id_especie, e.nombre as nombre_especie
         FROM tipos_producto t

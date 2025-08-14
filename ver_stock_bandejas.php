@@ -83,11 +83,14 @@
                 <label for="select-bandeja" class="control-label">Tipo de Bandeja:</label>
                 <select id="select-bandeja" title="Bandeja" class="selectpicker" data-style="btn-info"
                   data-width="100%">
+                  <option value="288">288</option>
                   <option value="200">200</option>
                   <option value="162">162</option>
                   <option value="128">128</option>
                   <option value="105">105</option>
+                  <option value="72">72</option>
                   <option value="50">50</option>
+                  <option value="25">25</option>
                 </select>
               </div>
               <div class="col-md-6">

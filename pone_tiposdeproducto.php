@@ -49,66 +49,6 @@ else if ($tipo == "carga_variedades") {
 	}
 }
 
-else if ($tipo == "carga_bandejas") {
-	$cadena = "SELECT precio_288, precio_200, precio_162, precio_128, precio_72, precio_50, precio_25, precio_49 FROM tipos_producto WHERE id_articulo = $id_tipo;";
-	$val = mysqli_query($con, $cadena);
-	$array = ["288","200","162","128","72","50","25","49"];
-	if (mysqli_num_rows($val)>0){
-	    while($re=mysqli_fetch_array($val)){
-	    	for ($i = 0;$i<count($array);$i++){
-	    		if($re[$i] != NULL){
-	    			echo "<option>".$array[$i]."</option>";		
-	    		}
-	    	}
-	    	
-	    }
-	}
-}
-else if ($tipo == "carga_precios") {
-	$cadena = "SELECT * FROM tipos_producto WHERE id_articulo = $id_tipo;";
-	$val = mysqli_query($con, $cadena);
-	if (mysqli_num_rows($val)>0){
-	    $precios = "";
-	    while($re=mysqli_fetch_array($val)){
-	    	$precios = array (
-			    "288"=>array(
-			        "sinsemilla" => $re["precio_288"],
-			        "consemilla" => $re["precio_288_s"]
-			    ),
-			    "200"=>array(
-			        "sinsemilla" => $re["precio_200"],
-			        "consemilla" => $re["precio_200_s"]
-			    ),
-			    "162"=>array(
-			        "sinsemilla" => $re["precio_162"],
-			        "consemilla" => $re["precio_162_s"]
-			    ),
-			    "128"=>array(
-			        "sinsemilla" => $re["precio_128"],
-			        "consemilla" => $re["precio_128_s"]
-			    ),
-			    "72"=>array(
-			        "sinsemilla" => $re["precio_72"],
-			        "consemilla" => $re["precio_72_s"]
-			    ),
-			    "50"=>array(
-			        "sinsemilla" => $re["precio_50"],
-			        "consemilla" => $re["precio_50_s"]
-			    ),
-			    "25"=>array(
-			        "sinsemilla" => $re["precio_25"],
-			        "consemilla" => $re["precio_25_s"]
-			    ),
-			    "49"=>array(
-			        "sinsemilla" => $re["precio_49"],
-			        "consemilla" => $re["precio_49_s"]
-			    )
-			);
-	    }
-	    echo json_encode($precios);
-	}
-}
-
 
 else if ($tipo == "carga_stock"){
 	$id_tipo = $_POST["id_tipo"];

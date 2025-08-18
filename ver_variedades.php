@@ -314,7 +314,13 @@
               <!-- Las imágenes existentes se mostrarán aquí -->
             </div>
           </div>
-
+          <div class="row">
+             <div class="col form-group">
+              <label for="input-descripcion">Descripción:</label>
+              <textarea rows="2" class="form-control" name="textarea" id="input-descripcion" placeholder="Descripción"
+                style="width:100%;text-transform: none; resize:none" maxlength="1024"></textarea>
+            </div>
+          </div>
           <div align="right">
             <button type="button" class="btn fa fa-close btn-modal-bottom" onClick="CerrarModalProducto();"></button>
             <button type="button" class="btn fa fa-save btn-modal-bottom ml-2" onClick="GuardarProducto();"></button>

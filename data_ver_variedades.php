@@ -42,7 +42,7 @@ if ($consulta == "busca_variedades") {
     mysqli_query($con, "SET SESSION SQL_BIG_SELECTS=1");
 
     $cadena = "SELECT v.id as id_variedad, t.id as id_tipo, t.nombre as nombre_tipo,
-          v.nombre as nombre_variedad, t.codigo, v.precio, v.precio_detalle, v.id_interno, v.dias_produccion
+          v.nombre as nombre_variedad, v.descripcion, t.codigo, v.precio, v.precio_detalle, v.id_interno, v.dias_produccion
           FROM variedades_producto v 
           INNER JOIN tipos_producto t ON t.id = v.id_tipo";
 
@@ -60,7 +60,7 @@ if ($consulta == "busca_variedades") {
         echo "<div class='box-body'>";
         echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         echo "<thead><tr>";
-        echo "<th>Tipo</th><th>Variedad</th>$headersAtributos<th>Precio Mayorista</th><th>Precio Mayorista +IVA</th><th>Precio Detalle</th><th>Precio Detalle +IVA</th><th>Días en Producción</th><th></th>";
+        echo "<th>Tipo</th><th>Variedad</th>$headersAtributos<th>Precio Mayorista</th><th>Precio Mayorista +IVA</th><th>Precio Detalle</th><th>Precio Detalle +IVA</th><th>Días en Producción</th><th>Descripción</th><th></th>";
         echo "</tr></thead>";
         echo "<tbody>";
 
@@ -77,7 +77,7 @@ if ($consulta == "busca_variedades") {
             $btneditar = "<button class='btn btn-primary fa fa-edit' onClick='editarVariedad(event, this)'></button>";
 
             echo "
-            <tr class='text-center' style='cursor:pointer' x-codigo-tipo='$ww[codigo]' x-id-interno='$ww[id_interno]' x-dias-produccion='$ww[dias_produccion]' x-id='$id_variedad' x-id-tipo='$id_tipo' x-precio='$precio' x-precio-iva='$precio_iva' x-precio-detalle='$precio_detalle' x-precio-detalle-iva='$precio_detalle_iva' x-nombre='$variedad'>
+            <tr class='text-center' style='cursor:pointer' x-codigo-tipo='$ww[codigo]' x-id-interno='$ww[id_interno]' x-dias-produccion='$ww[dias_produccion]' x-id='$id_variedad' x-id-tipo='$id_tipo' x-precio='$precio' x-precio-iva='$precio_iva' x-precio-detalle='$precio_detalle' x-precio-detalle-iva='$precio_detalle_iva' x-nombre='$variedad' x-descripcion='$ww[descripcion]'>
             <td class='clickable'>$tipo $ww[id_interno]</td>
             <td class='clickable'>$variedad</td>";
 
@@ -93,6 +93,8 @@ if ($consulta == "busca_variedades") {
                   <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>" . ($precio_detalle != "" ? "$ $precio_detalle" : "") . "</td>
                   <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>" . ($precio_detalle_iva != "" ? "$ $precio_detalle_iva" : "") . "</td>
                   <td class='clickable' style='font-size: 1.1em; font-weight:bold;'>$ww[dias_produccion]</td>
+                    <td class='clickable'><small>$ww[descripcion]</small></td>
+                  
                   <td class='text-center'>
                   <div class='d-flex flex-row justify-content-center' style='gap:5px;'>
                   $btneliminar
@@ -429,7 +431,7 @@ else if ($consulta == "agregar_variedad") {
     $precio = $_POST['precio'];
     $precio_detalle = isset($_POST['precio_detalle']) && !empty($_POST["precio_detalle"]) ? $_POST['precio_detalle'] : "NULL";
     $id_tipo = $_POST["id_tipo"];
-    
+    $descripcion = isset($_POST['descripcion']) && !empty($_POST["descripcion"]) ? "'".mysqli_real_escape_string($con, $_POST['descripcion'])."'" : "NULL";     
     try {
         $errors = [];
         
@@ -443,7 +445,7 @@ else if ($consulta == "agregar_variedad") {
         mysqli_autocommit($con, FALSE);
         
         // Insertar variedad
-        $query = "INSERT INTO variedades_producto (nombre, precio, precio_detalle, id_tipo, id_interno, dias_produccion) VALUES (UPPER('$nombre'), '$precio', $precio_detalle, '$id_tipo', '$codigo', $dias_produccion);";
+        $query = "INSERT INTO variedades_producto (nombre, precio, precio_detalle, id_tipo, id_interno, dias_produccion, descripcion) VALUES (UPPER('$nombre'), '$precio', $precio_detalle, '$id_tipo', '$codigo', $dias_produccion, $descripcion);";
         
         if (mysqli_query($con, $query)) {
             $id_variedad = mysqli_insert_id($con);
@@ -494,6 +496,7 @@ else if ($consulta == "agregar_variedad") {
 // Modificar la función editar_variedad existente
 else if ($consulta == "editar_variedad") {
     $id_variedad = $_POST['id_variedad'];
+    $descripcion = isset($_POST['descripcion']) && !empty($_POST["descripcion"]) ? "'".mysqli_real_escape_string($con, $_POST['descripcion'])."'" : "NULL";     
     $nombre = mysqli_real_escape_string($con, $_POST["nombre"]);
     $precio = $_POST["precio"];
     $precio_detalle = isset($_POST['precio_detalle']) && !empty($_POST["precio_detalle"]) ? $_POST['precio_detalle'] : "NULL";
@@ -504,7 +507,7 @@ else if ($consulta == "editar_variedad") {
         mysqli_autocommit($con, FALSE);
         
         // Actualizar variedad
-        $query = "UPDATE variedades_producto SET nombre = UPPER('$nombre'), precio = '$precio', precio_detalle = $precio_detalle, dias_produccion = $dias_produccion WHERE id = $id_variedad";
+        $query = "UPDATE variedades_producto SET nombre = UPPER('$nombre'), precio = '$precio', precio_detalle = $precio_detalle, dias_produccion = $dias_produccion, descripcion = $descripcion WHERE id = $id_variedad";
         
         if (mysqli_query($con, $query)) {
             

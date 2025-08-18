@@ -71,6 +71,15 @@ function busca_productos(filtro) {
     success: function (x) {
       $("#tabla_entradas").html(x);
       let table = $("#tabla").DataTable({
+        columnDefs: [
+          {
+            targets: -2, // anteúltima columna
+            width: "200px", // ancho fijo
+            render: function (data, type, row) {
+              return `<div style="max-width:200px; text-align:left;">${data}</div>`;
+            }
+          }
+        ],
         pageLength: 100,
         language: {
           lengthMenu: "Mostrando _MENU_ productos por página",
@@ -111,6 +120,7 @@ function editarVariedad(event, obj) {
   const row = $(obj).closest("tr");
   let id = $(row).attr("x-id");
   let nombre = $(row).attr("x-nombre");
+  let descripcion = $(row).attr("x-descripcion");
   let precio = $(row).attr("x-precio");
   let precio_detalle = $(row).attr("x-precio-detalle");
   let precio_detalle_iva = $(row).attr("x-precio-detalle-iva");
@@ -128,6 +138,7 @@ function editarVariedad(event, obj) {
     id_interno: id_interno,
     codigo_tipo: codigo_tipo,
     dias_produccion: dias_produccion,
+    descripcion: descripcion ?? null
   });
 }
 
@@ -256,7 +267,7 @@ function manejarSeleccionImagenes(files) {
   const imagenesActuales = imagenesSeleccionadas.length;
   const imagenesExistentes = $("#contenedor-imagenes-existentes .imagen-existente").not(".imagen-marcada-eliminar").length;
   const totalActuales = imagenesActuales + imagenesExistentes;
-  
+
   if (files.length + totalActuales > maxImagenes) {
     swal(`Solo puedes subir máximo ${maxImagenes} imágenes`, "", "error");
     return;
@@ -264,13 +275,13 @@ function manejarSeleccionImagenes(files) {
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    
+
     // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       swal(`El archivo ${file.name} no es una imagen válida`, "", "error");
       continue;
     }
-    
+
     // Validar tamaño (5MB máximo)
     if (file.size > 5 * 1024 * 1024) {
       swal(`La imagen ${file.name} es muy grande. Máximo 5MB`, "", "error");
@@ -280,10 +291,10 @@ function manejarSeleccionImagenes(files) {
     imagenesSeleccionadas.push(file);
     mostrarPreviewImagen(file, imagenesSeleccionadas.length - 1);
   }
-  
+
   // Limpiar input
   $("#imagenes-variedad").val('');
-  
+
   // Mostrar/ocultar contenedor
   if (imagenesSeleccionadas.length > 0) {
     $("#contenedor-imagenes-preview").show();
@@ -293,7 +304,7 @@ function manejarSeleccionImagenes(files) {
 // Función para mostrar preview de imagen nueva
 function mostrarPreviewImagen(file, index) {
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     const html = `
       <div class="col-md-4 imagen-preview-container" data-index="${index}">
         <img src="${e.target.result}" class="imagen-preview" alt="Preview">
@@ -314,13 +325,13 @@ function mostrarPreviewImagen(file, index) {
 function eliminarImagenNueva(index) {
   imagenesSeleccionadas.splice(index, 1);
   $(`[data-index="${index}"]`).remove();
-  
+
   // Reindexar elementos restantes
-  $("#contenedor-imagenes-preview .imagen-preview-container").each(function(newIndex) {
+  $("#contenedor-imagenes-preview .imagen-preview-container").each(function (newIndex) {
     $(this).attr('data-index', newIndex);
     $(this).find('.btn-eliminar-imagen').attr('onclick', `eliminarImagenNueva(${newIndex})`);
   });
-  
+
   if (imagenesSeleccionadas.length === 0) {
     $("#contenedor-imagenes-preview").hide();
   }
@@ -329,7 +340,7 @@ function eliminarImagenNueva(index) {
 // Función para marcar/desmarcar imagen existente para eliminar
 function toggleEliminarImagenExistente(idImagen, elemento) {
   const container = $(elemento).closest('.imagen-existente');
-  
+
   if (container.hasClass('imagen-marcada-eliminar')) {
     // Desmarcar para eliminar
     container.removeClass('imagen-marcada-eliminar');
@@ -355,7 +366,7 @@ function cargarImagenesExistentes(idVariedad) {
       consulta: "obtener_imagenes_variedad",
       id_variedad: idVariedad
     },
-    success: function(response) {
+    success: function (response) {
       try {
         const imagenes = JSON.parse(response);
         mostrarImagenesExistentes(imagenes);
@@ -363,7 +374,7 @@ function cargarImagenesExistentes(idVariedad) {
         console.log("No hay imágenes existentes o error en respuesta:", response);
       }
     },
-    error: function() {
+    error: function () {
       console.log("Error al cargar imágenes existentes");
     }
   });
@@ -372,15 +383,15 @@ function cargarImagenesExistentes(idVariedad) {
 // Función para mostrar imágenes existentes
 function mostrarImagenesExistentes(imagenes) {
   $("#contenedor-imagenes-existentes").empty();
-  
+
   if (imagenes && imagenes.length > 0) {
     let html = `
       <div class="col-12 mb-2">
         <h6 class="text-primary">Imágenes Actuales:</h6>
       </div>
     `;
-    
-    imagenes.forEach(function(imagen) {
+
+    imagenes.forEach(function (imagen) {
       html += `
         <div class="col-md-4 imagen-existente mb-3" data-id="${imagen.id}">
           <div class="imagen-preview-container">
@@ -397,7 +408,7 @@ function mostrarImagenesExistentes(imagenes) {
         </div>
       `;
     });
-    
+
     $("#contenedor-imagenes-existentes").html(html);
     $("#contenedor-imagenes-existentes").show();
   } else {
@@ -409,6 +420,7 @@ function mostrarImagenesExistentes(imagenes) {
 function GuardarProducto() {
   const id_tipo = $("#select_tipo2 option:selected").val();
   const nombre = $("#input-nombre").val().trim().replace(/\s+/g, " ");
+  const descripcion = $("#input-descripcion").val().trim();
   const precio = $("#input-precio").val().trim();
   const precio_detalle = $("#input-precio-detalle").val().trim();
   const codigo = $("#input-codigo").val().trim().replace(/\s+/g, "");
@@ -461,7 +473,7 @@ function GuardarProducto() {
 
   // Crear FormData para incluir archivos
   const formData = new FormData();
-  
+
   if (!edit_mode) {
     formData.append('consulta', 'agregar_variedad');
     formData.append('id_tipo', id_tipo);
@@ -474,13 +486,14 @@ function GuardarProducto() {
 
   // Datos comunes
   formData.append('nombre', nombre);
+  formData.append('descripcion', descripcion);
   formData.append('precio', precio);
   formData.append('precio_detalle', precio_detalle && precio_detalle.length ? precio_detalle : '');
   formData.append('atributos', atributos && atributos.length ? JSON.stringify(atributos) : '');
   formData.append('dias_produccion', (codigo_tipo == "E" || codigo_tipo == "S") ? dias_produccion : '');
 
   // Agregar imágenes nuevas
-  imagenesSeleccionadas.forEach(function(file, index) {
+  imagenesSeleccionadas.forEach(function (file, index) {
     formData.append('imagenes[]', file);
   });
 
@@ -531,13 +544,14 @@ function limpiarFormularioImagenes() {
 // Función modificada para mostrar modal
 function MostrarModalAgregarProducto(producto) {
   limpiarFormularioImagenes(); // Limpiar imágenes al abrir modal
-  
+
   if (producto) {
     // EDITANDO
     $("#ModalAgregarProducto").find("#titulo").html("Modificar Variedad");
     $("#select_tipo2").attr("disabled", "disabled");
     $("#select_tipo2").val("default").selectpicker("refresh");
     $("#input-nombre").val(producto.nombre);
+    $("#input-descripcion").val(producto.descripcion ?? '');
     $("#input-precio").val(producto.precio);
     $("#input-precio-detalle").val(producto.precio_detalle);
     $("#input-codigo").val(producto.id_interno).attr("disabled", true);
@@ -545,7 +559,7 @@ function MostrarModalAgregarProducto(producto) {
     $("#select-dias-produccion").addClass("d-none");
     $("#ModalAgregarProducto").attr("x-id-variedad", producto.id);
     $("#ModalAgregarProducto").attr("x-codigo-tipo", producto.codigo_tipo);
-    
+
     if (producto.codigo_tipo == "E" || producto.codigo_tipo == "S") {
       $(".form-dias-produccion-variedad").removeClass("d-none");
     } else {
@@ -554,10 +568,10 @@ function MostrarModalAgregarProducto(producto) {
 
     edit_mode = true;
     getAtributosVariedad(producto.id);
-    
+
     // Cargar imágenes existentes
     cargarImagenesExistentes(producto.id);
-    
+
   } else {
     //AGREGANDO
     $("#input-nombre, #input-precio, #input-precio-detalle, #input-codigo, #dias-produccion-variedad").val("");

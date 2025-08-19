@@ -9,8 +9,7 @@ $con = mysqli_connect($host, $user, $password, $dbname);
 if (!$con) {
     die("Connection failed: " . mysqli_connect_error());
 }
-//mysqli_query($con, "SET NAMES 'utf8'");
-mysqli_set_charset($con, "utf8mb4");
+mysqli_query($con, "SET NAMES 'utf8'");
 
 $consulta = $_POST["consulta"];
 
@@ -427,6 +426,8 @@ else if ($consulta == "eliminar_imagen_variedad") {
 
 // Modificar la función agregar_variedad existente
 else if ($consulta == "agregar_variedad") {
+
+    mysqli_set_charset($con, "utf8mb4");
     $nombre = mysqli_real_escape_string($con, $_POST['nombre']);
     $codigo = mysqli_real_escape_string($con, $_POST['codigo']);
     $dias_produccion = $_POST["dias_produccion"] == null || $_POST["dias_produccion"] == '' ? "NULL" : $_POST["dias_produccion"];
@@ -497,6 +498,8 @@ else if ($consulta == "agregar_variedad") {
 
 // Modificar la función editar_variedad existente
 else if ($consulta == "editar_variedad") {
+
+    mysqli_set_charset($con, "utf8mb4");
     $id_variedad = $_POST['id_variedad'];
     $descripcion = isset($_POST['descripcion']) && !empty($_POST["descripcion"]) ? "'".mysqli_real_escape_string($con, $_POST['descripcion'])."'" : "NULL";     
     $nombre = mysqli_real_escape_string($con, $_POST["nombre"]);

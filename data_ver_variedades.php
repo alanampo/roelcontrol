@@ -9,7 +9,9 @@ $con = mysqli_connect($host, $user, $password, $dbname);
 if (!$con) {
     die("Connection failed: " . mysqli_connect_error());
 }
-mysqli_query($con, "SET NAMES 'utf8'");
+//mysqli_query($con, "SET NAMES 'utf8'");
+mysqli_set_charset($con, "utf8mb4");
+
 $consulta = $_POST["consulta"];
 
 if ($consulta == "busca_variedades") {

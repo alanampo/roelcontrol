@@ -403,7 +403,10 @@ function pone_tiposdeproducto() {
             $("#select_bandeja").html(`
                 <option value="128">128</option>
                 <option value="162">162</option>
+                <option value="200">200</option>
                 <option value="105">105</option>
+                <option value="72">72</option>
+                <option value="50">50</option>
               `);
           } else if (codigo == "S" || codigo == "HS") {
             $(".form-semillas").removeClass("d-none");
@@ -412,13 +415,17 @@ function pone_tiposdeproducto() {
                 <option value="200">200</option>
                 <option value="105">105</option>
                 <option value="50">50</option>
+                <option value="288">288</option>
+                <option value="128">128</option>
               `);
           } else {
             $("#select_bandeja").html(`
+              <option value="288">288</option>
                 <option value="200">200</option>
                 <option value="162">162</option>
                 <option value="128">128</option>
                 <option value="105">105</option>
+                <option value="72">72</option>
                 <option value="50">50</option>
               `);
           }
@@ -531,6 +538,18 @@ function carga_variedades(id_tipo) {
             $("#select_bandeja").selectpicker("val", "162");
           } else if (nombre.includes("BANDEJA 200")) {
             $("#select_bandeja").selectpicker("val", "200");
+          }
+          else if (nombre.includes("BANDEJA 72")) {
+            $("#select_bandeja").selectpicker("val", "72");
+          }
+          else if (nombre.includes("BANDEJA 50")) {
+            $("#select_bandeja").selectpicker("val", "50");
+          }
+          else if (nombre.includes("BANDEJA 288")) {
+            $("#select_bandeja").selectpicker("val", "288");
+          }
+          else if (nombre.includes("BANDEJA 105")) {
+            $("#select_bandeja").selectpicker("val", "105");
           }
 
           if (codigo == "S") {

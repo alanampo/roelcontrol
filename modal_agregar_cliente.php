@@ -67,6 +67,7 @@
                             <option value="CACHAPOAL">CACHAPOAL</option>
                             <option value="CAPITÁN PRAT">CAPITÁN PRAT</option>
                             <option value="CARDENAL CARO">CARDENAL CARO</option>
+                            <option value="CAUQUENES">CAUQUENES</option>
                             <option value="CAUTÍN">CAUTÍN</option>
                             <option value="CHAÑARAL">CHAÑARAL</option>
                             <option value="CHACABUCO">CHACABUCO</option>

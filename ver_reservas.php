@@ -185,7 +185,7 @@
                   <tr role="row">
                     <th class="text-center">Orden</th>
                     <th class="text-center">Producto</th>
-                    <th class="text-center">Cantidad<br>Bandejas</th>
+                    <th class="text-center">Cantidad<br>Plantas</th>
                     <th class="text-center">Cliente</th>
                   </tr>
                 </thead>

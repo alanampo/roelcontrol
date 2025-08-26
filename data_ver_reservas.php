@@ -103,6 +103,7 @@ if ($consulta == "busca_stock_actual") {
             r.visto,
             r.cantidad,
             r.origen,
+            u.nombre_real as nombre_usuario,
             DATE_FORMAT(r.fecha, '%d/%m/%y<br>%H:%i') as fecha,
             DATE_FORMAT(r.fecha, '%Y%m%d %H:%i') as fecha_raw,
             (SELECT IFNULL(SUM(s.cantidad),0) FROM stock_productos s
@@ -122,6 +123,7 @@ if ($consulta == "busca_stock_actual") {
             INNER JOIN tipos_producto t
             ON t.id = v.id_tipo
             INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
+            LEFT JOIN usuarios u ON u.id = r.id_usuario
             GROUP BY r.id
             ;
         ";
@@ -138,18 +140,18 @@ if ($consulta == "busca_stock_actual") {
         echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>ID</th><th>Producto</th><th>F.<br>Reserva</th><th>Cliente</th><th>Origen</th><th>Cant.<br>Reservada</th><th>Cant.<br>Entregada</th><th style='max-width:250px'>Comentarios</th><th>Estado</th><th style='max-width:50px'></th>";
+        echo "<th>ID</th><th>Producto</th><th>F.<br>Reserva</th><th>Cliente</th><th>Origen</th><th>Vendedor</th><th>Cant.<br>Reservada</th><th>Cant.<br>Entregada</th><th style='max-width:250px'>Comentarios</th><th>Estado</th><th style='max-width:50px'></th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
 
         while ($ww = mysqli_fetch_array($val)) {
-            $btn_cancelar = ($ww["estado"] == 0 || $ww["estado"] == 1 ? "<button onclick='cancelarReserva($ww[id_reserva])' class='btn btn-danger btn-sm mb-2'><i class='fa fa-ban'></i></button>" : "");
-            $btn_visto = ($ww["estado"] == 0 && $ww["visto"] == 0 ? "<button onclick='marcarVisto($ww[id_reserva])' class='btn btn-info btn-sm d-inline-block mb-2'><i class='fa fa-book'></i></button>" : "");
-            $btn_proceso = ($ww["estado"] == 0 ? "<button onclick='marcarEnProceso($ww[id_reserva])' class='btn btn-primary btn-sm d-inline-block'><i class='fa fa-spinner'></i></button>" : "");
+            $btn_cancelar = ($ww["estado"] == 0 || $ww["estado"] == 1 ? "<button onclick='cancelarReserva($ww[id_reserva])' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
+            $btn_visto = ($ww["estado"] == 0 && $ww["visto"] == 0 ? "<button onclick='marcarVisto($ww[id_reserva])' class='btn btn-info btn-sm d-inline-block mb-2' title='Marcar como Visto'><i class='fa fa-book'></i></button>" : "");
+            $btn_proceso = ($ww["estado"] == 0 ? "<button onclick='marcarEnProceso($ww[id_reserva])' class='btn btn-primary btn-sm d-inline-block' title='Marcar como En Proceso'><i class='fa fa-spinner'></i></button>" : "");
 
             $cant_disponible = (int) $ww["cantidad_stock"] - (int) $ww["cantidad_entregada_total"];
-            $btn_entregar = ($ww["estado"] == 0 || $ww["estado"] == 1 ? "<button onclick='entregar($ww[id_reserva], \"$ww[nombre_variedad]\", $ww[cantidad], $cant_disponible)' class='btn btn-success btn-sm d-inline-block'><i class='fa fa-truck'></i></button>" : "");
+            $btn_entregar = ($ww["estado"] == 0 || $ww["estado"] == 1 ? "<button onclick='entregar($ww[id_reserva], \"$ww[nombre_variedad]\", $ww[cantidad], $cant_disponible)' class='btn btn-success btn-sm d-inline-block' title='Entregar'><i class='fa fa-truck'></i></button>" : "");
 
             $comentario_cliente = ($ww["comentario"] != null ? "<p><small>CLIENTE: $ww[comentario]</small></p>" : "");
             $comentario_empresa = ($ww["comentario_empresa"] != null ? "<p class='text-danger'><small>EMPRESA: $ww[comentario_empresa]</small></p>" : "");
@@ -161,6 +163,7 @@ if ($consulta == "busca_stock_actual") {
           <td><span style='display:none'>$ww[fecha_raw]</span>$ww[fecha]</td>
           <td>$ww[nombre_cliente] ($ww[id_cliente])</td>
           <td>$ww[origen]</td>
+          <td>$ww[nombre_usuario]</td>
           <td>$ww[cantidad]</td>
           <td>$ww[cantidad_entregada]</td>
           <td style='text-transform:uppercase'>$comentario_cliente $comentario_empresa</td>
@@ -580,7 +583,8 @@ if ($consulta == "busca_stock_actual") {
                     id_cliente,
                     comentario,
                     estado,
-                    origen
+                    origen,
+                    id_usuario
                 ) VALUES (
                     $cantidad,
                     NOW(),
@@ -588,7 +592,8 @@ if ($consulta == "busca_stock_actual") {
                     $id_cliente,
                     '$comentario',
                     0,
-                    'ADMINISTRACION'
+                    'ADMINISTRACION',
+                    $_SESSION[id_usuario]
                 )";
 
                 if (!mysqli_query($con, $query)) {

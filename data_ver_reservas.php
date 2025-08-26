@@ -132,7 +132,7 @@ if ($consulta == "busca_stock_actual") {
 
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
-        echo "<h3 class='box-title'>Reservas</h3>";
+        echo "<h3 class='box-title'>Compras</h3>";
         echo "</div>";
         echo "<div class='box-body'>";
         echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";

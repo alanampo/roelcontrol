@@ -268,16 +268,17 @@ function modalEditStock(id_variedad) {
 
 // Función para guardar el stock de un artículo específico
 function guardarStockArticulo(id_artpedido, id_variedad) {
-  const inputElement = document.getElementById(`stock-input-${id_artpedido}`);
-  const nuevaCantidad = inputElement.value.trim();
+  const accion = document.querySelector(`input[name="accion-${id_artpedido}"]:checked`).value;
+  const inputElement = document.getElementById(`cantidad-ajuste-${id_artpedido}`);
+  const cantidad = inputElement.value.trim();
 
   // Validaciones
-  if (!nuevaCantidad || nuevaCantidad.length === 0 || isNaN(nuevaCantidad)) {
+  if (!cantidad || cantidad.length === 0 || isNaN(cantidad)) {
     swal("Ingresa una cantidad válida", "", "error");
     return;
   }
 
-  if (parseInt(nuevaCantidad) < 0) {
+  if (parseInt(cantidad) < 0) {
     swal("La cantidad no puede ser negativa", "", "error");
     return;
   }
@@ -295,7 +296,8 @@ function guardarStockArticulo(id_artpedido, id_variedad) {
       consulta: "actualizar_stock_articulo",
       id_artpedido: id_artpedido,
       id_variedad: id_variedad,
-      nueva_cantidad: parseInt(nuevaCantidad)
+      accion: accion,        // nuevo campo
+      cantidad: parseInt(cantidad) // nuevo campo
     },
     success: function (response) {
       console.log(response);
@@ -307,10 +309,8 @@ function guardarStockArticulo(id_artpedido, id_variedad) {
       if (response.trim() === "success") {
         swal("Stock actualizado correctamente!", "", "success");
 
-        // Opcional: Actualizar la tabla principal de stock si está visible
-        // Si tienes una función para refrescar la tabla principal, puedes llamarla aquí
-        // busca_stock_actual(); // Por ejemplo
-        busca_entradas("actual")
+        // Refrescar tablas/modales si hace falta
+        busca_entradas("actual");
         modalEditStock(id_variedad);
       } else if (response.trim().includes("error:")) {
         const errorMsg = response.trim().replace("error:", "");
@@ -329,6 +329,7 @@ function guardarStockArticulo(id_artpedido, id_variedad) {
     }
   });
 }
+
 
 // Función opcional para guardar con Enter
 $(document).on('keypress', '[id^="stock-input-"]', function (e) {

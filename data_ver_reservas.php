@@ -36,7 +36,7 @@ if ($consulta == "busca_stock_actual") {
   ON v.id = ap.id_variedad
   INNER JOIN tipos_producto t
   ON t.id = v.id_tipo
-  WHERE ap.estado >= 8 
+  WHERE ap.estado = 8 
   GROUP BY v.id;
           ";
 
@@ -428,7 +428,9 @@ if ($consulta == "busca_stock_actual") {
 
             // Usar stock actual en lugar de cantidad_info
             $stock_actual = $ww['stock_actual'] ? $ww['stock_actual'] : 0;
-
+            if ($stock_actual < 0){
+                continue;
+            }
             // Crear input editable para el stock
             $stock_input = "
     <div class='d-flex align-items-center justify-content-center'>

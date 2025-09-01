@@ -324,10 +324,29 @@ if ($consulta == "busca_pedidos") {
     }
 
 } else if ($consulta == "get_pedidos_para_produccion") {
-
+    
     $productos = str_replace("[", "(", $_POST["productos"]);
     $productos = str_replace("]", ")", $productos);
 
+    // Calculamos el stock de bandejas de forma más simple y eficiente
+    $stock_query = "SELECT 
+        combined.tipo_bandeja,
+        combined.condicion,
+        SUM(combined.cantidad) as stock_total
+        FROM (
+            SELECT tipo_bandeja, condicion, cantidad FROM stock_bandejas
+            UNION ALL
+            SELECT tipo_bandeja, condicion, -cantidad FROM stock_bandejas_retiros
+        ) AS combined
+        GROUP BY combined.tipo_bandeja, combined.condicion";
+    
+    $stock_result = mysqli_query($con, $stock_query);
+    $stock_data = array();
+    while ($stock = mysqli_fetch_array($stock_result)) {
+        $stock_data[$stock['tipo_bandeja']][$stock['condicion']] = max(0, $stock['stock_total']);
+    }
+
+    // Query principal optimizada
     $query = "SELECT
         t.nombre as nombre_tipo,
         v.nombre as nombre_variedad,
@@ -352,33 +371,10 @@ if ($consulta == "busca_pedidos") {
         ap.problema,
         ap.observacionproblema,
         ap.observacion,
-        p.id_pedido,
         u.iniciales,
         e.nombre as nombre_especie,
         ap.id_especie,
         ap.eliminado,
-            (
-            SELECT IFNULL(SUM(s.cantidad),0) as cantidad
-            FROM stock_bandejas s
-            WHERE
-            s.tipo_bandeja = ap.tipo_bandeja AND s.condicion = 1
-            ) - (
-            SELECT IFNULL(SUM(sr.cantidad),0) as cantidad
-            FROM stock_bandejas_retiros sr
-            WHERE
-            sr.tipo_bandeja = ap.tipo_bandeja AND sr.condicion = 1
-            ) AS stock_nuevas,
-            (
-            SELECT IFNULL(SUM(s.cantidad),0) as cantidad
-            FROM stock_bandejas s
-            WHERE
-            s.tipo_bandeja = ap.tipo_bandeja AND s.condicion = 0
-            ) - (
-            SELECT IFNULL(SUM(sr.cantidad),0) as cantidad
-            FROM stock_bandejas_retiros sr
-            WHERE
-            sr.tipo_bandeja = ap.tipo_bandeja AND sr.condicion = 0
-            ) AS stock_usadas,
         DATE_FORMAT(ap.fecha_ingreso, '%d/%m/%y') as fecha_ingreso_solicitada,
         DATE_FORMAT(ap.fecha_entrega, '%d/%m/%y') as fecha_entrega_solicitada
         FROM tipos_producto t
@@ -388,52 +384,62 @@ if ($consulta == "busca_pedidos") {
         INNER JOIN clientes c ON c.id_cliente = p.id_cliente
         LEFT JOIN usuarios u ON u.id = p.id_usuario
         LEFT JOIN especies_provistas e ON e.id = ap.id_especie
-        GROUP BY ap.id
-        HAVING ap.eliminado IS NULL AND ap.id IN $productos;
-        ";
+        WHERE ap.eliminado IS NULL AND ap.id IN $productos";
+
+    // Obtenemos todas las semillas de una vez
+    $semillas_query = "SELECT
+        sp.id,
+        sp.id_artpedido,
+        ss.id_cliente as id_cliente_semillas,
+        sp.id_stock_semillas as id_stock_semillas,
+        sp.cantidad as cantidad_semillas_stock,
+        ss.codigo as codigo_semillas,
+        ss.porcentaje as porcentaje_semillas,
+        ms.nombre as marca_semillas,
+        ps.nombre as proveedor_semillas,
+        ss.cantidad as cantidad_stock,
+        IFNULL(SUM(sr.cantidad), 0) as cantidad_retirada
+        FROM semillas_pedidos sp
+        INNER JOIN stock_semillas ss ON ss.id_stock = sp.id_stock_semillas
+        INNER JOIN semillas_marcas ms ON ms.id = ss.id_marca
+        INNER JOIN semillas_proveedores ps ON ps.id = ss.id_proveedor
+        LEFT JOIN stock_semillas_retiros sr ON sr.id_stock = ss.id_stock
+        WHERE sp.id_artpedido IN $productos
+        GROUP BY sp.id, sp.id_artpedido, ss.id_cliente, sp.id_stock_semillas, sp.cantidad, ss.codigo, ss.porcentaje, ms.nombre, ps.nombre, ss.cantidad";
+    
+    $semillas_result = mysqli_query($con, $semillas_query);
+    $semillas_data = array();
+    while ($sem = mysqli_fetch_array($semillas_result)) {
+        if (!isset($semillas_data[$sem['id_artpedido']])) {
+            $semillas_data[$sem['id_artpedido']] = array();
+        }
+        array_push($semillas_data[$sem['id_artpedido']], array(
+            "id_semillapedida" => $sem["id"],
+            "id_cliente" => $sem["id_cliente_semillas"],
+            "id_stock" => $sem["id_stock_semillas"],
+            "cantidad" => $sem["cantidad_semillas_stock"],
+            "codigo" => $sem["codigo_semillas"],
+            "porcentaje" => $sem["porcentaje_semillas"],
+            "marca" => $sem["marca_semillas"],
+            "proveedor" => $sem["proveedor_semillas"],
+            "cantidad_stock" => $sem["cantidad_stock"] - $sem["cantidad_retirada"]
+        ));
+    }
+    
     $val = mysqli_query($con, $query);
     if (mysqli_num_rows($val) > 0) {
         $arraypedidos = array();
         while ($ww = mysqli_fetch_array($val)) {
-            $querysemillas = "
-            SELECT
-            sp.id,
-            ss.id_cliente as id_cliente_semillas,
-            sp.id_stock_semillas as id_stock_semillas,
-            sp.cantidad as cantidad_semillas_stock,
-            ss.codigo as codigo_semillas,
-            ss.porcentaje as porcentaje_semillas,
-            ms.nombre as marca_semillas,
-            ps.nombre as proveedor_semillas,
-            ss.cantidad as cantidad_stock,
-            (SELECT IFNULL(SUM(sr.cantidad),0) FROM stock_semillas_retiros sr WHERE sr.id_stock = ss.id_stock) as cantidad_retirada
-            FROM semillas_pedidos sp
-            INNER JOIN stock_semillas ss ON ss.id_stock = sp.id_stock_semillas
-            INNER JOIN semillas_marcas ms ON ms.id = ss.id_marca
-            INNER JOIN semillas_proveedores ps ON ps.id = ss.id_proveedor
-            WHERE sp.id_artpedido = $ww[id_artpedido]
-            ";
-            
-            $valsemillas = mysqli_query($con, $querysemillas);
-            $datasemillas = NULL;
-            if (mysqli_num_rows($valsemillas) > 0) {
-                $datasemillas = array();
-                while ($data = mysqli_fetch_array($valsemillas)) {
-                    array_push($datasemillas, array(
-                        "id_semillapedida" => $data["id"],
-                        "id_cliente" => $data["id_cliente_semillas"],
-                        "id_stock" => $data["id_stock_semillas"],
-                        "cantidad" => $data["cantidad_semillas_stock"],
-                        "codigo" => $data["codigo_semillas"],
-                        "porcentaje" => $data["porcentaje_semillas"],
-                        "marca" => $data["marca_semillas"],
-                        "proveedor" => $data["proveedor_semillas"],
-                        "cantidad_stock" => $data["cantidad_stock"] - $data["cantidad_retirada"]
-                    ));
-                }
-            }
-
             $id_artpedido = $ww['id_artpedido'];
+            $tipo_bandeja = $ww['tipo_bandeja'];
+            
+            // Obtener stock desde el array precargado
+            $stock_nuevas = isset($stock_data[$tipo_bandeja][1]) ? $stock_data[$tipo_bandeja][1] : 0;
+            $stock_usadas = isset($stock_data[$tipo_bandeja][0]) ? $stock_data[$tipo_bandeja][0] : 0;
+            
+            // Obtener semillas desde el array precargado
+            $datasemillas = isset($semillas_data[$id_artpedido]) ? $semillas_data[$id_artpedido] : NULL;
+
             $especie = $ww["nombre_especie"] ? $ww["nombre_especie"] : "";
             $producto = "$ww[nombre_variedad] ($ww[codigo]" . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT) . ") <span class='text-primary'>$especie</span>";
             $id_especie = $ww["id_especie"] ? "-" . str_pad($ww["id_especie"], 2, '0', STR_PAD_LEFT) : "";
@@ -454,8 +460,8 @@ if ($consulta == "busca_pedidos") {
                 "cant_plantas" => $ww["cant_plantas"],
                 "nombre_cliente" => $ww["nombre_cliente"],
                 "tipo_bandeja" => $ww["tipo_bandeja"],
-                "stock_nuevas" => $ww["stock_nuevas"],
-                "stock_usadas" => $ww["stock_usadas"],
+                "stock_nuevas" => $stock_nuevas,
+                "stock_usadas" => $stock_usadas,
                 "codigo" => $ww["codigo"],
                 "id_especie" => $ww["id_especie"], //NO SIRVE
                 "id_variedad" => $ww["id_variedad"],

@@ -199,6 +199,7 @@
                   <option value="viveros">Viveros</option>
                   <option value="reservas">Reservas</option>
                   <option value="vivero">Seguimiento Vivero</option>
+                  <option value="laboratorio">Laboratorio</option>
                 </select>
 
               </div>

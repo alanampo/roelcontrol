@@ -54,7 +54,24 @@ else if ($tipo == "vivero") {
             </div>
         </a>
     ";
-} else if ($tipo == "pedidos") {
+} 
+else if ($tipo == "laboratorio") {
+    echo "
+        <a href=\"laboratorio.php\">
+            <div class=\"small-box bg-success\">
+                <div class=\"inner\">
+                    <p class='text-light'>Laboratorio</p>
+                </div>
+                <div class=\"icon\">
+                    <i class=\"ion ion-waterdrop\"></i>
+                </div>
+                <h3 style=\"visibility:hidden;\">0</h3>
+                <span class=\"small-box-footer\">Ver Módulo <i class=\"fa fa-arrow-circle-right\"></i></span>
+            </div>
+        </a>
+    ";
+}
+else if ($tipo == "pedidos") {
     $i = "0";
     $consulta = "SELECT  (SELECT COUNT(*)
                 FROM   articulospedidos WHERE eliminado IS NULL

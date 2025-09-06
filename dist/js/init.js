@@ -95,6 +95,20 @@ function pone_vivero() {
   });
 }
 
+function pone_laboratorio() {
+  $.ajax({
+    url: "pone_boxes.php",
+    type: "POST",
+    data: {tipo: "laboratorio"},
+    success: function (x) {
+      $(".col-laboratorio").html(x).removeClass("d-none");
+      $("#contenedor_modulos").append(
+        '<li><a href="laboratorio.php"><i class="fa fa-arrow-circle-right"></i> Laboratorio</a></li>'
+      );
+    },
+  });
+}
+
 function pone_mesadas() {
   $.ajax({
     url: "pone_boxes.php",

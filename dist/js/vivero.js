@@ -270,7 +270,7 @@ function MakeBox(producto, index, tipo_producto) {
   }
 
   let html = `<div x-id-real="${producto.id_artpedido
-    }" x-id="${codigo}" x-estado='${producto.estado}' x-parcial='${producto.es_entrega_parcial ? 1 : 0
+    }" x-id="${codigo}" x-codigo="${codigo}" x-estado='${producto.estado}' x-parcial='${producto.es_entrega_parcial ? 1 : 0
     }' class='cajita' onClick='toggleSelection(this)' style='word-wrap: break-word;touch-action: none;cursor:pointer;background-color:${producto.problema ? "#DA6E6B" : colores[index]
     };font-size:1.0em;'
       ondblclick='MostrarModalEstado(${producto.id_artpedido}, "${codigo}", "${producto.nombre_cliente
@@ -2064,8 +2064,29 @@ function guardarEnMesada() {
 
 function buscar() {
   const busqueda = $("#input-search").val().trim();
-  if (!busqueda.length || busqueda.length >= 3) {
-    loadPedidos(miTab.replace("tab-", ""))
+  if (!busqueda.length) {
+    // Mostrar todos los elementos
+    $(".cajita").show();
+    loadPedidos(miTab.replace("tab-", ""));
+    return;
+  }
+  
+  // Primero intentar filtrado local por código (sin restricción de longitud para códigos)
+  let encontrados = 0;
+  $(".cajita").each(function() {
+    const codigo = $(this).attr("x-id") || $(this).attr("x-codigo");
+    console.log("Código encontrado:", codigo, "Búsqueda:", busqueda);
+    if (codigo && codigo.toUpperCase().includes(busqueda.toUpperCase())) {
+      $(this).show();
+      encontrados++;
+    } else {
+      $(this).hide();
+    }
+  });
+  
+  // Si no se encontró nada con el filtrado local y la búsqueda tiene 3+ caracteres, buscar en servidor
+  if (encontrados === 0 && busqueda.length >= 3) {
+    loadPedidos(miTab.replace("tab-", ""));
   }
 }
 

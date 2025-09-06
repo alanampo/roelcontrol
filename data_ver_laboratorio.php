@@ -26,7 +26,7 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
         }
 
         $cadenaselect = "SELECT t.nombre as nombre_tipo, v.nombre as nombre_variedad, c.nombre as nombre_cliente, p.fecha, p.id_pedido, ap.id as id_artpedido, ap.cant_plantas, ap.cant_bandejas, ap.tipo_bandeja, t.codigo, v.id_interno, ap.estado, p.id_interno as id_pedido_interno,
-        ap.problema, ap.observacionproblema, c.id_cliente, ap.observacion, u.iniciales, ap.id_especie, e.nombre as nombre_especie
+        ap.problema, ap.observacionproblema, c.id_cliente, ap.observacion, u.iniciales, ap.id_especie, e.nombre as nombre_especie, ap.en_revision, ur.nombre_real as nombre_responsable
         FROM tipos_producto t
         INNER JOIN variedades_producto v ON v.id_tipo = t.id
         INNER JOIN articulospedidos ap ON ap.id_variedad = v.id
@@ -34,6 +34,7 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
         INNER JOIN clientes c ON c.id_cliente = p.id_cliente
         LEFT JOIN usuarios u ON u.id = p.id_usuario
         LEFT JOIN especies_provistas e ON e.id = ap.id_especie
+        LEFT JOIN usuarios ur ON ur.id = ap.id_usuario_responsable_laboratorio
         WHERE ap.eliminado IS NULL AND ap.estado >= 0 AND ap.estado <= 6 AND t.codigo IN $tipo_producto
         $strbusqueda
         ORDER BY p.fecha ASC;
@@ -64,6 +65,8 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
                     "iniciales" => $re["iniciales"],
                     "id_especie" => $re["id_especie"],
                     "id_cliente" => $re["id_cliente"],
+                    "en_revision" => $re["en_revision"],
+                    "nombre_responsable" => $re["nombre_responsable"],
                     "query" => $cadenaselect
                 ));
 
@@ -116,7 +119,7 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
         }
 
         $cadenaselect = "SELECT t.nombre as nombre_tipo, v.nombre as nombre_variedad, c.nombre as nombre_cliente, p.fecha, p.id_pedido, ap.id as id_artpedido, ap.cant_plantas, ap.cant_bandejas, ap.tipo_bandeja, t.codigo, v.id_interno, ap.estado, p.id_interno as id_pedido_interno,
-        ap.problema, ap.observacionproblema, c.id_cliente, ap.observacion, u.iniciales, ap.id_especie, e.nombre as nombre_especie
+        ap.problema, ap.observacionproblema, c.id_cliente, ap.observacion, u.iniciales, ap.id_especie, e.nombre as nombre_especie, ap.en_revision, ur.nombre_real as nombre_responsable
         FROM tipos_producto t
         INNER JOIN variedades_producto v ON v.id_tipo = t.id
         INNER JOIN articulospedidos ap ON ap.id_variedad = v.id
@@ -124,6 +127,7 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
         INNER JOIN clientes c ON c.id_cliente = p.id_cliente
         LEFT JOIN usuarios u ON u.id = p.id_usuario
         LEFT JOIN especies_provistas e ON e.id = ap.id_especie
+        LEFT JOIN usuarios ur ON ur.id = ap.id_usuario_responsable_laboratorio
         INNER JOIN atributos_valores_variedades avv ON avv.id_variedad = v.id
         INNER JOIN atributos_valores av ON av.id = avv.id_atributo_valor
         INNER JOIN atributos a ON a.id = av.id_atributo
@@ -159,6 +163,8 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
                     "iniciales" => $re["iniciales"],
                     "id_especie" => $re["id_especie"],
                     "id_cliente" => $re["id_cliente"],
+                    "en_revision" => $re["en_revision"],
+                    "nombre_responsable" => $re["nombre_responsable"],
                     "query" => $cadenaselect
                 ));
             }
@@ -476,11 +482,15 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
     mysqli_autocommit($con, false);
     for ($i = 0; $i < count($productos); $i++) {
         if ($etapa == -10 || $etapa == "-10") { //DEVOLVER A PENDIENTES (DESDE PRODUCCION)
-            $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
+            $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL, en_revision = NULL WHERE id = $productos[$i];";
         } else if ($etapa == 0 || $etapa == "0") {
             $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
-        } else {
-            $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa$etapa = NOW() WHERE id = $productos[$i];";
+        } else if ($etapa == 1 || $etapa == "1") { // ETAPA 1 - ASIGNAR RESPONSABLE
+            $id_usuario = $_SESSION["id_usuario"];
+            $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa$etapa = NOW(), en_revision = NULL, id_usuario_responsable_laboratorio = $id_usuario WHERE id = $productos[$i];";
+        } else { // ETAPAS 2-5 - ASIGNAR SOLO SI NO TIENE RESPONSABLE
+            $id_usuario = $_SESSION["id_usuario"];
+            $query = "UPDATE articulospedidos SET estado = $etapa, fecha_etapa$etapa = NOW(), en_revision = NULL, id_usuario_responsable_laboratorio = COALESCE(id_usuario_responsable_laboratorio, $id_usuario) WHERE id = $productos[$i];";
         }
         if (!mysqli_query($con, $query)) {
             $errors[] = mysqli_error($con);
@@ -516,6 +526,28 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
     mysqli_autocommit($con, false);
     for ($i = 0; $i < count($productos); $i++) {
         $query = "UPDATE articulospedidos SET estado = 0, sector = 'plantinera', fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
+        }
+    }
+
+    if (count($errors) === 0) {
+        if (mysqli_commit($con)) {
+            echo "success";
+        } else {
+            mysqli_rollback($con);
+        }
+    } else {
+        mysqli_rollback($con);
+        print_r($errors);
+    }
+    mysqli_close($con);
+} else if ($consulta == "revision_contaminacion") {
+    $productos = json_decode($_POST["productos"], true);
+    $errors = array();
+    mysqli_autocommit($con, false);
+    for ($i = 0; $i < count($productos); $i++) {
+        $query = "UPDATE articulospedidos SET en_revision = 1 WHERE id = $productos[$i];";
         if (!mysqli_query($con, $query)) {
             $errors[] = mysqli_error($con);
         }

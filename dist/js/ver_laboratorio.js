@@ -70,6 +70,7 @@ $(document).ready(function () {
     menu.style = `top:${e.clientY}px;left:${e.pageX - 40}px`;
     menu.onmouseleave = () => (ctxmenu.outerHTML = "");
     menu.innerHTML = `<p onclick='DeseleccionarTodo()'>Deseleccionar Todo</p>
+                        <p onclick='revisionContaminacion()'>REVISIÓN DE CONTAMINACIÓN</p>
                         <p onclick='cambiarEtapa(0)'>Pasar a Etapa 0</p>
                         <p onclick='cambiarEtapa(1)'>Pasar a Etapa 1</p>
                         <p onclick='cambiarEtapa(2)'>Pasar a Etapa 2</p>
@@ -78,6 +79,7 @@ $(document).ready(function () {
                         <p onclick='cambiarEtapa(5)'>Pasar a Etapa 5</p>
                         <p onclick='cambiarEtapa(-10)'>DEVOLVER A PENDIENTES</p>
                         <p onclick='enviarAPlantinera()'>ENVIAR A PLANTINERA</p>
+                        
                         `;
     document.body.appendChild(menu);
   };
@@ -372,6 +374,83 @@ function enviarAPlantinera() {
   });
 }
 
+function revisionContaminacion() {
+  if (!$(".selected").length) return;
+
+  let puede = true;
+  $(".selected").each(function (i, e) {
+    if ($(e).attr("x-estado") != "0") {
+      puede = false;
+    }
+  });
+
+  if (!puede) {
+    swal("Los pedidos deben estar en la ETAPA 0 para marcar como en revisión!", "", "error");
+    return;
+  }
+
+  let es_entrega_parcial = false;
+  $(".selected").each(function (i, e) {
+    if ($(e).attr("x-parcial") == "1" || $(e).attr("x-parcial") == 1) {
+      es_entrega_parcial = true;
+    }
+  });
+
+  if (es_entrega_parcial) {
+    swal("No se puede marcar un producto que ya fue entregado!", "", "error");
+    return;
+  }
+
+  swal("Marcar pedidos en REVISIÓN DE CONTAMINACIÓN?", "Los pedidos se marcarán como en revisión", {
+    icon: "info",
+    buttons: {
+      cancel: "Cancelar",
+      catch: {
+        text: "ACEPTAR",
+        value: "catch",
+      },
+    },
+  }).then((value) => {
+    switch (value) {
+      case "catch":
+        let productos = [];
+        $(".loading-wrapper").show();
+        $(".selected").each(function (i, e) {
+          const id_artpedido = $(e).attr("x-id-real");
+          productos.push(id_artpedido);
+        });
+
+        if (!productos.length) return;
+
+        $.ajax({
+          type: "POST",
+          url: "data_ver_laboratorio.php",
+          data: {
+            consulta: "revision_contaminacion",
+            productos: JSON.stringify(productos),
+          },
+          success: function (data) {
+            if (data.trim() == "success") {
+              swal("Marcaste los productos en REVISIÓN DE CONTAMINACIÓN!", "", "success");
+              if (!miTab || miTab == "tab-esquejes") loadEsquejes();
+              else if (miTab == "tab-semillas") loadSemillas();
+              else loadPedidos(miTab.replace("tab-", ""));
+            } else {
+              swal("Ocurrió un error al marcar los productos en revisión", data, "error");
+            }
+            $(".selected").removeClass("selected");
+            $("td").css({ "background-color": "" });
+          },
+        });
+
+        break;
+
+      default:
+        break;
+    }
+  });
+}
+
 function MakeBox(producto, index, tipo_producto) {
   let colores = [
     "#ffffff",
@@ -450,6 +529,17 @@ function MakeBox(producto, index, tipo_producto) {
         : producto.observacion
     }</div>`;
   }
+
+  let enRevision = "";
+  if (producto.estado == 0 && producto.en_revision == "1") {
+    enRevision = `<div style="font-size: 0.8em; font-weight: bold;" class='text-danger ml-1 mr-1 mb-1'>EN REVISIÓN</div>`;
+  }
+
+  let responsable = "";
+  if (producto.nombre_responsable) {
+    responsable = `<small class='text-primary font-weight-bold'>Responsable: ${producto.nombre_responsable}</small><br>`;
+  }
+
   let especie = "";
   if (producto.id_especie) {
     especie = `<span class='${
@@ -470,7 +560,8 @@ function MakeBox(producto, index, tipo_producto) {
       <span>${codigo}<br></span>
       <span style='font-weight:bold;'>${producto.nombre_variedad}<br>
       ${especie}
-      ${producto.nombre_cliente}<br>Cant. Plantas: ${producto.cant_plantas}
+      ${producto.nombre_cliente}<br>
+      ${responsable}Cant. Plantas: ${producto.cant_plantas}
         ${
           producto.cant_bandejas
             ? `<br>
@@ -482,6 +573,7 @@ function MakeBox(producto, index, tipo_producto) {
         ${fecha}</span>
         ${observacionproblema}
         ${observacion}
+        ${enRevision}
         </span></div>`;
 
   return html;

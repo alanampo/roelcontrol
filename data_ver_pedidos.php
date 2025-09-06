@@ -555,10 +555,27 @@ if ($consulta == "busca_pedidos") {
                     
                     mysqli_autocommit($con, false);
                     if ($total_semillas && $total_semillas > 0){
-                        $query = "UPDATE articulospedidos SET estado = 0, cant_semillas = $total_semillas WHERE id = $id_artpedido;";
+                        $query = "UPDATE articulospedidos a 
+                                 JOIN variedades_producto vp ON a.id_variedad = vp.id 
+                                 JOIN tipos_producto tp ON vp.id_tipo = tp.id 
+                                 SET a.estado = 0, 
+                                     a.sector = CASE 
+                                         WHEN tp.nombre = 'INVITRO' AND a.sector IS NULL THEN 'laboratorio'
+                                         ELSE 'plantinera'
+                                     END,
+                                     a.cant_semillas = $total_semillas 
+                                 WHERE a.id = $id_artpedido;";
                     }
                     else{
-                        $query = "UPDATE articulospedidos SET estado = 0 WHERE id = $id_artpedido;";
+                        $query = "UPDATE articulospedidos a 
+                                 JOIN variedades_producto vp ON a.id_variedad = vp.id 
+                                 JOIN tipos_producto tp ON vp.id_tipo = tp.id 
+                                 SET a.estado = 0, 
+                                     a.sector = CASE 
+                                         WHEN tp.nombre = 'INVITRO' AND a.sector IS NULL THEN 'laboratorio'
+                                         ELSE 'plantinera'
+                                     END
+                                 WHERE a.id = $id_artpedido;";
                     }
                     if (!mysqli_query($con, $query)) {
                         $errors[] = mysqli_error($con);

@@ -343,7 +343,7 @@ function MakeBox(producto, index, tipo_producto) {
     producto.iniciales +
     producto.id_pedido_interno +
     "/M" +
-    date.format("M") +
+    date.format("MM") +
     "/" +
     date.format("DD") +
     "/" +

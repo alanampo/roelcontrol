@@ -21,7 +21,7 @@ foreach ($lines as $line) {
     }
   }
 }
-$version = 671;
+$version = 672;
 header('Content-type: text/html; charset=utf-8');
 if (!isset($_SESSION["roel-token"]) || !isset($_COOKIE["roel-token"])) {
   setcookie('roel-usuario', '', time() - 3600, '/');

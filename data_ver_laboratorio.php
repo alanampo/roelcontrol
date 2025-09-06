@@ -130,6 +130,7 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
         WHERE ap.eliminado IS NULL AND ap.estado >= 0 AND ap.estado <= 6
         $condicion_atributo
         $strbusqueda
+        AND (ap.sector != 'plantinera' OR ap.sector IS NULL)
         ORDER BY p.fecha ASC;
         ";
 
@@ -495,6 +496,28 @@ if ($consulta == "cargar_esquejes" || $consulta == "cargar_semillas") {
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con);
             }
+        }
+    }
+
+    if (count($errors) === 0) {
+        if (mysqli_commit($con)) {
+            echo "success";
+        } else {
+            mysqli_rollback($con);
+        }
+    } else {
+        mysqli_rollback($con);
+        print_r($errors);
+    }
+    mysqli_close($con);
+} else if ($consulta == "enviar_plantinera") {
+    $productos = json_decode($_POST["productos"], true);
+    $errors = array();
+    mysqli_autocommit($con, false);
+    for ($i = 0; $i < count($productos); $i++) {
+        $query = "UPDATE articulospedidos SET estado = 0, sector = 'plantinera', fecha_etapa1 = NULL, fecha_etapa2 = NULL, fecha_etapa3 = NULL, fecha_etapa4 = NULL, fecha_etapa5 = NULL WHERE id = $productos[$i];";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
         }
     }
 

@@ -77,6 +77,7 @@ $(document).ready(function () {
                         <p onclick='cambiarEtapa(4)'>Pasar a Etapa 4</p>
                         <p onclick='cambiarEtapa(5)'>Pasar a Etapa 5</p>
                         <p onclick='cambiarEtapa(-10)'>DEVOLVER A PENDIENTES</p>
+                        <p onclick='enviarAPlantinera()'>ENVIAR A PLANTINERA</p>
                         `;
     document.body.appendChild(menu);
   };
@@ -294,6 +295,83 @@ function cambiarEtapa(etapa) {
   });
 }
 
+function enviarAPlantinera() {
+  if (!$(".selected").length) return;
+
+  let puede = true;
+  $(".selected").each(function (i, e) {
+    if ($(e).attr("x-estado") != "5") {
+      puede = false;
+    }
+  });
+
+  if (!puede) {
+    swal("Los pedidos deben estar en la ETAPA 5 para enviar a plantinera!", "", "error");
+    return;
+  }
+
+  let es_entrega_parcial = false;
+  $(".selected").each(function (i, e) {
+    if ($(e).attr("x-parcial") == "1" || $(e).attr("x-parcial") == 1) {
+      es_entrega_parcial = true;
+    }
+  });
+
+  if (es_entrega_parcial) {
+    swal("No se puede mover un producto que ya fue entregado!", "", "error");
+    return;
+  }
+
+  swal("Enviar pedidos a PLANTINERA?", "Los pedidos pasarán a ETAPA 0 y se asignará el sector PLANTINERA", {
+    icon: "info",
+    buttons: {
+      cancel: "Cancelar",
+      catch: {
+        text: "ACEPTAR",
+        value: "catch",
+      },
+    },
+  }).then((value) => {
+    switch (value) {
+      case "catch":
+        let productos = [];
+        $(".loading-wrapper").show();
+        $(".selected").each(function (i, e) {
+          const id_artpedido = $(e).attr("x-id-real");
+          productos.push(id_artpedido);
+        });
+
+        if (!productos.length) return;
+
+        $.ajax({
+          type: "POST",
+          url: "data_ver_laboratorio.php",
+          data: {
+            consulta: "enviar_plantinera",
+            productos: JSON.stringify(productos),
+          },
+          success: function (data) {
+            if (data.trim() == "success") {
+              swal("Enviaste los productos a PLANTINERA correctamente!", "", "success");
+              if (!miTab || miTab == "tab-esquejes") loadEsquejes();
+              else if (miTab == "tab-semillas") loadSemillas();
+              else loadPedidos(miTab.replace("tab-", ""));
+            } else {
+              swal("Ocurrió un error al enviar los productos a PLANTINERA", data, "error");
+            }
+            $(".selected").removeClass("selected");
+            $("td").css({ "background-color": "" });
+          },
+        });
+
+        break;
+
+      default:
+        break;
+    }
+  });
+}
+
 function MakeBox(producto, index, tipo_producto) {
   let colores = [
     "#ffffff",
@@ -343,7 +421,7 @@ function MakeBox(producto, index, tipo_producto) {
     producto.iniciales +
     producto.id_pedido_interno +
     "/M" +
-    date.format("M") +
+    date.format("MM") +
     "/" +
     date.format("DD") +
     "/" +

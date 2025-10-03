@@ -45,4 +45,14 @@ else if ($consulta == "pone_clientes"){
         }
     }
 }
+else if ($consulta == "pone_usuarios"){
+    $cadena="SELECT id, nombre_real FROM usuarios ORDER BY nombre_real";
+    $val = mysqli_query($con, $cadena);
+    if (mysqli_num_rows($val)>0){
+        while($re=mysqli_fetch_array($val)){
+            $nombre = mysqli_real_escape_string($con, $re["nombre_real"]);
+            echo "<option value='$re[id]'>$nombre ($re[id])</option>";
+        }
+    }
+}
 ?>

@@ -13,9 +13,10 @@ if (!$con) {
 }
 mysqli_query($con,"SET NAMES 'utf8'");
 
-$cadena="SELECT c.id_cliente as id_cliente, UPPER(c.razon_social) as razon_social, c.nombre as nombre, c.domicilio as domicilio, c.domicilio2, c.telefono, c.mail as mail, c.provincia, c.region, c.rut as rut, com.ciudad as ciudad, com.nombre as comuna, com.id as id_comuna  
-FROM clientes c 
+$cadena="SELECT c.id_cliente as id_cliente, UPPER(c.razon_social) as razon_social, c.nombre as nombre, c.domicilio as domicilio, c.domicilio2, c.telefono, c.mail as mail, c.provincia, c.region, c.rut as rut, c.id_vendedor, com.ciudad as ciudad, com.nombre as comuna, com.id as id_comuna, u.nombre_real as vendedor_nombre
+FROM clientes c
 LEFT JOIN comunas com ON c.comuna = com.id
+LEFT JOIN usuarios u ON c.id_vendedor = u.id
 ORDER BY nombre ASC;";
 
 $val = mysqli_query($con, $cadena);
@@ -30,7 +31,7 @@ if (mysqli_num_rows($val)>0){
  echo "<tr>";
  $th_eliminar = ($_SESSION["id_usuario"] == 1 ? "<th></th>" :"");
 
- echo "<th>ID</th><th>Nombre</th><th>Razon Social</th><th>Domicilio</th><th>Domicilio Envío</th><th>Teléfono</th><th>E-Mail</th><th>R.U.T</th><th>Ciudad</th><th>Comuna</th><th>Provincia</th><th>Región</th>$th_eliminar";
+ echo "<th>ID</th><th>Nombre</th><th>Razon Social</th><th>Domicilio</th><th>Domicilio Envío</th><th>Teléfono</th><th>E-Mail</th><th>R.U.T</th><th>Ciudad</th><th>Comuna</th><th>Provincia</th><th>Región</th><th>Vendedor</th>$th_eliminar";
  echo "</tr>";
  echo "</thead>";
  echo "<tbody>";
@@ -43,8 +44,10 @@ if (mysqli_num_rows($val)>0){
 
      $telefono = $ww['telefono'];
      $mail = $ww['mail'];
-    
-   echo "<tr x-id-comuna='$ww[id_comuna]' id='cliente_$id_cliente' style='cursor:pointer;'>";
+     $id_vendedor = $ww['id_vendedor'] ? $ww['id_vendedor'] : '';
+     $vendedor_nombre = $ww['vendedor_nombre'] ? $ww['vendedor_nombre'] : '-';
+
+   echo "<tr x-id-comuna='$ww[id_comuna]' x-id-vendedor='$id_vendedor' id='cliente_$id_cliente' style='cursor:pointer;'>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center; color:#1F618D; font-weight:bold; font-size:16px;'>$id_cliente</td>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$nombre</td>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$ww[razon_social]</td>";
@@ -57,6 +60,7 @@ if (mysqli_num_rows($val)>0){
    echo "<td style='text-align: center;'>$ww[comuna]</td>";
    echo "<td class='td-provincia' style='text-align: center;'>$ww[provincia]</td>";
    echo "<td class='td-region' style='text-align: center;'>$ww[region]</td>";
+   echo "<td style='text-align: center;'>$vendedor_nombre</td>";
    
    if ($_SESSION["id_usuario"] == 1){
     echo "<td style='text-align: center;'>

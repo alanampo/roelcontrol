@@ -2,6 +2,7 @@ let edit_mode = false;
 let global_id_cliente = null;
 $(document).ready(function () {
   pone_comunas();
+  pone_usuarios();
   global_id_cliente = null;
   edit_mode = false;
 
@@ -30,6 +31,7 @@ function MostrarModalAgregarCliente() {
   $("#ModalAgregarCliente").find("input").val("");
   $("#ModalAgregarCliente").find("#titulo").html("Agregar Cliente");
   $("#select-comuna2").val("default").selectpicker("refresh");
+  $("#select-vendedor").val("default").selectpicker("refresh");
   $("#ModalAgregarCliente").modal("show");
   document.getElementById("nombrecliente_txt").focus();
 }
@@ -45,6 +47,7 @@ function GuardarCliente() {
   const comuna = $("#select-comuna2 option:selected").val();
   const provincia = $("#provinciacliente_txt").val().trim();
   const region = $("#regioncliente_txt").val().trim();
+  const id_vendedor = $("#select-vendedor option:selected").val();
   if (nombre.length < 3) {
     swal("Debes ingresar un nombre de al menos 3 letras", "", "error");
   } else if (domicilio.length < 3) {
@@ -72,6 +75,7 @@ function GuardarCliente() {
         comuna: comuna,
         provincia: provincia,
         region: region,
+        id_vendedor: id_vendedor,
         id_cliente: edit_mode ? global_id_cliente : null,
       },
       success: function (x) {
@@ -117,6 +121,23 @@ function pone_comunas() {
   });
 }
 
+function pone_usuarios() {
+  $.ajax({
+    beforeSend: function () {
+      $("#select-vendedor").html("Cargando lista de usuarios...");
+    },
+    url: "data_ver_clientes.php",
+    type: "POST",
+    data: { consulta: "pone_usuarios" },
+    success: function (x) {
+      $("#select-vendedor").html(x).selectpicker("refresh");
+    },
+    error: function (jqXHR, estado, error) {
+      $("#select-vendedor").html("Error al cargar usuarios").selectpicker("refresh");
+    },
+  });
+}
+
 function MostrarModalModificarCliente(id_cliente) {
   let indice = $("#" + id_cliente)
     .closest("tr")
@@ -145,7 +166,9 @@ function MostrarModalModificarCliente(id_cliente) {
     .text();
   let comuna = $("#" + id_cliente)
     .closest("tr").attr("x-id-comuna")
- 
+  let id_vendedor = $("#" + id_cliente)
+    .closest("tr").attr("x-id-vendedor")
+
   const tr = $("#tabla")
   .find("tr:eq(" + (parseInt(indice) + 1).toString() + ")");
   const provincia = $(tr).find(".td-provincia").text();
@@ -160,6 +183,7 @@ function MostrarModalModificarCliente(id_cliente) {
   $("#mailcliente_txt").val(mail);
   $("#rutcliente_txt").val(rut);
   $("#select-comuna2").val(comuna).selectpicker("refresh")
+  $("#select-vendedor").val(id_vendedor).selectpicker("refresh")
   $("#provinciacliente_txt").val(provincia);
   $("#regioncliente_txt").val(region);
   global_id_cliente = id;

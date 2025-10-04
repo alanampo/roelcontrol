@@ -55,10 +55,11 @@
 
         <!-- Main content -->
         <section class="content">
-        
+
           <div class="row">
             <div class="col text-lg-right text-center">
-              <button class="btn btn-success btn-round fa fa-plus-square" style="font-size: 1.4em" onclick="MostrarModalAgregarCliente();"> <span style="font-family: Arial">AGREGAR</span></button>
+              <button class="btn btn-info" onclick="sincronizarVendedoresManual();" id="btn-sync-vendedores"><i class="fa fa-refresh"></i> ACTUALIZAR VENDEDORES</button>
+              <button class="btn btn-success" onclick="MostrarModalAgregarCliente();"><i class="fa fa-plus-square"></i> AGREGAR</span></button>
             </div>
           </div>
 

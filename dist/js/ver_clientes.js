@@ -1,4 +1,7 @@
 $(document).ready(function(){
+  // Sincronización automática en segundo plano (si pasaron +24h)
+  sincronizarVendedoresAuto();
+
   busca_clientes()
   cargar_vendedores_para_cambio()
 })
@@ -234,6 +237,74 @@ function verHistorialVendedor(id_cliente, nombre_cliente) {
       $("#contenido-historial").html(
         '<div class="alert alert-danger">Error al cargar el historial: ' + error + "</div>"
       );
+    },
+  });
+}
+
+// Sincronización automática (solo si pasaron +24h)
+function sincronizarVendedoresAuto() {
+  $.ajax({
+    url: "sincronizar_vendedores.php",
+    type: "POST",
+    data: { auto_sync: "true" },
+    success: function (response) {
+      try {
+        const result = JSON.parse(response);
+        if (result.status === 'success') {
+          console.log('Sincronización automática completada:', result.timestamp);
+        } else if (result.status === 'skip') {
+          console.log('Sincronización omitida:', result.mensaje);
+        }
+      } catch (e) {
+        console.error('Error en sincronización automática:', e);
+      }
+    },
+    error: function (jqXHR, estado, error) {
+      console.error('Error en sincronización automática:', error);
+    },
+  });
+}
+
+// Sincronización manual (siempre se ejecuta)
+function sincronizarVendedoresManual() {
+  const $btn = $("#btn-sync-vendedores");
+  const textoOriginal = $btn.html();
+
+  // Deshabilitar botón y mostrar estado
+  $btn.prop("disabled", true);
+  $btn.html('<i class="fa fa-spin fa-spinner"></i> <span style="font-family: Arial">SINCRONIZANDO...</span>');
+
+  $.ajax({
+    url: "sincronizar_vendedores.php",
+    type: "POST",
+    data: { auto_sync: "false" },
+    success: function (response) {
+      try {
+        const result = JSON.parse(response);
+
+        if (result.status === 'success') {
+          swal("Sincronización completada", "Fechas actualizadas y vendedores verificados correctamente", "success");
+          // Recargar tabla de clientes
+          busca_clientes();
+        } else if (result.status === 'error') {
+          swal("Error en sincronización", result.mensaje, "error");
+        } else {
+          swal("Información", result.mensaje, "info");
+        }
+      } catch (e) {
+        swal("Error", "Error al procesar respuesta: " + response, "error");
+      }
+
+      // Restaurar botón
+      $btn.prop("disabled", false);
+      $btn.html(textoOriginal);
+    },
+    error: function (jqXHR, estado, error) {
+      swal("Error de conexión", "No se pudo completar la sincronización: " + error, "error");
+
+      // Restaurar botón
+      $btn.prop("disabled", false);
+      $btn.html(textoOriginal);
     },
   });
 }

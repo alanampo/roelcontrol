@@ -13,7 +13,8 @@ if (!$con) {
 }
 mysqli_query($con,"SET NAMES 'utf8'");
 
-$cadena="SELECT c.id_cliente as id_cliente, UPPER(c.razon_social) as razon_social, c.nombre as nombre, c.domicilio as domicilio, c.domicilio2, c.telefono, c.mail as mail, c.provincia, c.region, c.rut as rut, c.id_vendedor, com.ciudad as ciudad, com.nombre as comuna, com.id as id_comuna, u.nombre_real as vendedor_nombre
+$cadena="SELECT c.id_cliente as id_cliente, UPPER(c.razon_social) as razon_social, c.nombre as nombre, c.domicilio as domicilio, c.domicilio2, c.telefono, c.mail as mail, c.provincia, c.region, c.rut as rut, c.id_vendedor, c.fecha_ultimo_contacto, com.ciudad as ciudad, com.nombre as comuna, com.id as id_comuna, u.nombre_real as vendedor_nombre,
+DATE_FORMAT(c.fecha_ultimo_contacto, '%d/%m/%Y') as fecha_ultimo_contacto_format
 FROM clientes c
 LEFT JOIN comunas com ON c.comuna = com.id
 LEFT JOIN usuarios u ON c.id_vendedor = u.id
@@ -26,12 +27,12 @@ if (mysqli_num_rows($val)>0){
  echo "<div class='box-header with-border'>";
  echo "</div>";
  echo "<div class='box-body'>";
- echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
+ echo "<table id='tabla' class='table table-bordered table-striped' style='width:100%'>";
  echo "<thead>";
  echo "<tr>";
  $th_eliminar = ($_SESSION["id_usuario"] == 1 ? "<th></th>" :"");
 
- echo "<th>ID</th><th>Nombre</th><th>Razon Social</th><th>Domicilio</th><th>Domicilio Envío</th><th>Teléfono</th><th>E-Mail</th><th>R.U.T</th><th>Ciudad</th><th>Comuna</th><th>Provincia</th><th>Región</th><th>Vendedor</th>$th_eliminar";
+ echo "<th>ID</th><th>Nombre</th><th>Razon Social</th><th>Domicilio</th><th>Domicilio Envío</th><th>Teléfono</th><th>E-Mail</th><th>R.U.T</th><th>Ciudad</th><th>Comuna</th><th>Provincia</th><th>Región</th><th>Vendedor</th><th>Últ. Contacto</th>$th_eliminar";
  echo "</tr>";
  echo "</thead>";
  echo "<tbody>";
@@ -46,8 +47,18 @@ if (mysqli_num_rows($val)>0){
      $mail = $ww['mail'];
      $id_vendedor = $ww['id_vendedor'] ? $ww['id_vendedor'] : '';
      $vendedor_nombre = $ww['vendedor_nombre'] ? $ww['vendedor_nombre'] : '-';
+     $fecha_ultimo_contacto = $ww['fecha_ultimo_contacto_format'] ? $ww['fecha_ultimo_contacto_format'] : '-';
 
-   echo "<tr x-id-comuna='$ww[id_comuna]' x-id-vendedor='$id_vendedor' id='cliente_$id_cliente' style='cursor:pointer;'>";
+     // Verificar si han pasado más de 6 meses sin contacto
+     $alerta_inactividad = '';
+     if ($ww['fecha_ultimo_contacto'] && $ww['id_vendedor']) {
+         $fecha_limite = date('Y-m-d', strtotime('-6 months'));
+         if ($ww['fecha_ultimo_contacto'] < $fecha_limite) {
+             $alerta_inactividad = " style='background-color: #ffcccc;'";
+         }
+     }
+
+   echo "<tr x-id-comuna='$ww[id_comuna]' x-id-vendedor='$id_vendedor' id='cliente_$id_cliente' style='cursor:pointer;'$alerta_inactividad>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center; color:#1F618D; font-weight:bold; font-size:16px;'>$id_cliente</td>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$nombre</td>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$ww[razon_social]</td>";
@@ -60,7 +71,12 @@ if (mysqli_num_rows($val)>0){
    echo "<td style='text-align: center;'>$ww[comuna]</td>";
    echo "<td class='td-provincia' style='text-align: center;'>$ww[provincia]</td>";
    echo "<td class='td-region' style='text-align: center;'>$ww[region]</td>";
-   echo "<td style='text-align: center;'>$vendedor_nombre</td>";
+   echo "<td style='text-align: center; white-space: nowrap;'>
+       <span>$vendedor_nombre</span>
+       <button class='btn btn-xs btn-info fa fa-exchange' style='margin-left: 5px; padding: 2px 6px; font-size: 0.8em;' onclick='event.stopPropagation(); mostrarModalCambiarVendedor($id_cliente, \"$nombre\", $id_vendedor)' title='Cambiar vendedor'></button>
+       <button class='btn btn-xs btn-default fa fa-history' style='margin-left: 3px; padding: 2px 6px; font-size: 0.8em;' onclick='event.stopPropagation(); verHistorialVendedor($id_cliente, \"$nombre\")' title='Ver historial de cambios'></button>
+   </td>";
+   echo "<td style='text-align: center;'>$fecha_ultimo_contacto</td>";
    
    if ($_SESSION["id_usuario"] == 1){
     echo "<td style='text-align: center;'>

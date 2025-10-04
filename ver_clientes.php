@@ -57,13 +57,21 @@
         <section class="content">
 
           <div class="row">
-            <div class="col text-lg-right text-center">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label style="cursor: pointer;">
+                  <input type="checkbox" id="filtro-sin-vendedor" style="margin-right: 8px;">
+                  <span style="font-size: 14px;">Mostrar solo clientes sin vendedor asignado</span>
+                </label>
+              </div>
+            </div>
+            <div class="col-md-6 text-lg-right text-center">
               <button class="btn btn-info" onclick="sincronizarVendedoresManual();" id="btn-sync-vendedores"><i class="fa fa-refresh"></i> ACTUALIZAR VENDEDORES</button>
               <button class="btn btn-success" onclick="MostrarModalAgregarCliente();"><i class="fa fa-plus-square"></i> AGREGAR</span></button>
             </div>
           </div>
 
-        
+
           <!-- Your Page Content Here -->
           <div class='row mt-3 mb-5'>
           

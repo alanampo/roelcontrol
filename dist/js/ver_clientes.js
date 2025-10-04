@@ -1,9 +1,16 @@
+let tablaClientes = null;
+
 $(document).ready(function(){
   // Sincronización automática en segundo plano (si pasaron +24h)
   sincronizarVendedoresAuto();
 
   busca_clientes()
   cargar_vendedores_para_cambio()
+
+  // Event listener para el checkbox de filtro
+  $("#filtro-sin-vendedor").on("change", function() {
+    aplicarFiltroSinVendedor();
+  });
 })
 
 function cargar_vendedores_para_cambio() {
@@ -21,17 +28,19 @@ function cargar_vendedores_para_cambio() {
 }
 
 function busca_clientes() {
+  const filtroSinVendedor = $("#filtro-sin-vendedor").is(":checked");
+
   $.ajax({
     beforeSend: function () {
       $("#tabla_entradas").html("Cargando clientes, espere...");
     },
     url: "busca_clientes.php",
     type: "POST",
-    data: null,
+    data: { sin_vendedor: filtroSinVendedor ? "true" : "false" },
     success: function (x) {
       $("#tabla_entradas").html(x);
 
-      $("#tabla").DataTable({
+      tablaClientes = $("#tabla").DataTable({
         order: [[1, "asc"]],
         pageLength: 50,
         scrollX: true,
@@ -307,4 +316,9 @@ function sincronizarVendedoresManual() {
       $btn.html(textoOriginal);
     },
   });
+}
+
+// Filtrar clientes sin vendedor
+function aplicarFiltroSinVendedor() {
+  busca_clientes();
 }

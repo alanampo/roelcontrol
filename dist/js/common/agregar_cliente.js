@@ -32,6 +32,7 @@ function MostrarModalAgregarCliente() {
   $("#ModalAgregarCliente").find("#titulo").html("Agregar Cliente");
   $("#select-comuna2").val("default").selectpicker("refresh");
   $("#select-vendedor").val("default").selectpicker("refresh");
+  $("#grupo-vendedor-agregar").show();
   $("#ModalAgregarCliente").modal("show");
   document.getElementById("nombrecliente_txt").focus();
 }
@@ -47,7 +48,7 @@ function GuardarCliente() {
   const comuna = $("#select-comuna2 option:selected").val();
   const provincia = $("#provinciacliente_txt").val().trim();
   const region = $("#regioncliente_txt").val().trim();
-  const id_vendedor = $("#select-vendedor option:selected").val();
+  const id_vendedor = !edit_mode ? $("#select-vendedor option:selected").val() : null;
   if (nombre.length < 3) {
     swal("Debes ingresar un nombre de al menos 3 letras", "", "error");
   } else if (domicilio.length < 3) {
@@ -166,8 +167,6 @@ function MostrarModalModificarCliente(id_cliente) {
     .text();
   let comuna = $("#" + id_cliente)
     .closest("tr").attr("x-id-comuna")
-  let id_vendedor = $("#" + id_cliente)
-    .closest("tr").attr("x-id-vendedor")
 
   const tr = $("#tabla")
   .find("tr:eq(" + (parseInt(indice) + 1).toString() + ")");
@@ -183,9 +182,9 @@ function MostrarModalModificarCliente(id_cliente) {
   $("#mailcliente_txt").val(mail);
   $("#rutcliente_txt").val(rut);
   $("#select-comuna2").val(comuna).selectpicker("refresh")
-  $("#select-vendedor").val(id_vendedor).selectpicker("refresh")
   $("#provinciacliente_txt").val(provincia);
   $("#regioncliente_txt").val(region);
+  $("#grupo-vendedor-agregar").hide();
   global_id_cliente = id;
   edit_mode = true;
   $("#ModalAgregarCliente").modal("show");

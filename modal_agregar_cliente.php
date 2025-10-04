@@ -189,7 +189,7 @@
                         </form>
                     </div>
                 </div>
-                <div class='form-group'>
+                <div class='form-group' id='grupo-vendedor-agregar'>
                     <div>
                         <label class="control-label">Vendedor Asignado:</label>
                     </div>

@@ -13,11 +13,20 @@ if (!$con) {
 }
 mysqli_query($con,"SET NAMES 'utf8'");
 
+// Filtro de clientes sin vendedor
+$filtro_sin_vendedor = isset($_POST['sin_vendedor']) && $_POST['sin_vendedor'] == 'true';
+
+$where_clause = "";
+if ($filtro_sin_vendedor) {
+    $where_clause = "WHERE c.id_vendedor IS NULL";
+}
+
 $cadena="SELECT c.id_cliente as id_cliente, UPPER(c.razon_social) as razon_social, c.nombre as nombre, c.domicilio as domicilio, c.domicilio2, c.telefono, c.mail as mail, c.provincia, c.region, c.rut as rut, c.id_vendedor, c.fecha_ultimo_contacto, com.ciudad as ciudad, com.nombre as comuna, com.id as id_comuna, u.nombre_real as vendedor_nombre,
 DATE_FORMAT(c.fecha_ultimo_contacto, '%d/%m/%Y') as fecha_ultimo_contacto_format
 FROM clientes c
 LEFT JOIN comunas com ON c.comuna = com.id
 LEFT JOIN usuarios u ON c.id_vendedor = u.id
+$where_clause
 ORDER BY nombre ASC;";
 
 $val = mysqli_query($con, $cadena);

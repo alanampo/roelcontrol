@@ -81,11 +81,8 @@ if ($tipo == "agregar") {
         die("Ya existe un Cliente con ese RUT");
     }
     else{
-        if ($id_vendedor !== null) {
-            $query = "UPDATE clientes SET nombre = UPPER('$nombre'), domicilio = UPPER('$domicilio'), domicilio2 = UPPER('$domicilio2'), telefono = '$telefono', mail = LOWER('$mail'), rut = UPPER('$rut'), comuna = $comuna, razon_social = UPPER('$razon_social'), region = UPPER('$region'), provincia = UPPER('$provincia'), id_vendedor = $id_vendedor WHERE id_cliente = '$global_id_cliente';";
-        } else {
-            $query = "UPDATE clientes SET nombre = UPPER('$nombre'), domicilio = UPPER('$domicilio'), domicilio2 = UPPER('$domicilio2'), telefono = '$telefono', mail = LOWER('$mail'), rut = UPPER('$rut'), comuna = $comuna, razon_social = UPPER('$razon_social'), region = UPPER('$region'), provincia = UPPER('$provincia'), id_vendedor = NULL WHERE id_cliente = '$global_id_cliente';";
-        }
+        // En modo edición NO se actualiza el vendedor (se usa el modal de cambio de vendedor para eso)
+        $query = "UPDATE clientes SET nombre = UPPER('$nombre'), domicilio = UPPER('$domicilio'), domicilio2 = UPPER('$domicilio2'), telefono = '$telefono', mail = LOWER('$mail'), rut = UPPER('$rut'), comuna = $comuna, razon_social = UPPER('$razon_social'), region = UPPER('$region'), provincia = UPPER('$provincia') WHERE id_cliente = '$global_id_cliente';";
     }
 }
 

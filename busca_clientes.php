@@ -36,7 +36,7 @@ if (mysqli_num_rows($val)>0){
  echo "<div class='box-header with-border'>";
  echo "</div>";
  echo "<div class='box-body'>";
- echo "<table id='tabla' class='table table-bordered table-striped' style='width:100%'>";
+ echo "<table id='tabla' class='table table-bordered table-striped'>";
  echo "<thead>";
  echo "<tr>";
  $th_eliminar = ($_SESSION["id_usuario"] == 1 ? "<th></th>" :"");
@@ -73,19 +73,15 @@ if (mysqli_num_rows($val)>0){
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$ww[razon_social]</td>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$domicilio</td>";
    echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$domicilio2</td>";
-   echo "<td style='text-align: center;'>$telefono</td>";
-   echo "<td style='text-align: center;'>$mail</td>";
-   echo "<td style='text-align: center;'>$ww[rut]</td>";
-   echo "<td style='text-align: center;'>$ww[ciudad]</td>";
-   echo "<td style='text-align: center;'>$ww[comuna]</td>";
-   echo "<td class='td-provincia' style='text-align: center;'>$ww[provincia]</td>";
-   echo "<td class='td-region' style='text-align: center;'>$ww[region]</td>";
-   echo "<td style='text-align: center; white-space: nowrap;'>
-       <span>$vendedor_nombre</span>
-       <button class='btn btn-xs btn-info fa fa-exchange' style='margin-left: 5px; padding: 2px 6px; font-size: 0.8em;' onclick='event.stopPropagation(); mostrarModalCambiarVendedor($id_cliente, \"$nombre\", $id_vendedor)' title='Cambiar vendedor'></button>
-       <button class='btn btn-xs btn-default fa fa-history' style='margin-left: 3px; padding: 2px 6px; font-size: 0.8em;' onclick='event.stopPropagation(); verHistorialVendedor($id_cliente, \"$nombre\")' title='Ver historial de cambios'></button>
-   </td>";
-   echo "<td style='text-align: center;'>$fecha_ultimo_contacto</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$telefono</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$mail</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$ww[rut]</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$ww[ciudad]</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$ww[comuna]</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' class='td-provincia' style='text-align: center;'>$ww[provincia]</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' class='td-region' style='text-align: center;'>$ww[region]</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$vendedor_nombre</td>";
+   echo "<td onClick='MostrarModalModificarCliente(this.parentNode.id)' style='text-align: center;'>$fecha_ultimo_contacto</td>";
    
    if ($_SESSION["id_usuario"] == 1){
     echo "<td style='text-align: center;'>

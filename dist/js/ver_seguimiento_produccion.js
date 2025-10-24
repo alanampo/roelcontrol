@@ -1,6 +1,7 @@
 let mesActual = new Date().getMonth() + 1; // 1-12
 let anioActual = new Date().getFullYear();
 let usuarioSeleccionado = null;
+let totalMensual = 0;
 
 const meses = [
   "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
@@ -194,14 +195,16 @@ function renderizarTabla(datos, diasDelMes) {
 
   // Footer con totales
   totalSueldoLiquido = totalPagar1Q + totalPagar2Q;
+  totalMensual = totalSueldoLiquido; // Guardar para la sección de pagos
+
   html += "<div class='box-footer'>";
   html += "<div class='row'>";
   html += "<div class='col-md-6'>";
-  html += `<h4>Total a Pagar 1ª Quincena: <strong>$${formatNumber(totalPagar1Q)}</strong></h4>`;
-  html += `<h4>Total a Pagar 2ª Quincena: <strong>$${formatNumber(totalPagar2Q)}</strong></h4>`;
+  html += `<p style='font-size: 15px; margin-bottom: 8px;'>Total a Pagar 1ª Quincena: <strong>$${formatNumber(totalPagar1Q)}</strong></p>`;
+  html += `<p style='font-size: 15px; margin-bottom: 8px;'>Total a Pagar 2ª Quincena: <strong>$${formatNumber(totalPagar2Q)}</strong></p>`;
   html += "</div>";
   html += "<div class='col-md-6 text-right'>";
-  html += `<h3>Sueldo Líquido: <strong class='text-success'>$${formatNumber(totalSueldoLiquido)}</strong></h3>`;
+  html += `<p style='font-size: 18px; margin-bottom: 0;'>Sueldo Líquido: <strong class='text-success'>$${formatNumber(totalSueldoLiquido)}</strong></p>`;
   html += "</div>";
   html += "</div>";
   html += "</div>";
@@ -209,6 +212,11 @@ function renderizarTabla(datos, diasDelMes) {
   html += "</div>";
 
   $("#tabla_produccion").html(html);
+
+  // Cargar pagos del mes
+  if (usuarioSeleccionado) {
+    cargarPagos();
+  }
 }
 
 function renderizarFila(item, diasDelMes) {
@@ -457,46 +465,259 @@ function guardarCambio(input, itemId, campo) {
 }
 
 function eliminarFila(itemId) {
-  swal({
-    title: "¿Estás seguro?",
-    text: "Esta acción no se puede deshacer",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Sí, eliminar",
-    cancelButtonText: "Cancelar",
-    closeOnConfirm: false
-  },
-  function(isConfirm) {
-    if (isConfirm) {
-      $.ajax({
-        url: "data_ver_seguimiento_produccion.php",
-        type: "POST",
-        data: {
-          consulta: "eliminar_fila",
-          id: itemId
+  swal(
+    "¿Estás seguro de eliminar esta fila?",
+    "Esta acción no se puede deshacer",
+    {
+      icon: "warning",
+      buttons: {
+        cancel: "Cancelar",
+        catch: {
+          text: "SÍ, ELIMINAR",
+          value: "catch",
         },
-        success: function (x) {
-          if (x.includes("success")) {
-            swal({
-              title: "Eliminado",
-              text: "La fila se eliminó correctamente",
-              icon: "success"
-            },
-            function() {
+      },
+    }
+  ).then((value) => {
+    switch (value) {
+      case "catch":
+        $.ajax({
+          url: "data_ver_seguimiento_produccion.php",
+          type: "POST",
+          data: {
+            consulta: "eliminar_fila",
+            id: itemId
+          },
+          success: function (x) {
+            if (x.includes("success")) {
+              swal("Eliminado", "La fila se eliminó correctamente", "success");
               cargarDatosProduccion();
-            });
-          } else {
-            swal("Error", "No se pudo eliminar: " + x, "error");
+            } else {
+              swal("Error", "No se pudo eliminar: " + x, "error");
+            }
+          },
+          error: function () {
+            swal("Error", "Ocurrió un error al eliminar", "error");
           }
-        },
-        error: function () {
-          swal("Error", "Ocurrió un error al eliminar", "error");
-        }
-      });
+        });
+        break;
+
+      default:
+        break;
     }
   });
 }
 
 function formatNumber(num) {
   return parseFloat(num).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// ==================== FUNCIONES DE PAGOS ====================
+
+function cargarPagos() {
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "obtener_pagos",
+      mes: mesActual,
+      anio: anioActual,
+      id_usuario: usuarioSeleccionado
+    },
+    success: function (x) {
+      if (x.length) {
+        try {
+          const pagos = JSON.parse(x);
+          renderizarPagos(pagos);
+        } catch (error) {
+          console.error("Error al cargar pagos:", error);
+          renderizarPagos([]);
+        }
+      } else {
+        renderizarPagos([]);
+      }
+    },
+    error: function () {
+      console.error("Error al cargar pagos");
+      renderizarPagos([]);
+    }
+  });
+}
+
+function renderizarPagos(pagos) {
+  // Mostrar la sección de pagos
+  $("#seccion-pagos").show();
+
+  // Calcular total pagado
+  let totalPagado = 0;
+  pagos.forEach(function(pago) {
+    totalPagado += parseFloat(pago.monto);
+  });
+
+  // Actualizar labels
+  $("#label-total-pagar").text("$" + formatNumber(totalMensual));
+  $("#label-total-pagado").text("$" + formatNumber(totalPagado));
+
+  // Determinar estado
+  const ultimoDiaMes = new Date(anioActual, mesActual, 0).getDate();
+  const ultimaFechaMes = new Date(anioActual, mesActual - 1, ultimoDiaMes);
+  const fechaHoy = new Date();
+  fechaHoy.setHours(0, 0, 0, 0);
+
+  let estado = "PENDIENTE";
+  let colorEstado = "bg-yellow";
+  let iconoEstado = "fa-clock-o";
+
+  if (totalPagado >= totalMensual && fechaHoy >= ultimaFechaMes) {
+    estado = "PAGADO";
+    colorEstado = "bg-green";
+    iconoEstado = "fa-check-circle";
+  } else if (totalPagado > 0) {
+    estado = "PARCIAL";
+    colorEstado = "bg-blue";
+    iconoEstado = "fa-pie-chart";
+  }
+
+  $("#label-estado").text(estado);
+  $("#info-estado").removeClass("bg-yellow bg-green bg-blue").addClass(colorEstado);
+  $("#info-estado .fa").removeClass("fa-clock-o fa-check-circle fa-pie-chart").addClass(iconoEstado);
+
+  // Renderizar tabla de pagos
+  let html = "";
+  if (pagos.length > 0) {
+    html = "<table class='table table-bordered'>";
+    html += "<thead>";
+    html += "<tr>";
+    html += "<th>Fecha</th>";
+    html += "<th>Monto</th>";
+    html += "<th>Observaciones</th>";
+    html += "<th style='width:80px;'>Acciones</th>";
+    html += "</tr>";
+    html += "</thead>";
+    html += "<tbody>";
+
+    pagos.forEach(function(pago) {
+      const fechaFormateada = moment(pago.fecha_pago).format('DD/MM/YYYY');
+      html += "<tr>";
+      html += `<td>${fechaFormateada}</td>`;
+      html += `<td><strong>$${formatNumber(pago.monto)}</strong></td>`;
+      html += `<td>${pago.observaciones || '-'}</td>`;
+      html += `<td class='text-center'>`;
+      html += `<button class='btn btn-danger btn-xs' onclick='eliminarPago(${pago.id})' title='Eliminar'><i class='fa fa-trash'></i></button>`;
+      html += `</td>`;
+      html += "</tr>";
+    });
+
+    html += "</tbody>";
+    html += "</table>";
+  } else {
+    html = "<div class='callout callout-info'><p>No hay pagos registrados para este mes.</p></div>";
+  }
+
+  $("#tabla-pagos").html(html);
+}
+
+function abrirModalPago() {
+  // Limpiar formulario
+  $("#input-monto-pago").val("");
+  $("#input-observaciones-pago").val("");
+
+  // Establecer fecha actual por defecto
+  const hoy = new Date();
+  const fechaStr = hoy.toISOString().split('T')[0];
+  $("#input-fecha-pago").val(fechaStr);
+
+  // Abrir modal
+  $("#modalRegistrarPago").show();
+}
+
+function cerrarModalPago() {
+  $("#modalRegistrarPago").hide();
+}
+
+function guardarPago() {
+  const monto = $("#input-monto-pago").val();
+  const fecha = $("#input-fecha-pago").val();
+  const observaciones = $("#input-observaciones-pago").val();
+
+  // Validaciones
+  if (!monto || monto === "" || isNaN(monto) || parseFloat(monto) <= 0) {
+    toastr.error("Debes ingresar un monto válido");
+    return;
+  }
+
+  if (!fecha || fecha === "") {
+    toastr.error("Debes seleccionar una fecha");
+    return;
+  }
+
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "registrar_pago",
+      mes: mesActual,
+      anio: anioActual,
+      id_usuario: usuarioSeleccionado,
+      monto: monto,
+      fecha_pago: fecha,
+      observaciones: observaciones
+    },
+    success: function (x) {
+      if (x.includes("success")) {
+        toastr.success("Pago registrado correctamente");
+        $("#modalRegistrarPago").hide();
+        cargarPagos();
+      } else {
+        toastr.error("No se pudo registrar el pago: " + x);
+      }
+    },
+    error: function () {
+      toastr.error("Ocurrió un error al registrar el pago");
+    }
+  });
+}
+
+function eliminarPago(idPago) {
+  swal(
+    "¿Estás seguro de eliminar este pago?",
+    "Esta acción no se puede deshacer",
+    {
+      icon: "warning",
+      buttons: {
+        cancel: "Cancelar",
+        catch: {
+          text: "SÍ, ELIMINAR",
+          value: "catch",
+        },
+      },
+    }
+  ).then((value) => {
+    switch (value) {
+      case "catch":
+        $.ajax({
+          url: "data_ver_seguimiento_produccion.php",
+          type: "POST",
+          data: {
+            consulta: "eliminar_pago",
+            id: idPago
+          },
+          success: function (x) {
+            if (x.includes("success")) {
+              swal("Eliminado", "El pago se eliminó correctamente", "success");
+              cargarPagos();
+            } else {
+              swal("Error", "No se pudo eliminar el pago: " + x, "error");
+            }
+          },
+          error: function () {
+            swal("Error", "Ocurrió un error al eliminar", "error");
+          }
+        });
+        break;
+
+      default:
+        break;
+    }
+  });
 }

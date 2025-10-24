@@ -126,6 +126,57 @@ else if ($consulta == "eliminar_fila") {
         echo mysqli_error($con);
     }
 }
+else if ($consulta == "obtener_pagos") {
+    $mes = intval($_POST["mes"]);
+    $anio = intval($_POST["anio"]);
+    $id_usuario = intval($_POST["id_usuario"]);
+
+    $query = "SELECT * FROM pagos_produccion
+              WHERE mes = $mes AND anio = $anio AND id_usuario = $id_usuario
+              ORDER BY fecha_pago DESC";
+
+    $val = mysqli_query($con, $query);
+
+    if ($val && mysqli_num_rows($val) > 0) {
+        $pagos = array();
+        while ($row = mysqli_fetch_assoc($val)) {
+            array_push($pagos, $row);
+        }
+        echo json_encode($pagos);
+    } else {
+        echo json_encode(array());
+    }
+}
+else if ($consulta == "registrar_pago") {
+    $mes = intval($_POST["mes"]);
+    $anio = intval($_POST["anio"]);
+    $id_usuario = intval($_POST["id_usuario"]);
+    $monto = floatval($_POST["monto"]);
+    $fecha_pago = mysqli_real_escape_string($con, $_POST["fecha_pago"]);
+    $observaciones = isset($_POST["observaciones"]) && !empty($_POST["observaciones"])
+        ? "'" . mysqli_real_escape_string($con, $_POST["observaciones"]) . "'"
+        : "NULL";
+
+    $query = "INSERT INTO pagos_produccion (id_usuario, mes, anio, monto, fecha_pago, observaciones)
+              VALUES ($id_usuario, $mes, $anio, $monto, '$fecha_pago', $observaciones)";
+
+    if (mysqli_query($con, $query)) {
+        echo "success";
+    } else {
+        echo mysqli_error($con);
+    }
+}
+else if ($consulta == "eliminar_pago") {
+    $id = intval($_POST["id"]);
+
+    $query = "DELETE FROM pagos_produccion WHERE id = $id";
+
+    if (mysqli_query($con, $query)) {
+        echo "success";
+    } else {
+        echo mysqli_error($con);
+    }
+}
 
 mysqli_close($con);
 ?>

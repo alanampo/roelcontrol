@@ -4,7 +4,7 @@ let imagenesSeleccionadas = [];
 let imagenesAEliminar = [];
 let maxImagenes = 3;
 $(document).ready(() => {
-  $("#input-precio,#input-precio-detalle")
+  $("#input-precio,#input-precio-detalle,#input-precio-produccion")
     .on("keypress", function (evt) {
       let $txtBox = $(this);
       let charCode = evt.which ? evt.which : evt.keyCode;
@@ -123,6 +123,7 @@ function editarVariedad(event, obj) {
   let descripcion = $(row).attr("x-descripcion");
   let precio = $(row).attr("x-precio");
   let precio_detalle = $(row).attr("x-precio-detalle");
+  let precio_produccion = $(row).attr("x-precio-produccion");
   let precio_detalle_iva = $(row).attr("x-precio-detalle-iva");
   let precio_iva = $(row).attr("x-precio-iva");
   let id_interno = $(row).attr("x-id-interno");
@@ -134,6 +135,7 @@ function editarVariedad(event, obj) {
     precio: precio,
     precio_iva: precio_iva,
     precio_detalle: precio_detalle,
+    precio_produccion: precio_produccion,
     precio_detalle_iva: precio_detalle_iva,
     id_interno: id_interno,
     codigo_tipo: codigo_tipo,
@@ -423,6 +425,7 @@ function GuardarProducto() {
   const descripcion = $("#input-descripcion").val().trim();
   const precio = $("#input-precio").val().trim();
   const precio_detalle = $("#input-precio-detalle").val().trim();
+  const precio_produccion = $("#input-precio-produccion").val().trim();
   const codigo = $("#input-codigo").val().trim().replace(/\s+/g, "");
   const dias_produccion = $("#dias-produccion-variedad").val().trim().replace(/\s+/g, "");
 
@@ -489,6 +492,7 @@ function GuardarProducto() {
   formData.append('descripcion', descripcion);
   formData.append('precio', precio);
   formData.append('precio_detalle', precio_detalle && precio_detalle.length ? precio_detalle : '');
+  formData.append('precio_produccion', precio_produccion && precio_produccion.length ? precio_produccion : '');
   formData.append('atributos', atributos && atributos.length ? JSON.stringify(atributos) : '');
   formData.append('dias_produccion', (codigo_tipo == "E" || codigo_tipo == "S") ? dias_produccion : '');
 
@@ -513,7 +517,7 @@ function GuardarProducto() {
         busca_productos(null);
         limpiarFormularioImagenes();
         if (!edit_mode) {
-          $("#input-nombre,#input-precio,#input-precio-detalle,#input-codigo").val("");
+          $("#input-nombre,#input-precio,#input-precio-detalle,#input-precio-produccion,#input-codigo").val("");
           $("#select_tipo2").val("default").selectpicker("refresh");
           $("#input-nombre").focus();
           swal("La Variedad se agregó correctamente!", "", "success");
@@ -554,6 +558,7 @@ function MostrarModalAgregarProducto(producto) {
     $("#input-descripcion").val(producto.descripcion ?? '');
     $("#input-precio").val(producto.precio);
     $("#input-precio-detalle").val(producto.precio_detalle);
+    $("#input-precio-produccion").val(producto.precio_produccion ?? '');
     $("#input-codigo").val(producto.id_interno).attr("disabled", true);
     $("#dias-produccion-variedad").val(producto.dias_produccion ? producto.dias_produccion : "");
     $("#select-dias-produccion").addClass("d-none");
@@ -574,7 +579,7 @@ function MostrarModalAgregarProducto(producto) {
 
   } else {
     //AGREGANDO
-    $("#input-nombre, #input-precio, #input-precio-detalle, #input-codigo, #dias-produccion-variedad").val("");
+    $("#input-nombre, #input-precio, #input-precio-detalle, #input-precio-produccion, #input-codigo, #dias-produccion-variedad").val("");
     $("#select-dias-produccion").val("0");
     $("#input-codigo").removeAttr("disabled");
     $("#select_tipo2").removeAttr("disabled");

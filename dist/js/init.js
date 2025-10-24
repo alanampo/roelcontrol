@@ -294,8 +294,8 @@ function pone_informes() {
     .html(
       `
         <a href="informes.php">
-          <div class="small-box" style="background-color:#585858;"> 
-            <div class="inner"  style="height:7.1em;">    
+          <div class="small-box" style="background-color:#585858;">
+            <div class="inner"  style="height:7.1em;">
               <p style='color:white'>Informes</p>
             </div>
             <div class="icon">
@@ -309,5 +309,28 @@ function pone_informes() {
     .removeClass("d-none");
   $("#contenedor_modulos").append(
     '<li><a href="informes.php"><i class="fa fa-arrow-circle-right"></i> Informes</a></li>'
+  );
+}
+
+function pone_seguimientoproduccion() {
+  $(".col-seguimiento-produccion")
+    .html(
+      `
+        <a href="ver_seguimiento_produccion.php">
+          <div class="small-box" style="background-color:#17a2b8;">
+            <div class="inner"  style="height:7.1em;">
+              <p style='color:white'>Seguimiento de Producción</p>
+            </div>
+            <div class="icon">
+              <i style="color:rgba(0, 0, 0, 0.15);" class="fa fa-calendar-check-o"></i>
+            </div>
+            <span class="small-box-footer" style="background-color:rgba(0, 0, 0, 0.1);">Ver Módulo <i class="fa fa-arrow-circle-right"></i></span>
+          </div>
+        </a>
+      `
+    )
+    .removeClass("d-none");
+  $("#contenedor_modulos").append(
+    '<li><a href="ver_seguimiento_produccion.php"><i class="fa fa-arrow-circle-right"></i> Seguimiento de Producción</a></li>'
   );
 }

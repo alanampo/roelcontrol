@@ -33,6 +33,7 @@
           pone_informes();
           pone_vivero();
           pone_laboratorio();
+          pone_seguimientoproduccion();
           $("#contenedor_panel").html(`<a href="#"><i class="fa fa-bars"></i> <span>Panel de Control</span> <i class="fa fa-angle-left pull-right"></i></a>
                           <ul class="treeview-menu menu-open" style="display:block;"> 
                             <li><a href="ver_variedades.php"><i class="fa fa-arrow-circle-right"></i> Variedades</a></li> 
@@ -196,6 +197,9 @@
             </div>
 
             <div class="col-6 col-md-3 col-informes d-none">
+            </div>
+
+            <div class="col-6 col-md-3 col-seguimiento-produccion d-none">
             </div>
           </div>
         </section>

@@ -109,6 +109,25 @@
             </div>
           </div>
 
+          <div class="row mt-3" id="seccion-comentarios" style="display:none;">
+            <div class="col-md-12">
+              <div class="box box-warning">
+                <div class="box-header with-border">
+                  <h3 class="box-title"><i class="fa fa-comment"></i> Comentarios del Mes</h3>
+                </div>
+                <div class="box-body">
+                  <textarea class="form-control" id="textarea-comentarios" rows="3"
+                            placeholder="Ej: Acuerdo con trabajador - 100000 pesos por 3 días a la semana"></textarea>
+                  <div class="mt-2 text-right">
+                    <button class="btn btn-warning btn-sm" onclick="guardarComentarios()">
+                      <i class="fa fa-save"></i> Guardar Comentarios
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="row mt-4" id="seccion-pagos" style="display:none;">
             <div class="col-md-12">
               <div class="box box-success">
@@ -224,6 +243,23 @@
           <div align="right">
             <button type="button" class="btn fa fa-close btn-modal-bottom" onclick="cerrarModalPago()"></button>
             <button type="button" class="btn fa fa-save btn-modal-bottom ml-2" onclick="guardarPago()"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ver Evidencias -->
+  <div id="modalVerEvidencias" class="modal">
+    <div class="modal-content">
+      <div class="box box-primary">
+        <div class="box-header with-border">
+          <h3 class="box-title">Evidencias del Día <span id="label-fecha-evidencias"></span></h3>
+        </div>
+        <div class="box-body">
+          <div id="contenedor-evidencias-dia"></div>
+          <div align="right" class="mt-3">
+            <button type="button" class="btn fa fa-close btn-modal-bottom" onclick="cerrarModalEvidencias()"></button>
           </div>
         </div>
       </div>

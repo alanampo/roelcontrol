@@ -267,6 +267,100 @@ else if ($consulta == "validar_registro") {
         echo mysqli_error($con);
     }
 }
+else if ($consulta == "obtener_evidencias_dia") {
+    $id_usuario = intval($_POST["id_usuario"]);
+    $fecha = mysqli_real_escape_string($con, $_POST["fecha"]);
+
+    $query = "SELECT rpd.id, rpd.turno, rpd.cantidad_plantines,
+              vp.nombre as variedad_nombre, rpd.descripcion_manual, rpd.item_tipo,
+              ep.id as id_evidencia, ep.ruta_imagen, ep.tamano_kb
+              FROM registro_produccion_diario rpd
+              LEFT JOIN variedades_producto vp ON rpd.id_variedad = vp.id
+              LEFT JOIN evidencias_produccion ep ON ep.id_registro = rpd.id
+              WHERE rpd.id_usuario = $id_usuario
+              AND rpd.fecha = '$fecha'
+              ORDER BY rpd.turno, ep.id";
+
+    $val = mysqli_query($con, $query);
+
+    if ($val && mysqli_num_rows($val) > 0) {
+        $registros = array();
+        $registro_actual = null;
+
+        while ($row = mysqli_fetch_assoc($val)) {
+            $id_registro = $row['id'];
+
+            if (!isset($registros[$id_registro])) {
+                $registros[$id_registro] = array(
+                    'id' => $id_registro,
+                    'turno' => $row['turno'],
+                    'cantidad' => $row['cantidad_plantines'],
+                    'descripcion' => $row['item_tipo'] == 'variedad' ? $row['variedad_nombre'] : $row['descripcion_manual'],
+                    'evidencias' => array()
+                );
+            }
+
+            if ($row['id_evidencia']) {
+                $registros[$id_registro]['evidencias'][] = array(
+                    'ruta_imagen' => $row['ruta_imagen'],
+                    'tamano_kb' => $row['tamano_kb']
+                );
+            }
+        }
+
+        echo json_encode(array_values($registros));
+    } else {
+        echo json_encode(array());
+    }
+}
+else if ($consulta == "guardar_comentarios") {
+    $mes = intval($_POST["mes"]);
+    $anio = intval($_POST["anio"]);
+    $id_usuario = intval($_POST["id_usuario"]);
+    $comentarios = mysqli_real_escape_string($con, $_POST["comentarios"]);
+
+    // Buscar si existe algún registro para este usuario/mes/año
+    $query_check = "SELECT id FROM seguimiento_produccion_trabajadoras
+                    WHERE id_usuario = $id_usuario AND mes = $mes AND anio = $anio
+                    LIMIT 1";
+    $check = mysqli_query($con, $query_check);
+
+    if (mysqli_num_rows($check) > 0) {
+        // Actualizar comentarios en todos los registros de ese usuario/mes
+        $query = "UPDATE seguimiento_produccion_trabajadoras
+                  SET comentarios = '$comentarios'
+                  WHERE id_usuario = $id_usuario AND mes = $mes AND anio = $anio";
+    } else {
+        // Crear un registro solo para guardar comentarios
+        $query = "INSERT INTO seguimiento_produccion_trabajadoras
+                  (mes, anio, id_usuario, item_tipo, precio, comentarios)
+                  VALUES ($mes, $anio, $id_usuario, 'variedad', 0, '$comentarios')";
+    }
+
+    if (mysqli_query($con, $query)) {
+        echo "success";
+    } else {
+        echo mysqli_error($con);
+    }
+}
+else if ($consulta == "obtener_comentarios") {
+    $mes = intval($_POST["mes"]);
+    $anio = intval($_POST["anio"]);
+    $id_usuario = intval($_POST["id_usuario"]);
+
+    $query = "SELECT comentarios FROM seguimiento_produccion_trabajadoras
+              WHERE id_usuario = $id_usuario AND mes = $mes AND anio = $anio
+              AND comentarios IS NOT NULL AND comentarios != ''
+              LIMIT 1";
+    $val = mysqli_query($con, $query);
+
+    if ($val && mysqli_num_rows($val) > 0) {
+        $row = mysqli_fetch_assoc($val);
+        echo json_encode(array("comentarios" => $row["comentarios"]));
+    } else {
+        echo json_encode(array("comentarios" => ""));
+    }
+}
 
 mysqli_close($con);
 ?>

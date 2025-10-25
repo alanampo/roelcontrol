@@ -40,6 +40,7 @@ $(document).ready(function () {
     actualizarLabelMes();
     if (usuarioSeleccionado) {
       cargarDatosProduccion();
+      cargarComentarios();
     }
   });
 
@@ -52,6 +53,7 @@ $(document).ready(function () {
     actualizarLabelMes();
     if (usuarioSeleccionado) {
       cargarDatosProduccion();
+      cargarComentarios();
     }
   });
 
@@ -60,6 +62,10 @@ $(document).ready(function () {
     if (usuarioSeleccionado) {
       cargarDatosProduccion();
       cargarMetaUsuario();
+      cargarComentarios();
+      $("#seccion-comentarios").show();
+    } else {
+      $("#seccion-comentarios").hide();
     }
   });
 });
@@ -250,7 +256,22 @@ function renderizarFila(item, diasDelMes) {
   for (let dia = 1; dia <= diasDelMes; dia++) {
     const diaStr = String(dia).padStart(2, '0');
     const valor = item[`dia_${diaStr}`] || 0;
-    html += `<td><input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="${valor}" min="0" onchange="guardarCambio(this, ${itemId}, 'dia_${diaStr}')" /></td>`;
+
+    // Construir fecha completa para este día
+    const fecha = `${anioActual}-${String(mesActual).padStart(2, '0')}-${diaStr}`;
+
+    html += `<td style="position:relative;">
+              <input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="${valor}" min="0" onchange="guardarCambio(this, ${itemId}, 'dia_${diaStr}')" />`;
+
+    // Agregar botón de evidencias si hay cantidad
+    if (parseInt(valor) > 0) {
+      html += `<button type="button" class="btn btn-xs btn-info" style="position:absolute;top:2px;right:2px;padding:1px 4px;font-size:10px;"
+                      onclick="verEvidenciasDia('${fecha}')" title="Ver evidencias">
+                 <i class="fa fa-camera"></i>
+               </button>`;
+    }
+
+    html += `</td>`;
 
     if (dia <= 15) {
       cantidad1Q += parseInt(valor);
@@ -611,6 +632,147 @@ function guardarMeta() {
         cargarMetaUsuario();
       } else {
         toastr.error("No se pudo establecer la meta: " + x);
+      }
+    },
+    error: function() {
+      toastr.error("Error de conexión");
+    }
+  });
+}
+
+// ==================== FUNCIONES DE EVIDENCIAS ====================
+
+function verEvidenciasDia(fecha) {
+  if (!usuarioSeleccionado) {
+    toastr.warning("Selecciona un usuario primero");
+    return;
+  }
+
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "obtener_evidencias_dia",
+      id_usuario: usuarioSeleccionado,
+      fecha: fecha
+    },
+    success: function(x) {
+      try {
+        const registros = JSON.parse(x);
+        mostrarModalEvidencias(fecha, registros);
+      } catch (error) {
+        console.error("Error al cargar evidencias:", error);
+        toastr.error("Error al cargar evidencias");
+      }
+    },
+    error: function() {
+      toastr.error("Error de conexión");
+    }
+  });
+}
+
+function mostrarModalEvidencias(fecha, registros) {
+  const fechaFormateada = moment(fecha).format('DD/MM/YYYY');
+  $("#label-fecha-evidencias").text(fechaFormateada);
+
+  let html = "";
+
+  if (registros.length === 0) {
+    html = '<div class="callout callout-info"><p>No hay evidencias registradas para este día.</p></div>';
+  } else {
+    registros.forEach(function(reg) {
+      const turnoIcon = reg.turno === 'mañana' ? 'fa-sun-o text-warning' : 'fa-moon-o text-info';
+
+      html += `<div class="box box-default mb-3">
+                <div class="box-header">
+                  <h4 class="box-title">
+                    <i class="fa ${turnoIcon}"></i>
+                    ${reg.turno} - ${reg.descripcion}
+                    <span class="badge bg-blue">${reg.cantidad} plantines</span>
+                  </h4>
+                </div>
+                <div class="box-body">`;
+
+      if (reg.evidencias.length > 0) {
+        html += '<div class="row">';
+        reg.evidencias.forEach(function(ev) {
+          html += `<div class="col-md-4 mb-3">
+                     <a href="uploads/evidencias/${ev.ruta_imagen}" target="_blank">
+                       <img src="uploads/evidencias/${ev.ruta_imagen}" class="img-thumbnail" style="width:100%;height:150px;object-fit:cover;">
+                     </a>
+                     <div class="text-center mt-1">
+                       <small class="text-muted">${ev.tamano_kb} KB</small>
+                     </div>
+                   </div>`;
+        });
+        html += '</div>';
+      } else {
+        html += '<p class="text-muted">Sin evidencias fotográficas</p>';
+      }
+
+      html += `</div></div>`;
+    });
+  }
+
+  $("#contenedor-evidencias-dia").html(html);
+  $("#modalVerEvidencias").show();
+}
+
+function cerrarModalEvidencias() {
+  $("#modalVerEvidencias").hide();
+}
+
+// ==================== FUNCIONES DE COMENTARIOS ====================
+
+function cargarComentarios() {
+  if (!usuarioSeleccionado) return;
+
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "obtener_comentarios",
+      mes: mesActual,
+      anio: anioActual,
+      id_usuario: usuarioSeleccionado
+    },
+    success: function(x) {
+      try {
+        const response = JSON.parse(x);
+        $("#textarea-comentarios").val(response.comentarios || "");
+      } catch (error) {
+        console.error("Error al cargar comentarios:", error);
+      }
+    },
+    error: function() {
+      console.error("Error al cargar comentarios");
+    }
+  });
+}
+
+function guardarComentarios() {
+  if (!usuarioSeleccionado) {
+    toastr.warning("Selecciona un usuario primero");
+    return;
+  }
+
+  const comentarios = $("#textarea-comentarios").val();
+
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "guardar_comentarios",
+      mes: mesActual,
+      anio: anioActual,
+      id_usuario: usuarioSeleccionado,
+      comentarios: comentarios
+    },
+    success: function(x) {
+      if (x.includes("success")) {
+        toastr.success("Comentarios guardados");
+      } else {
+        toastr.error("Error al guardar: " + x);
       }
     },
     error: function() {

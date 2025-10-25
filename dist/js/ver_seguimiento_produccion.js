@@ -159,8 +159,15 @@ function renderizarTabla(datos, diasDelMes) {
   html += "<th style='min-width:100px;'>Precio</th>";
 
   // Columnas de días
+  const hoy = new Date();
+  const diaActual = hoy.getDate();
+  const mesHoy = hoy.getMonth() + 1;
+  const anioHoy = hoy.getFullYear();
+
   for (let dia = 1; dia <= diasDelMes; dia++) {
-    html += `<th class='text-center' style='min-width:120px;'>${dia}</th>`;
+    const esDiaHoy = (dia === diaActual && mesActual === mesHoy && anioActual === anioHoy);
+    const claseHoy = esDiaHoy ? 'dia-actual' : '';
+    html += `<th class='text-center ${claseHoy}' style='min-width:120px;' data-dia='${dia}'>${dia}</th>`;
   }
 
   html += "<th class='text-center' style='min-width:100px;'>Total 1ª Q.</th>";
@@ -220,6 +227,9 @@ function renderizarTabla(datos, diasDelMes) {
 
   $("#tabla_produccion").html(html);
 
+  // Auto-scroll al día actual
+  scrollToDiaActual();
+
   // Cargar pagos del mes
   if (usuarioSeleccionado) {
     cargarPagos();
@@ -253,6 +263,11 @@ function renderizarFila(item, diasDelMes) {
   let cantidad1Q = 0;
   let cantidad2Q = 0;
 
+  const hoy = new Date();
+  const diaActual = hoy.getDate();
+  const mesHoy = hoy.getMonth() + 1;
+  const anioHoy = hoy.getFullYear();
+
   for (let dia = 1; dia <= diasDelMes; dia++) {
     const diaStr = String(dia).padStart(2, '0');
     const valor = item[`dia_${diaStr}`] || 0;
@@ -260,7 +275,11 @@ function renderizarFila(item, diasDelMes) {
     // Construir fecha completa para este día
     const fecha = `${anioActual}-${String(mesActual).padStart(2, '0')}-${diaStr}`;
 
-    html += `<td style="position:relative;">
+    // Determinar si es el día actual
+    const esDiaHoy = (dia === diaActual && mesActual === mesHoy && anioActual === anioHoy);
+    const claseHoy = esDiaHoy ? 'dia-actual' : '';
+
+    html += `<td class="${claseHoy}" style="position:relative;">
               <input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="${valor}" min="0" disabled data-id="${itemId}" data-campo="dia_${diaStr}" />
               <button type="button" class="btn btn-xs btn-warning" style="position:absolute;top:2px;left:2px;padding:1px 4px;font-size:10px;"
                       onclick="habilitarEdicion(this)" title="Editar cantidad">
@@ -346,8 +365,15 @@ function agregarFilaConVariedades(variedades) {
   html += `<td><input type="number" class="form-control text-center input-precio" value="" step="0.01" disabled /></td>`;
 
   // Columnas de días (vacías inicialmente)
+  const hoy = new Date();
+  const diaActual = hoy.getDate();
+  const mesHoy = hoy.getMonth() + 1;
+  const anioHoy = hoy.getFullYear();
+
   for (let dia = 1; dia <= diasDelMes; dia++) {
-    html += `<td><input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="0" min="0" disabled /></td>`;
+    const esDiaHoy = (dia === diaActual && mesActual === mesHoy && anioActual === anioHoy);
+    const claseHoy = esDiaHoy ? 'dia-actual' : '';
+    html += `<td class="${claseHoy}"><input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="0" min="0" disabled /></td>`;
   }
 
   // Totales (vacíos)
@@ -1188,4 +1214,64 @@ function eliminarPago(idPago) {
         break;
     }
   });
+}
+
+// ==================== FUNCIÓN REFRESCAR ====================
+
+function refrescarDatos() {
+  if (!usuarioSeleccionado) {
+    toastr.warning("Selecciona un usuario primero");
+    return;
+  }
+
+  // Mostrar animación en el botón
+  const $btnRefrescar = $("#btn-refrescar");
+  const textoOriginal = $btnRefrescar.html();
+  $btnRefrescar.prop('disabled', true);
+  $btnRefrescar.html('<i class="fa fa-refresh fa-spin"></i> Actualizando...');
+
+  // Recargar todos los datos
+  cargarDatosProduccion();
+  cargarMetaUsuario();
+  cargarComentarios();
+  cargarPagos();
+
+  // Restaurar botón después de 1 segundo
+  setTimeout(function() {
+    $btnRefrescar.prop('disabled', false);
+    $btnRefrescar.html(textoOriginal);
+    toastr.success("Datos actualizados correctamente");
+  }, 1000);
+}
+
+// ==================== FUNCIÓN AUTO-SCROLL ====================
+
+function scrollToDiaActual() {
+  // Buscar la columna del día actual
+  const $diaActual = $('th.dia-actual').first();
+
+  if ($diaActual.length === 0) {
+    return; // No hay día actual en este mes
+  }
+
+  // Obtener el contenedor con scroll
+  const $contenedor = $('.box-body').first();
+
+  if ($contenedor.length === 0) {
+    return;
+  }
+
+  // Calcular la posición de scroll para centrar el día actual
+  const offsetColumna = $diaActual.position().left;
+  const anchoColumna = $diaActual.outerWidth();
+  const anchoContenedor = $contenedor.width();
+  const scrollActual = $contenedor.scrollLeft();
+
+  // Calcular scroll para centrar la columna (o mostrarla claramente)
+  const scrollTarget = scrollActual + offsetColumna - (anchoContenedor / 2) + (anchoColumna / 2);
+
+  // Hacer scroll suave
+  $contenedor.animate({
+    scrollLeft: scrollTarget
+  }, 800, 'swing');
 }

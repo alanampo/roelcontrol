@@ -47,6 +47,12 @@
       cursor: default;
       opacity: 1;
     }
+
+    /* Estilo para el día actual */
+    th.dia-actual,
+    td.dia-actual {
+      background-color: #e3f2fd !important; /* Azul muy suave / celeste claro */
+    }
   </style>
 </head>
 
@@ -96,6 +102,11 @@
                 <i class="fa fa-target"></i> Establecer Meta Semanal
               </button>
               <span id="meta-actual" style="display:none; margin-left: 10px;"></span>
+            </div>
+            <div class="col-md-4 text-right">
+              <button class="btn btn-primary" id="btn-refrescar" onclick="refrescarDatos()" title="Actualizar información">
+                <i class="fa fa-refresh"></i> Refrescar
+              </button>
             </div>
           </div>
 

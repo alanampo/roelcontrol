@@ -201,6 +201,7 @@
                   <option value="vivero">Seguimiento Vivero</option>
                   <option value="laboratorio">Laboratorio</option>
                   <option value="seguimiento_produccion">Mi Producción (Trabajadores)</option>
+                  <option value="seguimiento_produccion_supervisor">Seguimiento Producción (Supervisión)</option>
                 </select>
 
               </div>

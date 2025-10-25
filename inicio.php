@@ -101,6 +101,9 @@
                       else if (array[i] == "seguimiento_produccion"){
                         pone_miproduccion();
                       }
+                      else if (array[i] == "seguimiento_produccion_supervisor"){
+                        pone_seguimientoproduccion();
+                      }
                       else if (array[i] == "panel"){
 
                         $("#contenedor_panel").html(

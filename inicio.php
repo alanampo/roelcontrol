@@ -98,6 +98,9 @@
                                     </ul>'
                         );
                       }
+                      else if (array[i] == "seguimiento_produccion"){
+                        pone_miproduccion();
+                      }
                       else if (array[i] == "panel"){
 
                         $("#contenedor_panel").html(
@@ -106,11 +109,11 @@
                             <li><a href="ver_clientes.php"><i class="fa fa-arrow-circle-right"></i> Clientes</a></li> \
                           </ul>'
               );
-                      } 
+                      }
                     }
-                  } 
- }    
- 
+                  }
+ }
+
 }
     </script>
   </head>
@@ -200,6 +203,9 @@
             </div>
 
             <div class="col-6 col-md-3 col-seguimiento-produccion d-none">
+            </div>
+
+            <div class="col-6 col-md-3 col-mi-produccion d-none">
             </div>
           </div>
         </section>

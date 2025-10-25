@@ -63,7 +63,8 @@ function func_check(id_usuario, permisos) {
           "productos",
           "productos",
           "productos",
-          "informes"
+          "informes",
+          'seguimiento_produccion'
         ];
 
         let permisos2 = [
@@ -79,7 +80,8 @@ function func_check(id_usuario, permisos) {
           "ver_variedades",
           "ver_especies",
           "ver_tipos",
-          "informes"
+          "informes",
+          'ver_mi_produccion'
         ];
 
         if (permisos.includes(permisos1[permisos2.indexOf(page)]) == false) {

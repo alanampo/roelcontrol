@@ -75,7 +75,13 @@ try {
         $_SESSION['id_usuario'] = $r["id"];
         $_SESSION['nombre_real'] = $r["nombre_real"];
         $_SESSION['permisos'] = $r["modulos"];
-        $_SESSION["arraypermisos"] = isset($r["modulos"]) ? implode(",", $r["modulos"]) : [];
+
+        // Convertir permisos a array si es necesario
+        if (isset($r["modulos"]) && !empty($r["modulos"])) {
+            $_SESSION["arraypermisos"] = is_array($r["modulos"]) ? $r["modulos"] : explode(',', $r["modulos"]);
+        } else {
+            $_SESSION["arraypermisos"] = [];
+        }
         $token = sha1(uniqid("roel", TRUE));
         $_SESSION["roel-token"] = $token;
         setcookie("roel-usuario", $r['nombre'], time()+(60*60*24*30), '/');

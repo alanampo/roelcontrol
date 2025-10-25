@@ -334,3 +334,26 @@ function pone_seguimientoproduccion() {
     '<li><a href="ver_seguimiento_produccion.php"><i class="fa fa-arrow-circle-right"></i> Seguimiento de Producción</a></li>'
   );
 }
+
+function pone_miproduccion() {
+  $(".col-mi-produccion")
+    .html(
+      `
+        <a href="ver_mi_produccion.php">
+          <div class="small-box" style="background-color:#28a745;">
+            <div class="inner"  style="height:7.1em;">
+              <p style='color:white'>Mi Producción</p>
+            </div>
+            <div class="icon">
+              <i style="color:rgba(0, 0, 0, 0.15);" class="fa fa-user-circle"></i>
+            </div>
+            <span class="small-box-footer" style="background-color:rgba(0, 0, 0, 0.1);">Registrar Avance <i class="fa fa-arrow-circle-right"></i></span>
+          </div>
+        </a>
+      `
+    )
+    .removeClass("d-none");
+  $("#contenedor_modulos").append(
+    '<li><a href="ver_mi_produccion.php"><i class="fa fa-arrow-circle-right"></i> Mi Producción</a></li>'
+  );
+}

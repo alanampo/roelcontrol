@@ -59,6 +59,7 @@ $(document).ready(function () {
     usuarioSeleccionado = $(this).val();
     if (usuarioSeleccionado) {
       cargarDatosProduccion();
+      cargarMetaUsuario();
     }
   });
 });
@@ -153,7 +154,7 @@ function renderizarTabla(datos, diasDelMes) {
 
   // Columnas de días
   for (let dia = 1; dia <= diasDelMes; dia++) {
-    html += `<th class='text-center' style='min-width:60px;'>${dia}</th>`;
+    html += `<th class='text-center' style='min-width:120px;'>${dia}</th>`;
   }
 
   html += "<th class='text-center' style='min-width:100px;'>Total 1ª Q.</th>";
@@ -249,7 +250,7 @@ function renderizarFila(item, diasDelMes) {
   for (let dia = 1; dia <= diasDelMes; dia++) {
     const diaStr = String(dia).padStart(2, '0');
     const valor = item[`dia_${diaStr}`] || 0;
-    html += `<td><input type="number" class="form-control text-center input-dia" style="min-width:60px;" value="${valor}" min="0" onchange="guardarCambio(this, ${itemId}, 'dia_${diaStr}')" /></td>`;
+    html += `<td><input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="${valor}" min="0" onchange="guardarCambio(this, ${itemId}, 'dia_${diaStr}')" /></td>`;
 
     if (dia <= 15) {
       cantidad1Q += parseInt(valor);
@@ -321,7 +322,7 @@ function agregarFilaConVariedades(variedades) {
 
   // Columnas de días (vacías inicialmente)
   for (let dia = 1; dia <= diasDelMes; dia++) {
-    html += `<td><input type="number" class="form-control text-center input-dia" style="min-width:60px;" value="0" min="0" disabled /></td>`;
+    html += `<td><input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="0" min="0" disabled /></td>`;
   }
 
   // Totales (vacíos)
@@ -510,6 +511,112 @@ function eliminarFila(itemId) {
 
 function formatNumber(num) {
   return parseFloat(num).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// ==================== FUNCIONES DE META SEMANAL ====================
+
+function cargarMetaUsuario() {
+  if (!usuarioSeleccionado) return;
+
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "obtener_meta_usuario",
+      id_usuario: usuarioSeleccionado
+    },
+    success: function(x) {
+      try {
+        const meta = JSON.parse(x);
+        if (meta.meta_semanal) {
+          $("#meta-actual").html(`<span class="label label-info">Meta actual: ${formatNumber(meta.meta_semanal)} plantines/semana</span>`).show();
+        } else {
+          $("#meta-actual").html(`<span class="label label-default">Sin meta establecida</span>`).show();
+        }
+        $("#btn-establecer-meta").show();
+      } catch (error) {
+        console.error("Error al cargar meta:", error);
+      }
+    }
+  });
+}
+
+function abrirModalMeta() {
+  if (!usuarioSeleccionado) {
+    toastr.warning("Selecciona un usuario primero");
+    return;
+  }
+
+  // Cargar meta actual si existe
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "obtener_meta_usuario",
+      id_usuario: usuarioSeleccionado
+    },
+    success: function(x) {
+      try {
+        const meta = JSON.parse(x);
+        if (meta.meta_semanal) {
+          $("#input-meta-semanal").val(meta.meta_semanal);
+        } else {
+          $("#input-meta-semanal").val(1000); // Default
+        }
+      } catch (error) {
+        $("#input-meta-semanal").val(1000);
+      }
+    }
+  });
+
+  // Establecer fecha actual por defecto
+  const hoy = new Date().toISOString().split('T')[0];
+  $("#input-fecha-desde-meta").val(hoy);
+
+  // Mostrar modal
+  $("#modalEstablecerMeta").show();
+}
+
+function cerrarModalMeta() {
+  $("#modalEstablecerMeta").hide();
+}
+
+function guardarMeta() {
+  const metaSemanal = $("#input-meta-semanal").val();
+  const fechaDesde = $("#input-fecha-desde-meta").val();
+
+  if (!metaSemanal || metaSemanal <= 0) {
+    toastr.error("Debes ingresar una meta válida");
+    return;
+  }
+
+  if (!fechaDesde) {
+    toastr.error("Debes seleccionar una fecha");
+    return;
+  }
+
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: {
+      consulta: "establecer_meta",
+      id_usuario: usuarioSeleccionado,
+      meta_semanal: metaSemanal,
+      fecha_desde: fechaDesde
+    },
+    success: function(x) {
+      if (x.includes("success")) {
+        toastr.success("Meta establecida correctamente");
+        $("#modalEstablecerMeta").hide();
+        cargarMetaUsuario();
+      } else {
+        toastr.error("No se pudo establecer la meta: " + x);
+      }
+    },
+    error: function() {
+      toastr.error("Error de conexión");
+    }
+  });
 }
 
 // ==================== FUNCIONES DE PAGOS ====================

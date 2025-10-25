@@ -83,6 +83,12 @@
                   data-dropup-auto="false" data-width="100%" data-live-search="true">
               </select>
             </div>
+            <div class="col-md-4">
+              <button class="btn btn-warning" id="btn-establecer-meta" onclick="abrirModalMeta()" style="display:none;">
+                <i class="fa fa-target"></i> Establecer Meta Semanal
+              </button>
+              <span id="meta-actual" style="display:none; margin-left: 10px;"></span>
+            </div>
           </div>
 
           <div class="row mt-3">
@@ -168,6 +174,32 @@
   </div><!-- ./wrapper -->
 
   </div> <!-- ID OCULTAR-->
+
+  <!-- Modal Establecer Meta -->
+  <div id="modalEstablecerMeta" class="modal">
+    <div class="modal-content3">
+      <div class="box box-warning">
+        <div class="box-header with-border">
+          <h3 class="box-title">Establecer Meta Semanal</h3>
+        </div>
+        <div class="box-body">
+          <div class="form-group">
+            <label>Meta Semanal (plantines)</label>
+            <input type="number" class="form-control" id="input-meta-semanal" placeholder="1000" min="1" step="100">
+            <p class="help-block">Cantidad de plantines que debe producir por semana</p>
+          </div>
+          <div class="form-group">
+            <label>Vigente desde</label>
+            <input type="date" class="form-control" id="input-fecha-desde-meta">
+          </div>
+          <div align="right">
+            <button type="button" class="btn fa fa-close btn-modal-bottom" onclick="cerrarModalMeta()"></button>
+            <button type="button" class="btn fa fa-save btn-modal-bottom ml-2" onclick="guardarMeta()"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Registrar Pago -->
   <div id="modalRegistrarPago" class="modal">

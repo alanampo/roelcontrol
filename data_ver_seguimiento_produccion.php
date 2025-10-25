@@ -177,6 +177,96 @@ else if ($consulta == "eliminar_pago") {
         echo mysqli_error($con);
     }
 }
+else if ($consulta == "obtener_meta_usuario") {
+    $id_usuario = intval($_POST["id_usuario"]);
+
+    $query = "SELECT meta_semanal, fecha_desde
+              FROM metas_produccion
+              WHERE id_usuario = $id_usuario AND activo = 1
+              ORDER BY id DESC
+              LIMIT 1";
+    $val = mysqli_query($con, $query);
+
+    if ($val && mysqli_num_rows($val) > 0) {
+        $row = mysqli_fetch_assoc($val);
+        echo json_encode($row);
+    } else {
+        echo json_encode(array("meta_semanal" => null));
+    }
+}
+else if ($consulta == "establecer_meta") {
+    $id_usuario = intval($_POST["id_usuario"]);
+    $meta_semanal = intval($_POST["meta_semanal"]);
+    $fecha_desde = mysqli_real_escape_string($con, $_POST["fecha_desde"]);
+
+    // Desactivar metas anteriores
+    $query_desactivar = "UPDATE metas_produccion SET activo = 0 WHERE id_usuario = $id_usuario";
+    mysqli_query($con, $query_desactivar);
+
+    // Insertar nueva meta
+    $query = "INSERT INTO metas_produccion (id_usuario, meta_semanal, fecha_desde, activo)
+              VALUES ($id_usuario, $meta_semanal, '$fecha_desde', 1)";
+
+    if (mysqli_query($con, $query)) {
+        echo "success";
+    } else {
+        echo mysqli_error($con);
+    }
+}
+else if ($consulta == "obtener_registros_diarios") {
+    $mes = intval($_POST["mes"]);
+    $anio = intval($_POST["anio"]);
+    $id_usuario = intval($_POST["id_usuario"]);
+
+    $query = "SELECT rpd.*,
+              vp.nombre as variedad_nombre,
+              (SELECT COUNT(*) FROM evidencias_produccion WHERE id_registro = rpd.id) as num_evidencias
+              FROM registro_produccion_diario rpd
+              LEFT JOIN variedades_producto vp ON rpd.id_variedad = vp.id
+              WHERE rpd.id_usuario = $id_usuario
+              AND MONTH(rpd.fecha) = $mes
+              AND YEAR(rpd.fecha) = $anio
+              ORDER BY rpd.fecha DESC, rpd.turno ASC";
+
+    $val = mysqli_query($con, $query);
+
+    if ($val && mysqli_num_rows($val) > 0) {
+        $registros = array();
+        while ($row = mysqli_fetch_assoc($val)) {
+            // Obtener evidencias si hay
+            if ($row['num_evidencias'] > 0) {
+                $id_reg = $row['id'];
+                $query_ev = "SELECT ruta_imagen, tamano_kb FROM evidencias_produccion WHERE id_registro = $id_reg";
+                $val_ev = mysqli_query($con, $query_ev);
+                $evidencias = array();
+                while ($ev = mysqli_fetch_assoc($val_ev)) {
+                    $evidencias[] = $ev;
+                }
+                $row['evidencias'] = $evidencias;
+            } else {
+                $row['evidencias'] = array();
+            }
+            array_push($registros, $row);
+        }
+        echo json_encode($registros);
+    } else {
+        echo json_encode(array());
+    }
+}
+else if ($consulta == "validar_registro") {
+    $id_registro = intval($_POST["id_registro"]);
+    $id_admin = intval($_SESSION["id_usuario"]);
+
+    $query = "UPDATE registro_produccion_diario
+              SET validado = 1, fecha_validacion = NOW(), validado_por = $id_admin
+              WHERE id = $id_registro";
+
+    if (mysqli_query($con, $query)) {
+        echo "success";
+    } else {
+        echo mysqli_error($con);
+    }
+}
 
 mysqli_close($con);
 ?>

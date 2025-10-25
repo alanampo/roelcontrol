@@ -264,6 +264,9 @@ else if ($tipo == "historial") {
     ";
 }
 else if ($tipo == "alertas") {
+    if (is_array($_SESSION["arraypermisos"]) && !in_array("pedidos", $_SESSION["arraypermisos"]))
+        return;
+
     $date = date('Y-m-d');
     $consulta = "SELECT  (SELECT COUNT(*)
                 FROM   articulospedidos WHERE fecha_entrega < '$date' AND estado >= 0 AND estado <= 5 AND eliminado IS NULL

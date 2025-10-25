@@ -245,13 +245,26 @@ function renderizarHistorial(registros) {
     const fechaFormateada = moment(reg.fecha).format('DD/MM/YYYY');
     const turnoIcon = reg.turno === 'mañana' ? 'fa-sun-o' : 'fa-moon-o';
     const turnoColor = reg.turno === 'mañana' ? 'text-warning' : 'text-info';
-    const validadoIcon = reg.validado == 1 ? '<i class="fa fa-check-circle text-success"></i> Validado' : '<i class="fa fa-clock-o text-muted"></i> Pendiente';
     const ubicacion = reg.ubicacion_lote || '-';
+
+    // Determinar estado y color
+    let estadoIcon = '';
+    let rowClass = '';
+    if (reg.estado === 'aprobado') {
+      estadoIcon = '<i class="fa fa-check-circle text-success"></i> Aprobado';
+      rowClass = '';
+    } else if (reg.estado === 'rechazado') {
+      estadoIcon = '<i class="fa fa-times-circle text-danger"></i> Rechazado';
+      rowClass = 'bg-danger';
+    } else {
+      estadoIcon = '<i class="fa fa-clock-o text-warning"></i> Pendiente';
+      rowClass = '';
+    }
 
     // Mostrar variedad o descripción manual
     const descripcionItem = reg.item_tipo === 'variedad' ? reg.variedad_nombre : reg.descripcion_manual;
 
-    html += `<tr>
+    html += `<tr class="${rowClass}">
               <td>${fechaFormateada}</td>
               <td><i class="fa ${turnoIcon} ${turnoColor}"></i> ${reg.turno}</td>
               <td>${descripcionItem}</td>
@@ -268,13 +281,23 @@ function renderizarHistorial(registros) {
     }
 
     html += `</td>
-              <td>${validadoIcon}</td>
+              <td>${estadoIcon}`;
+
+    // Mostrar motivo de rechazo si existe
+    if (reg.estado === 'rechazado' && reg.motivo_rechazo) {
+      html += `<br><small class="text-danger"><strong>Motivo:</strong> ${reg.motivo_rechazo}</small>`;
+    }
+
+    html += `</td>
               <td class="text-center">`;
 
-    if (reg.validado == 0) {
+    // Permitir eliminar registros pendientes o rechazados
+    if (reg.estado === 'pendiente' || reg.estado === 'rechazado') {
       html += `<button class="btn btn-xs btn-danger" onclick="eliminarRegistro(${reg.id})" title="Eliminar">
                  <i class="fa fa-trash"></i>
                </button>`;
+    } else if (reg.estado === 'aprobado') {
+      html += `<span class="text-muted"><i class="fa fa-lock"></i></span>`;
     }
 
     html += `</td>

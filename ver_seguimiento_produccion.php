@@ -39,6 +39,14 @@
     #seccion-pagos .info-box-icon {
       font-size: 50px !important;
     }
+
+    /* Estilos para inputs deshabilitados en tabla de producción */
+    .input-dia:disabled {
+      background-color: #f9f9f9 !important;
+      color: #333 !important;
+      cursor: default;
+      opacity: 1;
+    }
   </style>
 </head>
 

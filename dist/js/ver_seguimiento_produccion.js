@@ -261,7 +261,11 @@ function renderizarFila(item, diasDelMes) {
     const fecha = `${anioActual}-${String(mesActual).padStart(2, '0')}-${diaStr}`;
 
     html += `<td style="position:relative;">
-              <input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="${valor}" min="0" onchange="guardarCambio(this, ${itemId}, 'dia_${diaStr}')" />`;
+              <input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="${valor}" min="0" disabled data-id="${itemId}" data-campo="dia_${diaStr}" />
+              <button type="button" class="btn btn-xs btn-warning" style="position:absolute;top:2px;left:2px;padding:1px 4px;font-size:10px;"
+                      onclick="habilitarEdicion(this)" title="Editar cantidad">
+                <i class="fa fa-pencil"></i>
+              </button>`;
 
     // Agregar botón de evidencias si hay cantidad
     if (parseInt(valor) > 0) {
@@ -673,7 +677,7 @@ function verEvidenciasDia(fecha) {
 
 function mostrarModalEvidencias(fecha, registros) {
   const fechaFormateada = moment(fecha).format('DD/MM/YYYY');
-  $("#label-fecha-evidencias").text(fechaFormateada);
+  $("#label-fecha-evidencias").text(fechaFormateada).attr('data-fecha', fecha);
 
   let html = "";
 
@@ -683,15 +687,36 @@ function mostrarModalEvidencias(fecha, registros) {
     registros.forEach(function(reg) {
       const turnoIcon = reg.turno === 'mañana' ? 'fa-sun-o text-warning' : 'fa-moon-o text-info';
 
-      html += `<div class="box box-default mb-3">
+      // Determinar estilo según estado
+      let boxClass = 'box-default';
+      let estadoBadge = '';
+      if (reg.estado === 'aprobado') {
+        boxClass = 'box-success';
+        estadoBadge = '<span class="badge bg-green"><i class="fa fa-check"></i> Aprobado</span>';
+      } else if (reg.estado === 'rechazado') {
+        boxClass = 'box-danger';
+        estadoBadge = '<span class="badge bg-red"><i class="fa fa-times"></i> Rechazado</span>';
+      } else {
+        estadoBadge = '<span class="badge bg-yellow"><i class="fa fa-clock-o"></i> Pendiente</span>';
+      }
+
+      html += `<div class="box ${boxClass} mb-3">
                 <div class="box-header">
                   <h4 class="box-title">
                     <i class="fa ${turnoIcon}"></i>
                     ${reg.turno} - ${reg.descripcion}
                     <span class="badge bg-blue">${reg.cantidad} plantines</span>
+                    ${estadoBadge}
                   </h4>
                 </div>
                 <div class="box-body">`;
+
+      // Mostrar motivo de rechazo si existe
+      if (reg.estado === 'rechazado' && reg.motivo_rechazo) {
+        html += `<div class="alert alert-danger">
+                   <strong>Motivo del rechazo:</strong> ${reg.motivo_rechazo}
+                 </div>`;
+      }
 
       if (reg.evidencias.length > 0) {
         html += '<div class="row">';
@@ -710,6 +735,20 @@ function mostrarModalEvidencias(fecha, registros) {
         html += '<p class="text-muted">Sin evidencias fotográficas</p>';
       }
 
+      // Botones de acción
+      html += `<div class="mt-3">`;
+      if (reg.estado === 'pendiente' || reg.estado === 'rechazado') {
+        html += `<button class="btn btn-success btn-sm" onclick="aprobarRegistro(${reg.id})">
+                   <i class="fa fa-check"></i> Aprobar
+                 </button> `;
+      }
+      if (reg.estado === 'pendiente' || reg.estado === 'aprobado') {
+        html += `<button class="btn btn-danger btn-sm" onclick="rechazarRegistro(${reg.id})">
+                   <i class="fa fa-times"></i> Rechazar
+                 </button>`;
+      }
+      html += `</div>`;
+
       html += `</div></div>`;
     });
   }
@@ -720,6 +759,166 @@ function mostrarModalEvidencias(fecha, registros) {
 
 function cerrarModalEvidencias() {
   $("#modalVerEvidencias").hide();
+}
+
+// ==================== FUNCIONES DE VALIDACIÓN ====================
+
+function aprobarRegistro(id_registro) {
+  swal({
+    title: "¿Aprobar registro?",
+    text: "Esta cantidad será contabilizada en los totales y pagos",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#28a745",
+    confirmButtonText: "Sí, aprobar",
+    cancelButtonText: "Cancelar",
+    closeOnConfirm: false
+  }).then(function(isConfirm) {
+    switch (isConfirm) {
+      case true:
+        $.ajax({
+          url: "data_ver_seguimiento_produccion.php",
+          type: "POST",
+          data: {
+            consulta: "aprobar_registro",
+            id_registro: id_registro
+          },
+          success: function(x) {
+            try {
+              const response = JSON.parse(x);
+              if (response.success) {
+                swal({
+                  title: "¡Aprobado!",
+                  text: "El registro ha sido aprobado correctamente",
+                  icon: "success",
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+                // Recargar evidencias y tabla
+                const fecha = $("#label-fecha-evidencias").attr('data-fecha');
+                verEvidenciasDia(fecha);
+                cargarDatosProduccion();
+              } else {
+                swal("Error", response.error || "No se pudo aprobar el registro", "error");
+              }
+            } catch (error) {
+              swal("Error", "Error al procesar la respuesta", "error");
+              console.error(error)
+            }
+          },
+          error: function() {
+            swal("Error", "Error en la conexión", "error");
+          }
+        });
+        break;
+      case false:
+        break;
+    }
+  });
+}
+
+function rechazarRegistro(id_registro) {
+  swal({
+    title: "¿Rechazar registro?",
+    text: "Esta cantidad NO será contabilizada en los totales ni pagos",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#dc3545",
+    confirmButtonText: "Sí, rechazar",
+    cancelButtonText: "Cancelar",
+    closeOnConfirm: false
+  }).then(function(isConfirm) {
+    switch (isConfirm) {
+      case true:
+        // Pedir motivo del rechazo (opcional)
+        const motivo = prompt("Motivo del rechazo (opcional):\nEj: Cantidad exagerada, sin evidencias suficientes...");
+
+        // Si presiona cancelar en el prompt, cancelamos todo
+        if (motivo === null) {
+          swal.close();
+          return;
+        }
+
+        $.ajax({
+          url: "data_ver_seguimiento_produccion.php",
+          type: "POST",
+          data: {
+            consulta: "rechazar_registro",
+            id_registro: id_registro,
+            motivo: motivo || ""
+          },
+          success: function(x) {
+            try {
+              const response = JSON.parse(x);
+              if (response.success) {
+                swal({
+                  title: "¡Rechazado!",
+                  text: "El registro ha sido rechazado correctamente",
+                  icon: "success",
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+                // Recargar evidencias y tabla
+                const fecha = $("#label-fecha-evidencias").attr('data-fecha');
+                verEvidenciasDia(fecha);
+                cargarDatosProduccion();
+              } else {
+                swal("Error", response.error || "No se pudo rechazar el registro", "error");
+              }
+            } catch (error) {
+              swal("Error", "Error al procesar la respuesta", "error");
+              console.error(error)
+            }
+          },
+          error: function() {
+            swal("Error", "Error en la conexión", "error");
+          }
+        });
+        break;
+      case false:
+        break;
+    }
+  });
+}
+
+// ==================== FUNCIONES DE EDICIÓN ====================
+
+function habilitarEdicion(btn) {
+  const $btn = $(btn);
+  const $td = $btn.parent();
+  const $input = $td.find('input.input-dia');
+
+  // Habilitar input
+  $input.prop('disabled', false);
+  $input.focus();
+  $input.select();
+
+  // Cambiar botón a guardar
+  $btn.removeClass('btn-warning').addClass('btn-success');
+  $btn.html('<i class="fa fa-save"></i>');
+  $btn.attr('title', 'Guardar cambio');
+  $btn.attr('onclick', 'guardarEdicion(this)');
+}
+
+function guardarEdicion(btn) {
+  const $btn = $(btn);
+  const $td = $btn.parent();
+  const $input = $td.find('input.input-dia');
+
+  const id = $input.data('id');
+  const campo = $input.data('campo');
+
+  // Llamar a guardarCambio
+  guardarCambio($input[0], id, campo);
+
+  // Deshabilitar input
+  $input.prop('disabled', true);
+
+  // Cambiar botón de vuelta a editar
+  $btn.removeClass('btn-success').addClass('btn-warning');
+  $btn.html('<i class="fa fa-pencil"></i>');
+  $btn.attr('title', 'Editar cantidad');
+  $btn.attr('onclick', 'habilitarEdicion(this)');
 }
 
 // ==================== FUNCIONES DE COMENTARIOS ====================

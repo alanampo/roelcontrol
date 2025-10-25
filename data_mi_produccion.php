@@ -91,7 +91,8 @@ else if ($consulta == "guardar_registro") {
         ? "'" . mysqli_real_escape_string($con, $_POST["observaciones"]) . "'"
         : "NULL";
 
-    // Validar que no exista un registro duplicado
+    // Validar que no exista un registro duplicado (que no esté rechazado)
+    // Si el registro anterior fue rechazado, permitir crear uno nuevo
     $where_item = $item_tipo == "variedad"
         ? "id_variedad = $id_variedad"
         : "descripcion_manual = $descripcion_manual";
@@ -100,7 +101,8 @@ else if ($consulta == "guardar_registro") {
                     WHERE id_usuario = $id_usuario
                     AND fecha = '$fecha'
                     AND turno = '$turno'
-                    AND $where_item";
+                    AND $where_item
+                    AND estado != 'rechazado'";
     $check = mysqli_query($con, $query_check);
 
     if (mysqli_num_rows($check) > 0) {
@@ -269,28 +271,31 @@ else if ($consulta == "obtener_estadisticas") {
     $inicio_mes = date('Y-m-01');
     $fin_mes = date('Y-m-t');
 
-    // Producción diaria (hoy)
+    // Producción diaria (hoy) - solo aprobados y pendientes
     $query_diaria = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
                      FROM registro_produccion_diario
-                     WHERE id_usuario = $id_usuario AND fecha = '$hoy'";
+                     WHERE id_usuario = $id_usuario AND fecha = '$hoy'
+                     AND estado != 'rechazado'";
     $val_diaria = mysqli_query($con, $query_diaria);
     $row_diaria = mysqli_fetch_assoc($val_diaria);
     $produccion_diaria = intval($row_diaria['total']);
 
-    // Producción semanal
+    // Producción semanal - solo aprobados y pendientes
     $query_semanal = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
                       FROM registro_produccion_diario
                       WHERE id_usuario = $id_usuario
-                      AND fecha BETWEEN '$inicio_semana' AND '$fin_semana'";
+                      AND fecha BETWEEN '$inicio_semana' AND '$fin_semana'
+                      AND estado != 'rechazado'";
     $val_semanal = mysqli_query($con, $query_semanal);
     $row_semanal = mysqli_fetch_assoc($val_semanal);
     $produccion_semanal = intval($row_semanal['total']);
 
-    // Producción mensual
+    // Producción mensual - solo aprobados y pendientes
     $query_mensual = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
                       FROM registro_produccion_diario
                       WHERE id_usuario = $id_usuario
-                      AND fecha BETWEEN '$inicio_mes' AND '$fin_mes'";
+                      AND fecha BETWEEN '$inicio_mes' AND '$fin_mes'
+                      AND estado != 'rechazado'";
     $val_mensual = mysqli_query($con, $query_mensual);
     $row_mensual = mysqli_fetch_assoc($val_mensual);
     $produccion_mensual = intval($row_mensual['total']);
@@ -342,8 +347,8 @@ else if ($consulta == "obtener_estadisticas") {
 else if ($consulta == "eliminar_registro") {
     $id_registro = intval($_POST["id_registro"]);
 
-    // Validar que pertenezca al usuario
-    $query_check = "SELECT id FROM registro_produccion_diario
+    // Obtener datos completos del registro para sincronización
+    $query_check = "SELECT * FROM registro_produccion_diario
                     WHERE id = $id_registro AND id_usuario = $id_usuario";
     $check = mysqli_query($con, $query_check);
 
@@ -352,6 +357,8 @@ else if ($consulta == "eliminar_registro") {
         mysqli_close($con);
         exit;
     }
+
+    $registro = mysqli_fetch_assoc($check);
 
     // Eliminar evidencias físicas primero
     $query_ev = "SELECT ruta_imagen FROM evidencias_produccion WHERE id_registro = $id_registro";
@@ -367,6 +374,46 @@ else if ($consulta == "eliminar_registro") {
     $query = "DELETE FROM registro_produccion_diario WHERE id = $id_registro";
 
     if (mysqli_query($con, $query)) {
+        // SINCRONIZACIÓN: Restar de tabla mensual si no estaba rechazado
+        if ($registro['estado'] != 'rechazado') {
+            $fecha = $registro['fecha'];
+            $cantidad = intval($registro['cantidad_plantines']);
+            $item_tipo = $registro['item_tipo'];
+            $id_variedad = $registro['id_variedad'];
+            $descripcion_manual = $registro['descripcion_manual'];
+
+            $dia = intval(date('d', strtotime($fecha)));
+            $mes = intval(date('m', strtotime($fecha)));
+            $anio = intval(date('Y', strtotime($fecha)));
+            $columna_dia = "dia_" . str_pad($dia, 2, '0', STR_PAD_LEFT);
+
+            // Construir WHERE para encontrar la fila
+            if ($item_tipo == 'variedad') {
+                $where = "id_variedad = $id_variedad AND item_tipo = 'variedad'";
+            } else {
+                $desc_escaped = mysqli_real_escape_string($con, $descripcion_manual);
+                $where = "descripcion_manual = '$desc_escaped' AND item_tipo = 'manual'";
+            }
+
+            // Buscar y restar
+            $query_buscar = "SELECT id, $columna_dia FROM seguimiento_produccion_trabajadoras
+                           WHERE id_usuario = $id_usuario AND mes = $mes AND anio = $anio AND $where
+                           LIMIT 1";
+            $res = mysqli_query($con, $query_buscar);
+
+            if ($res && mysqli_num_rows($res) > 0) {
+                $row = mysqli_fetch_assoc($res);
+                $id_fila = $row['id'];
+                $cantidad_actual = intval($row[$columna_dia]);
+                $nueva_cantidad = max(0, $cantidad_actual - $cantidad);
+
+                $query_update = "UPDATE seguimiento_produccion_trabajadoras
+                               SET $columna_dia = $nueva_cantidad
+                               WHERE id = $id_fila";
+                mysqli_query($con, $query_update);
+            }
+        }
+
         echo "success";
     } else {
         echo "error: " . mysqli_error($con);

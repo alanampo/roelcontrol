@@ -271,7 +271,7 @@ else if ($consulta == "obtener_evidencias_dia") {
     $id_usuario = intval($_POST["id_usuario"]);
     $fecha = mysqli_real_escape_string($con, $_POST["fecha"]);
 
-    $query = "SELECT rpd.id, rpd.turno, rpd.cantidad_plantines,
+    $query = "SELECT rpd.id, rpd.turno, rpd.cantidad_plantines, rpd.estado, rpd.motivo_rechazo,
               vp.nombre as variedad_nombre, rpd.descripcion_manual, rpd.item_tipo,
               ep.id as id_evidencia, ep.ruta_imagen, ep.tamano_kb
               FROM registro_produccion_diario rpd
@@ -296,6 +296,8 @@ else if ($consulta == "obtener_evidencias_dia") {
                     'turno' => $row['turno'],
                     'cantidad' => $row['cantidad_plantines'],
                     'descripcion' => $row['item_tipo'] == 'variedad' ? $row['variedad_nombre'] : $row['descripcion_manual'],
+                    'estado' => $row['estado'],
+                    'motivo_rechazo' => $row['motivo_rechazo'],
                     'evidencias' => array()
                 );
             }
@@ -359,6 +361,121 @@ else if ($consulta == "obtener_comentarios") {
         echo json_encode(array("comentarios" => $row["comentarios"]));
     } else {
         echo json_encode(array("comentarios" => ""));
+    }
+}
+else if ($consulta == "aprobar_registro") {
+    $id_registro = intval($_POST["id_registro"]);
+    $id_admin = intval($_SESSION["id_usuario"]);
+
+    // Obtener datos del registro
+    $query_reg = "SELECT * FROM registro_produccion_diario WHERE id = $id_registro";
+    $val_reg = mysqli_query($con, $query_reg);
+
+    if (!$val_reg || mysqli_num_rows($val_reg) == 0) {
+        echo json_encode(array("error" => "Registro no encontrado"));
+        mysqli_close($con);
+        exit;
+    }
+
+    $reg = mysqli_fetch_assoc($val_reg);
+    $estado_anterior = $reg['estado'];
+
+    // Actualizar estado a aprobado
+    $query = "UPDATE registro_produccion_diario
+              SET estado = 'aprobado', validado = 1, fecha_validacion = NOW(), validado_por = $id_admin
+              WHERE id = $id_registro";
+
+    if (mysqli_query($con, $query)) {
+        // Si estaba rechazado, volver a sumar en la tabla mensual
+        if ($estado_anterior == 'rechazado') {
+            actualizarTablaMensual($con, $reg, 'sumar');
+        }
+
+        echo json_encode(array("success" => true));
+    } else {
+        echo json_encode(array("error" => mysqli_error($con)));
+    }
+}
+else if ($consulta == "rechazar_registro") {
+    $id_registro = intval($_POST["id_registro"]);
+    $motivo = isset($_POST["motivo"]) && !empty($_POST["motivo"])
+        ? "'" . mysqli_real_escape_string($con, $_POST["motivo"]) . "'"
+        : "NULL";
+    $id_admin = intval($_SESSION["id_usuario"]);
+
+    // Obtener datos del registro
+    $query_reg = "SELECT * FROM registro_produccion_diario WHERE id = $id_registro";
+    $val_reg = mysqli_query($con, $query_reg);
+
+    if (!$val_reg || mysqli_num_rows($val_reg) == 0) {
+        echo json_encode(array("error" => "Registro no encontrado"));
+        mysqli_close($con);
+        exit;
+    }
+
+    $reg = mysqli_fetch_assoc($val_reg);
+    $estado_anterior = $reg['estado'];
+
+    // Actualizar estado a rechazado
+    $query = "UPDATE registro_produccion_diario
+              SET estado = 'rechazado', motivo_rechazo = $motivo, validado = 0, validado_por = $id_admin, fecha_validacion = NOW()
+              WHERE id = $id_registro";
+
+    if (mysqli_query($con, $query)) {
+        // Si estaba aprobado o pendiente, restar de la tabla mensual
+        if ($estado_anterior != 'rechazado') {
+            actualizarTablaMensual($con, $reg, 'restar');
+        }
+
+        echo json_encode(array("success" => true));
+    } else {
+        echo json_encode(array("error" => mysqli_error($con)));
+    }
+}
+
+// Función auxiliar para actualizar tabla mensual
+function actualizarTablaMensual($con, $registro, $operacion) {
+    $id_usuario = $registro['id_usuario'];
+    $fecha = $registro['fecha'];
+    $cantidad = intval($registro['cantidad_plantines']);
+    $item_tipo = $registro['item_tipo'];
+    $id_variedad = $registro['id_variedad'];
+    $descripcion_manual = $registro['descripcion_manual'];
+
+    $dia = intval(date('d', strtotime($fecha)));
+    $mes = intval(date('m', strtotime($fecha)));
+    $anio = intval(date('Y', strtotime($fecha)));
+    $columna_dia = "dia_" . str_pad($dia, 2, '0', STR_PAD_LEFT);
+
+    // Construir WHERE para encontrar la fila
+    if ($item_tipo == 'variedad') {
+        $where = "id_variedad = $id_variedad AND item_tipo = 'variedad'";
+    } else {
+        $desc_escaped = mysqli_real_escape_string($con, $descripcion_manual);
+        $where = "descripcion_manual = '$desc_escaped' AND item_tipo = 'manual'";
+    }
+
+    // Buscar la fila
+    $query_buscar = "SELECT id, $columna_dia FROM seguimiento_produccion_trabajadoras
+                     WHERE id_usuario = $id_usuario AND mes = $mes AND anio = $anio AND $where
+                     LIMIT 1";
+    $res = mysqli_query($con, $query_buscar);
+
+    if ($res && mysqli_num_rows($res) > 0) {
+        $row = mysqli_fetch_assoc($res);
+        $id_fila = $row['id'];
+        $cantidad_actual = intval($row[$columna_dia]);
+
+        if ($operacion == 'sumar') {
+            $nueva_cantidad = $cantidad_actual + $cantidad;
+        } else { // restar
+            $nueva_cantidad = max(0, $cantidad_actual - $cantidad);
+        }
+
+        $query_update = "UPDATE seguimiento_produccion_trabajadoras
+                        SET $columna_dia = $nueva_cantidad
+                        WHERE id = $id_fila";
+        mysqli_query($con, $query_update);
     }
 }
 

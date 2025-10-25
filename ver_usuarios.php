@@ -200,7 +200,7 @@
                   <option value="reservas">Reservas</option>
                   <option value="vivero">Seguimiento Vivero</option>
                   <option value="laboratorio">Laboratorio</option>
-                  <option value="seguimiento_produccion">Mi Producción (Trabajadoras)</option>
+                  <option value="seguimiento_produccion">Mi Producción (Trabajadores)</option>
                 </select>
 
               </div>

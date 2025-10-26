@@ -23,6 +23,9 @@ $nombre_real = mysqli_real_escape_string($con, $_POST['nombre_real']);
 $password = mysqli_real_escape_string($con, $_POST['password']);
 $permisos = json_decode($_POST["permisos"]);
 
+// Hashear la contraseña con bcrypt
+$password_hash = password_hash($password, PASSWORD_BCRYPT);
+
 if ($tipo == "agregar") {
     if ($tipo_usuario == "cliente") {
         $query = "SELECT * FROM usuarios WHERE nombre = '$email'";
@@ -53,7 +56,7 @@ if ($tipo == "agregar") {
                 //     $errors[] = mysqli_error($con);
                 // }
                 
-                $query = "INSERT INTO usuarios (nombre, nombre_real, password, tipo_usuario, iniciales) VALUES (LOWER('$nombre'), '$nombre_real', '$password', 1, UPPER('$inicial'));";
+                $query = "INSERT INTO usuarios (nombre, nombre_real, password, tipo_usuario, iniciales) VALUES (LOWER('$nombre'), '$nombre_real', '$password_hash', 1, UPPER('$inicial'));";
                 if (!mysqli_query($con, $query)) {
                     $errors[] = mysqli_error($con);
                 }
@@ -80,7 +83,7 @@ if ($tipo == "agregar") {
 
             
         } else if ($tipo_usuario == "cliente") {
-            $query = "INSERT INTO usuarios (nombre, password, id_cliente, tipo_usuario) VALUES (LOWER('$email'), '$password', $id_cliente, 0);";
+            $query = "INSERT INTO usuarios (nombre, password, id_cliente, tipo_usuario) VALUES (LOWER('$email'), '$password_hash', $id_cliente, 0);";
             if (mysqli_query($con, $query)){
                 echo "success";
             }
@@ -105,7 +108,7 @@ if ($tipo == "agregar") {
     } else {
         if ($tipo_usuario == "trabajador") {
             mysqli_autocommit($con, false);
-            $query = "UPDATE usuarios SET nombre = LOWER('$nombre'), nombre_real = '$nombre_real', password = '$password' WHERE id = $id_usuario;";
+            $query = "UPDATE usuarios SET nombre = LOWER('$nombre'), nombre_real = '$nombre_real', password = '$password_hash' WHERE id = $id_usuario;";
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con);
             }
@@ -133,7 +136,7 @@ if ($tipo == "agregar") {
             }
             mysqli_close($con);
         } else if ($tipo_usuario == "cliente") {
-            $query = "UPDATE usuarios SET nombre = LOWER('$email'), password = '$password' WHERE id = $id_usuario;";
+            $query = "UPDATE usuarios SET nombre = LOWER('$email'), password = '$password_hash' WHERE id = $id_usuario;";
             if (mysqli_query($con, $query)){
                 echo "success";
             }

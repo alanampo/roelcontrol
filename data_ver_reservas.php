@@ -383,17 +383,22 @@ if ($consulta == "busca_stock_actual") {
     ap.id_especie,
     DATE_FORMAT(ap.fecha_entrega, '%d/%m/%y') as fecha_entrega_solicitada,
     mp.cantidad as cantidad_mesada,
-    (
-        IFNULL(s.cantidad,0) 
-        - (
-            SELECT IFNULL(SUM(e.cantidad),0) 
-            FROM entregas_stock e
-            INNER JOIN reservas_productos r2 ON e.id_reserva = r2.id
-            WHERE r2.id_variedad = v.id 
-            AND r2.estado = 2
+    GREATEST(0, IFNULL(s.cantidad,0) -
+        ROUND(IFNULL(s.cantidad,0) *
+            ((SELECT IFNULL(SUM(r.cantidad),0)
+              FROM reservas_productos r
+              WHERE r.id_variedad = v.id AND (r.estado = 0 OR r.estado = 1)) +
+             (SELECT IFNULL(SUM(e.cantidad),0)
+              FROM entregas_stock e
+              INNER JOIN reservas_productos r2 ON e.id_reserva = r2.id
+              WHERE r2.id_variedad = v.id AND r2.estado = 2)) /
+            NULLIF((SELECT SUM(s2.cantidad)
+                    FROM stock_productos s2
+                    INNER JOIN articulospedidos ap2 ON s2.id_artpedido = ap2.id
+                    WHERE ap2.id_variedad = v.id AND ap2.estado = 8), 0)
         )
     ) AS stock_actual
-    FROM articulospedidos ap 
+    FROM articulospedidos ap
     LEFT JOIN mesadas_productos mp ON mp.id_artpedido = ap.id
     LEFT JOIN stock_productos s ON s.id_artpedido = ap.id
     INNER JOIN variedades_producto v ON v.id = ap.id_variedad
@@ -430,10 +435,7 @@ if ($consulta == "busca_stock_actual") {
 
                 // Usar stock actual en lugar de cantidad_info
                 $stock_actual = $ww['stock_actual'] ? $ww['stock_actual'] : 0;
-                die("LALO");
-                if ($stock_actual < 0) {
-                    continue;
-                }
+
                 // Crear input editable para el stock
                 $stock_input = "
     <div class='d-flex align-items-center justify-content-center'>
@@ -511,21 +513,48 @@ if ($consulta == "busca_stock_actual") {
         exit;
     }
 
-    // Verificar si ya existe stock
-    $stock_check = "SELECT id, cantidad FROM stock_productos WHERE id_artpedido = $id_artpedido";
+    // Verificar si ya existe stock y calcular cantidades comprometidas
+    $stock_check = "SELECT
+        s.id,
+        s.cantidad as stock_fisico,
+        ROUND(s.cantidad *
+            ((SELECT IFNULL(SUM(r.cantidad),0)
+              FROM reservas_productos r
+              WHERE r.id_variedad = $id_variedad AND (r.estado = 0 OR r.estado = 1)) +
+             (SELECT IFNULL(SUM(e.cantidad),0)
+              FROM entregas_stock e
+              INNER JOIN reservas_productos r2 ON e.id_reserva = r2.id
+              WHERE r2.id_variedad = $id_variedad AND r2.estado = 2)) /
+            NULLIF((SELECT SUM(s2.cantidad)
+                    FROM stock_productos s2
+                    INNER JOIN articulospedidos ap2 ON s2.id_artpedido = ap2.id
+                    WHERE ap2.id_variedad = $id_variedad AND ap2.estado = 8), 0)
+        ) as cantidad_comprometida
+        FROM stock_productos s
+        WHERE s.id_artpedido = $id_artpedido";
     $stock_result = mysqli_query($con, $stock_check);
 
     if (mysqli_num_rows($stock_result) > 0) {
         $row = mysqli_fetch_assoc($stock_result);
-        $cantidad_actual = (int) $row["cantidad"];
+        $stock_fisico_actual = (int) $row["stock_fisico"];
+        $cantidad_comprometida = (int) $row["cantidad_comprometida"];
 
         if ($accion === "sumar") {
-            $update_query = "UPDATE stock_productos 
-                         SET cantidad = cantidad + $cantidad 
+            $update_query = "UPDATE stock_productos
+                         SET cantidad = cantidad + $cantidad
                          WHERE id_artpedido = $id_artpedido";
         } else {
-            $update_query = "UPDATE stock_productos 
-                         SET cantidad = cantidad - $cantidad 
+            // Validar que no se reste más del stock físico disponible
+            $stock_fisico_resultante = $stock_fisico_actual - $cantidad;
+
+            if ($stock_fisico_resultante < $cantidad_comprometida) {
+                $disponible_para_restar = $stock_fisico_actual - $cantidad_comprometida;
+                echo "error:No se puede restar $cantidad. Solo hay $disponible_para_restar disponibles para restar (stock físico: $stock_fisico_actual - comprometido: $cantidad_comprometida)";
+                exit;
+            }
+
+            $update_query = "UPDATE stock_productos
+                         SET cantidad = cantidad - $cantidad
                          WHERE id_artpedido = $id_artpedido";
         }
 

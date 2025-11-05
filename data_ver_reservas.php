@@ -345,7 +345,7 @@ if ($consulta == "busca_stock_actual") {
 } else if ($consulta == "check_reservas_nuevas") {
     if (is_array($_SESSION["arraypermisos"]) && !in_array("pedidos", $_SESSION["arraypermisos"]))
         return;
-    
+
     $query = "SELECT r.id as id_reserva, cl.nombre as nombre_cliente FROM reservas_productos r INNER JOIN clientes cl ON r.id_cliente = cl.id_cliente WHERE r.estado = 0 AND r.visto = 0 ORDER BY r.id DESC LIMIT 1";
     $val = mysqli_query($con, $query);
 
@@ -406,36 +406,35 @@ if ($consulta == "busca_stock_actual") {
     AND ap.estado = 8
     ORDER BY p.id_pedido, ap.id";
 
+    try {
+        $val = mysqli_query($con, $query);
+        if (mysqli_num_rows($val) > 0) {
+            while ($ww = mysqli_fetch_array($val)) {
+                $id_cliente = $ww['id_cliente'];
+                $id_pedido = $ww['id_pedido'];
+                $id_artpedido = $ww['id_artpedido'];
 
-    $val = mysqli_query($con, $query);
-    if (mysqli_num_rows($val) > 0) {
-        die("KAKAKAKA");
-        while ($ww = mysqli_fetch_array($val)) {
-            $id_cliente = $ww['id_cliente'];
-            $id_pedido = $ww['id_pedido'];
-            $id_artpedido = $ww['id_artpedido'];
+                // Generar ID del producto
+                $especie = $ww["nombre_especie"] ? $ww["nombre_especie"] : "";
+                $id_especie = $ww["id_especie"] ? "-" . str_pad($ww["id_especie"], 2, '0', STR_PAD_LEFT) : "";
+                $id_producto = "$ww[iniciales]$ww[id_pedido_interno]/M$ww[mes_dia]/$ww[codigo]" . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT) . $id_especie . "/$ww[cant_plantas]/" . str_pad($ww["id_cliente"], 2, '0', STR_PAD_LEFT);
 
-            // Generar ID del producto
-            $especie = $ww["nombre_especie"] ? $ww["nombre_especie"] : "";
-            $id_especie = $ww["id_especie"] ? "-" . str_pad($ww["id_especie"], 2, '0', STR_PAD_LEFT) : "";
-            $id_producto = "$ww[iniciales]$ww[id_pedido_interno]/M$ww[mes_dia]/$ww[codigo]" . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT) . $id_especie . "/$ww[cant_plantas]/" . str_pad($ww["id_cliente"], 2, '0', STR_PAD_LEFT);
+                // Nombre del producto con especie
+                $producto = "$ww[nombre_variedad] ($ww[codigo]" . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT) . ")";
+                if ($especie) {
+                    $producto .= " <span class='text-primary'>$especie</span>";
+                }
 
-            // Nombre del producto con especie
-            $producto = "$ww[nombre_variedad] ($ww[codigo]" . str_pad($ww["id_interno"], 2, '0', STR_PAD_LEFT) . ")";
-            if ($especie) {
-                $producto .= " <span class='text-primary'>$especie</span>";
-            }
+                $cliente = $ww['nombre_cliente'] . " ($id_cliente)";
+                $estado = generarBoxEstado($ww["estado"], $ww["codigo"], true);
 
-            $cliente = $ww['nombre_cliente'] . " ($id_cliente)";
-            $estado = generarBoxEstado($ww["estado"], $ww["codigo"], true);
-
-            // Usar stock actual en lugar de cantidad_info
-            $stock_actual = $ww['stock_actual'] ? $ww['stock_actual'] : 0;
-            if ($stock_actual < 0){
-                continue;
-            }
-            // Crear input editable para el stock
-            $stock_input = "
+                // Usar stock actual en lugar de cantidad_info
+                $stock_actual = $ww['stock_actual'] ? $ww['stock_actual'] : 0;
+                if ($stock_actual < 0) {
+                    continue;
+                }
+                // Crear input editable para el stock
+                $stock_input = "
     <div class='d-flex align-items-center justify-content-center'>
         <span class='badge bg-success text-white me-2 mr-2' style='min-width:60px;font-size:14px;'>Real actual: $stock_actual</span>
 
@@ -462,28 +461,32 @@ if ($consulta == "busca_stock_actual") {
     </div>";
 
 
-            $onclick = "onClick='MostrarModalEstado($ww[id_artpedido], \"$id_producto\", \"$ww[nombre_cliente]\", $id_cliente)'";
+                $onclick = "onClick='MostrarModalEstado($ww[id_artpedido], \"$id_producto\", \"$ww[nombre_cliente]\", $id_cliente)'";
 
-            echo "<tr style='cursor:pointer;' x-codigo='$id_producto' x-etapa='$ww[estado]' x-id-artpedido='$id_artpedido'>";
+                echo "<tr style='cursor:pointer;' x-codigo='$id_producto' x-etapa='$ww[estado]' x-id-artpedido='$id_artpedido'>";
 
-            // Columnas según el header de tu tabla HTML:
-            // Orden
-            echo "<td $onclick style='text-align: center;color:#1F618D; font-weight:bold; font-size:1.0em'>$id_producto</td>";
+                // Columnas según el header de tu tabla HTML:
+                // Orden
+                echo "<td $onclick style='text-align: center;color:#1F618D; font-weight:bold; font-size:1.0em'>$id_producto</td>";
 
-            // Producto
-            echo "<td $onclick>$producto</td>";
+                // Producto
+                echo "<td $onclick>$producto</td>";
 
-            // Stock Actual (input editable) - Esta columna no tiene onclick para permitir edición
-            echo "<td style='text-align: center;'>$stock_input</td>";
+                // Stock Actual (input editable) - Esta columna no tiene onclick para permitir edición
+                echo "<td style='text-align: center;'>$stock_input</td>";
 
-            // Cliente
-            echo "<td $onclick>$cliente</td>";
+                // Cliente
+                echo "<td $onclick>$cliente</td>";
 
-            echo "</tr>";
+                echo "</tr>";
+            }
+        } else {
+            echo "<tr><td colspan='4' class='text-center'><div class='callout callout-danger'><b>No se encontraron productos en esta mesada.</b></div></td></tr>";
         }
-    } else {
-        echo "<tr><td colspan='4' class='text-center'><div class='callout callout-danger'><b>No se encontraron productos en esta mesada.</b></div></td></tr>";
+    } catch (\Throwable $th) {
+        echo $th->getMessage();
     }
+
 } else if ($consulta == "actualizar_stock_articulo") {
     $id_artpedido = $_POST["id_artpedido"];
     $id_variedad = $_POST["id_variedad"];
@@ -516,7 +519,7 @@ if ($consulta == "busca_stock_actual") {
         $cantidad_actual = (int) $row["cantidad"];
 
         if ($accion === "sumar") {
-             $update_query = "UPDATE stock_productos 
+            $update_query = "UPDATE stock_productos 
                          SET cantidad = cantidad + $cantidad 
                          WHERE id_artpedido = $id_artpedido";
         } else {
@@ -525,7 +528,7 @@ if ($consulta == "busca_stock_actual") {
                          WHERE id_artpedido = $id_artpedido";
         }
 
-       
+
         if (mysqli_query($con, $update_query)) {
             echo "success";
         } else {

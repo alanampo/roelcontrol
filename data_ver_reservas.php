@@ -430,6 +430,7 @@ if ($consulta == "busca_stock_actual") {
 
                 // Usar stock actual en lugar de cantidad_info
                 $stock_actual = $ww['stock_actual'] ? $ww['stock_actual'] : 0;
+                die("LALO");
                 if ($stock_actual < 0) {
                     continue;
                 }

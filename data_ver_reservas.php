@@ -343,6 +343,9 @@ if ($consulta == "busca_stock_actual") {
 
     mysqli_close($con);
 } else if ($consulta == "check_reservas_nuevas") {
+    if (is_array($_SESSION["arraypermisos"]) && !in_array("pedidos", $_SESSION["arraypermisos"]))
+        return;
+    
     $query = "SELECT r.id as id_reserva, cl.nombre as nombre_cliente FROM reservas_productos r INNER JOIN clientes cl ON r.id_cliente = cl.id_cliente WHERE r.estado = 0 AND r.visto = 0 ORDER BY r.id DESC LIMIT 1";
     $val = mysqli_query($con, $query);
 
@@ -406,7 +409,7 @@ if ($consulta == "busca_stock_actual") {
 
     $val = mysqli_query($con, $query);
     if (mysqli_num_rows($val) > 0) {
-
+        die("KAKAKAKA");
         while ($ww = mysqli_fetch_array($val)) {
             $id_cliente = $ww['id_cliente'];
             $id_pedido = $ww['id_pedido'];

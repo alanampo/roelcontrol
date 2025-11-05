@@ -15,7 +15,13 @@ mysqli_query($con, "SET NAMES 'utf8'");
 $consulta = $_POST["consulta"];
 
 if ($consulta == "obtener_usuarios") {
-    $query = "SELECT id as id_usuario, nombre_real as nombre_completo FROM usuarios WHERE tipo_usuario = 1 ORDER BY nombre_Real";
+    $query = "SELECT u.id as id_usuario, u.nombre_real as nombre_completo
+              FROM usuarios u
+              INNER JOIN permisos p ON u.id = p.id_usuario
+              WHERE u.tipo_usuario = 1
+                AND u.inhabilitado = 0
+                AND p.seguimiento_produccion = 1
+              ORDER BY u.nombre_Real";
     $val = mysqli_query($con, $query);
 
     if ($val && mysqli_num_rows($val) > 0) {

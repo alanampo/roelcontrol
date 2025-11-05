@@ -17,11 +17,11 @@ $consulta = $_POST["consulta"];
 if ($consulta == "obtener_usuarios") {
     $query = "SELECT u.id as id_usuario, u.nombre_real as nombre_completo
               FROM usuarios u
-              INNER JOIN permisos p ON u.id = p.id_usuario
-              WHERE u.tipo_usuario = 1
-                AND u.inhabilitado = 0
-                AND p.seguimiento_produccion = 1
-              ORDER BY u.nombre_Real";
+              LEFT JOIN permisos p ON u.id = p.id_usuario
+              WHERE u.tipo_usuario = 1 AND u.inhabilitado = 0
+              GROUP BY u.id, u.nombre_real
+              HAVING FIND_IN_SET('seguimiento_produccion', GROUP_CONCAT(p.modulo)) > 0
+              ORDER BY u.nombre_real";
     $val = mysqli_query($con, $query);
 
     if ($val && mysqli_num_rows($val) > 0) {

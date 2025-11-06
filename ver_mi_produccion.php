@@ -123,8 +123,32 @@
         <!-- Main content -->
         <section class="content">
 
-          <!-- Estadísticas Rápidas -->
+          <!-- Selector de Mes -->
           <div class="row">
+            <div class="col-md-12">
+              <div class="box box-solid">
+                <div class="box-body text-center" style="padding: 15px;">
+                  <div class="btn-group" role="group" style="display: inline-flex; align-items: center; gap: 15px;">
+                    <button type="button" class="btn btn-default" id="btn-mes-anterior" title="Mes Anterior">
+                      <i class="fa fa-chevron-left"></i>
+                    </button>
+                    <div style="min-width: 200px;">
+                      <input type="month" class="form-control text-center" id="input-mes-actual" style="font-size: 16px; font-weight: bold;">
+                    </div>
+                    <button type="button" class="btn btn-default" id="btn-mes-siguiente" title="Mes Siguiente">
+                      <i class="fa fa-chevron-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btn-mes-hoy" title="Ir al mes actual">
+                      <i class="fa fa-calendar"></i> Mes Actual
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estadísticas Rápidas -->
+          <div class="row" id="stats-mes-actual">
             <div class="col-md-3 col-sm-6">
               <div class="info-box bg-aqua">
                 <span class="info-box-icon"><i class="fa fa-calendar-o"></i></span>
@@ -166,8 +190,31 @@
             </div>
           </div>
 
+          <!-- Estadísticas para Meses Anteriores -->
+          <div class="row" id="stats-mes-historico" style="display: none;">
+            <div class="col-md-6 col-sm-6">
+              <div class="info-box bg-purple">
+                <span class="info-box-icon"><i class="fa fa-calendar"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text" id="label-mes-historico">Mes</span>
+                  <span class="info-box-number" id="stat-mes-historico">0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-sm-6">
+              <div class="info-box bg-yellow">
+                <span class="info-box-icon"><i class="fa fa-money"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">Bono Estimado</span>
+                  <span class="info-box-number" id="stat-bono-historico">$0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Progreso Semanal -->
-          <div class="row">
+          <div class="row" id="progreso-semanal-container">
             <div class="col-md-12">
               <div class="box box-primary">
                 <div class="box-header with-border">

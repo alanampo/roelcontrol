@@ -11,12 +11,19 @@ let variedades = [];
 let descripcionesManuales = [];
 let imagenesSeleccionadas = [];
 let registroActual = null;
+let mesActual = new Date().getMonth() + 1; // 1-12
+let anioActual = new Date().getFullYear();
 
 $(document).ready(function() {
   cargarVariedades();
   cargarDescripcionesManuales();
-  cargarEstadisticas();
-  cargarHistorial();
+
+  // Inicializar selector de mes
+  inicializarSelectorMes();
+
+  // Cargar datos del mes actual
+  cargarEstadisticas(mesActual, anioActual);
+  cargarHistorial(mesActual, anioActual);
 
   // Establecer fecha actual por defecto
   const hoy = new Date().toISOString().split('T')[0];
@@ -44,7 +51,70 @@ $(document).ready(function() {
       $("#input-descripcion-texto").val("");
     }
   });
+
+  // Navegación de meses
+  $("#btn-mes-anterior").on("click", irMesAnterior);
+  $("#btn-mes-siguiente").on("click", irMesSiguiente);
+  $("#btn-mes-hoy").on("click", irMesActual);
+  $("#input-mes-actual").on("change", cambioMesManual);
 });
+
+// ==================== NAVEGACIÓN DE MESES ====================
+
+function inicializarSelectorMes() {
+  const mesStr = String(mesActual).padStart(2, '0');
+  $("#input-mes-actual").val(`${anioActual}-${mesStr}`);
+}
+
+function irMesAnterior() {
+  let mes = mesActual - 1;
+  let anio = anioActual;
+
+  if (mes < 1) {
+    mes = 12;
+    anio--;
+  }
+
+  cambiarMes(mes, anio);
+}
+
+function irMesSiguiente() {
+  let mes = mesActual + 1;
+  let anio = anioActual;
+
+  if (mes > 12) {
+    mes = 1;
+    anio++;
+  }
+
+  cambiarMes(mes, anio);
+}
+
+function irMesActual() {
+  const hoy = new Date();
+  cambiarMes(hoy.getMonth() + 1, hoy.getFullYear());
+}
+
+function cambioMesManual() {
+  const valor = $("#input-mes-actual").val();
+  if (!valor) return;
+
+  const [anio, mes] = valor.split('-');
+  cambiarMes(parseInt(mes), parseInt(anio));
+}
+
+function cambiarMes(mes, anio) {
+  mesActual = mes;
+  anioActual = anio;
+
+  // Actualizar input
+  const mesStr = String(mes).padStart(2, '0');
+  $("#input-mes-actual").val(`${anio}-${mesStr}`);
+
+  // Recargar datos
+  cargarEstadisticas(mes, anio);
+  cargarHistorial(mes, anio);
+}
 
 // ==================== CARGA DE DATOS ====================
 
@@ -126,11 +196,15 @@ function cambioTipoItem() {
   }
 }
 
-function cargarEstadisticas() {
+function cargarEstadisticas(mes, anio) {
   $.ajax({
     url: "data_mi_produccion.php",
     type: "POST",
-    data: { consulta: "obtener_estadisticas" },
+    data: {
+      consulta: "obtener_estadisticas",
+      mes: mes,
+      anio: anio
+    },
     success: function(x) {
       try {
         const stats = JSON.parse(x);
@@ -146,49 +220,65 @@ function cargarEstadisticas() {
 }
 
 function renderizarEstadisticas(stats) {
-  // Actualizar números
-  $("#stat-diaria").text(formatNumber(stats.produccion_diaria));
-  $("#stat-semanal").text(formatNumber(stats.produccion_semanal));
-  $("#stat-mensual").text(formatNumber(stats.produccion_mensual));
-  $("#stat-meta").text(formatNumber(stats.meta_semanal));
-  $("#stat-progreso").text(stats.progreso_semanal + "%");
-  $("#stat-bono").text("$" + formatNumber(stats.bono_estimado));
+  if (stats.es_mes_actual) {
+    // Mostrar cards del mes actual
+    $("#stats-mes-actual").show();
+    $("#stats-mes-historico").hide();
+    $("#progreso-semanal-container").show();
 
-  // Actualizar barra de progreso
-  const progressBar = $("#progress-bar-semanal");
-  progressBar.css("width", stats.progreso_semanal + "%");
-  progressBar.attr("aria-valuenow", stats.progreso_semanal);
+    // Actualizar números
+    $("#stat-diaria").text(formatNumber(stats.produccion_diaria));
+    $("#stat-semanal").text(formatNumber(stats.produccion_semanal));
+    $("#stat-mensual").text(formatNumber(stats.produccion_mensual));
+    $("#stat-meta").text(formatNumber(stats.meta_semanal));
+    $("#stat-progreso").text(stats.progreso_semanal + "%");
+    $("#stat-bono").text("$" + formatNumber(stats.bono_estimado));
 
-  // Actualizar clase de color según progreso
-  progressBar.removeClass("bg-success bg-warning bg-danger");
-  if (stats.progreso_semanal >= 100) {
-    progressBar.addClass("bg-success");
-  } else if (stats.progreso_semanal >= 75) {
-    progressBar.addClass("bg-warning");
+    // Actualizar barra de progreso
+    const progressBar = $("#progress-bar-semanal");
+    progressBar.css("width", stats.progreso_semanal + "%");
+    progressBar.attr("aria-valuenow", stats.progreso_semanal);
+
+    // Actualizar clase de color según progreso
+    progressBar.removeClass("bg-success bg-warning bg-danger");
+    if (stats.progreso_semanal >= 100) {
+      progressBar.addClass("bg-success");
+    } else if (stats.progreso_semanal >= 75) {
+      progressBar.addClass("bg-warning");
+    } else {
+      progressBar.addClass("bg-danger");
+    }
+
+    // Actualizar indicador
+    const indicador = $("#indicador-cumplimiento");
+    indicador.removeClass("bg-green bg-yellow bg-red");
+
+    if (stats.indicador === "green") {
+      indicador.addClass("bg-green");
+      indicador.html('<i class="fa fa-check-circle"></i> Cumpliendo');
+    } else if (stats.indicador === "yellow") {
+      indicador.addClass("bg-yellow");
+      indicador.html('<i class="fa fa-exclamation-triangle"></i> En Progreso');
+    } else {
+      indicador.addClass("bg-red");
+      indicador.html('<i class="fa fa-times-circle"></i> Bajo Meta');
+    }
   } else {
-    progressBar.addClass("bg-danger");
-  }
+    // Mostrar cards de mes histórico
+    $("#stats-mes-actual").hide();
+    $("#stats-mes-historico").show();
+    $("#progreso-semanal-container").hide();
 
-  // Actualizar indicador
-  const indicador = $("#indicador-cumplimiento");
-  indicador.removeClass("bg-green bg-yellow bg-red");
-
-  if (stats.indicador === "green") {
-    indicador.addClass("bg-green");
-    indicador.html('<i class="fa fa-check-circle"></i> Cumpliendo');
-  } else if (stats.indicador === "yellow") {
-    indicador.addClass("bg-yellow");
-    indicador.html('<i class="fa fa-exclamation-triangle"></i> En Progreso');
-  } else {
-    indicador.addClass("bg-red");
-    indicador.html('<i class="fa fa-times-circle"></i> Bajo Meta');
+    // Actualizar números de mes histórico
+    $("#label-mes-historico").text(stats.nombre_mes + " " + stats.anio);
+    $("#stat-mes-historico").text(formatNumber(stats.produccion_mensual));
+    $("#stat-bono-historico").text("$" + formatNumber(stats.bono_estimado));
   }
 }
 
-function cargarHistorial() {
-  const mesActual = new Date();
-  const primerDia = new Date(mesActual.getFullYear(), mesActual.getMonth(), 1).toISOString().split('T')[0];
-  const ultimoDia = new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 0).toISOString().split('T')[0];
+function cargarHistorial(mes, anio) {
+  const primerDia = new Date(anio, mes - 1, 1).toISOString().split('T')[0];
+  const ultimoDia = new Date(anio, mes, 0).toISOString().split('T')[0];
 
   $.ajax({
     url: "data_mi_produccion.php",
@@ -526,8 +616,8 @@ function subirEvidencias(idRegistro) {
 function finalizarGuardado() {
   limpiarFormulario();
   cargarDescripcionesManuales(); // Recargar por si agregó una nueva
-  cargarEstadisticas();
-  cargarHistorial();
+  cargarEstadisticas(mesActual, anioActual);
+  cargarHistorial(mesActual, anioActual);
   $("#btn-registrar").prop("disabled", false).html('<i class="fa fa-save"></i> Registrar');
 }
 
@@ -621,8 +711,8 @@ function eliminarRegistro(idRegistro) {
           success: function(x) {
             if (x.includes("success")) {
               toastr.success("Registro eliminado");
-              cargarEstadisticas();
-              cargarHistorial();
+              cargarEstadisticas(mesActual, anioActual);
+              cargarHistorial(mesActual, anioActual);
             } else {
               toastr.error("No se pudo eliminar: " + x);
             }

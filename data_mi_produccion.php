@@ -265,30 +265,45 @@ else if ($consulta == "obtener_mi_produccion") {
     }
 }
 else if ($consulta == "obtener_estadisticas") {
+    // Permitir pasar mes y año específicos
+    $mes_solicitado = isset($_POST["mes"]) ? intval($_POST["mes"]) : intval(date('m'));
+    $anio_solicitado = isset($_POST["anio"]) ? intval($_POST["anio"]) : intval(date('Y'));
+
+    // Determinar si es el mes actual
+    $es_mes_actual = ($mes_solicitado == intval(date('m')) && $anio_solicitado == intval(date('Y')));
+
     $hoy = date('Y-m-d');
     $inicio_semana = date('Y-m-d', strtotime('monday this week'));
     $fin_semana = date('Y-m-d', strtotime('sunday this week'));
-    $inicio_mes = date('Y-m-01');
-    $fin_mes = date('Y-m-t');
 
-    // Producción diaria (hoy) - solo aprobados y pendientes
-    $query_diaria = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
-                     FROM registro_produccion_diario
-                     WHERE id_usuario = $id_usuario AND fecha = '$hoy'
-                     AND estado != 'rechazado'";
-    $val_diaria = mysqli_query($con, $query_diaria);
-    $row_diaria = mysqli_fetch_assoc($val_diaria);
-    $produccion_diaria = intval($row_diaria['total']);
+    // Calcular inicio y fin del mes solicitado
+    $inicio_mes = sprintf('%04d-%02d-01', $anio_solicitado, $mes_solicitado);
+    $fin_mes = date('Y-m-t', strtotime($inicio_mes));
 
-    // Producción semanal - solo aprobados y pendientes
-    $query_semanal = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
-                      FROM registro_produccion_diario
-                      WHERE id_usuario = $id_usuario
-                      AND fecha BETWEEN '$inicio_semana' AND '$fin_semana'
-                      AND estado != 'rechazado'";
-    $val_semanal = mysqli_query($con, $query_semanal);
-    $row_semanal = mysqli_fetch_assoc($val_semanal);
-    $produccion_semanal = intval($row_semanal['total']);
+    $produccion_diaria = 0;
+    $produccion_semanal = 0;
+
+    // Solo calcular producción diaria y semanal si es el mes actual
+    if ($es_mes_actual) {
+        // Producción diaria (hoy) - solo aprobados y pendientes
+        $query_diaria = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
+                         FROM registro_produccion_diario
+                         WHERE id_usuario = $id_usuario AND fecha = '$hoy'
+                         AND estado != 'rechazado'";
+        $val_diaria = mysqli_query($con, $query_diaria);
+        $row_diaria = mysqli_fetch_assoc($val_diaria);
+        $produccion_diaria = intval($row_diaria['total']);
+
+        // Producción semanal - solo aprobados y pendientes
+        $query_semanal = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
+                          FROM registro_produccion_diario
+                          WHERE id_usuario = $id_usuario
+                          AND fecha BETWEEN '$inicio_semana' AND '$fin_semana'
+                          AND estado != 'rechazado'";
+        $val_semanal = mysqli_query($con, $query_semanal);
+        $row_semanal = mysqli_fetch_assoc($val_semanal);
+        $produccion_semanal = intval($row_semanal['total']);
+    }
 
     // Producción mensual - solo aprobados y pendientes
     $query_mensual = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
@@ -314,11 +329,22 @@ else if ($consulta == "obtener_estadisticas") {
     // Calcular progreso y bono estimado
     $progreso_semanal = $meta_semanal > 0 ? round(($produccion_semanal / $meta_semanal) * 100, 1) : 0;
 
-    // Calcular bono (simplificado: $0.50 por plantín que exceda la meta)
+    // Calcular bono basado en el mes
+    // Para mes actual: usar producción semanal
+    // Para meses anteriores: usar producción mensual / 4 semanas
     $bono_estimado = 0;
-    if ($produccion_semanal > $meta_semanal) {
-        $exceso = $produccion_semanal - $meta_semanal;
-        $bono_estimado = $exceso * 0.50;
+    if ($es_mes_actual) {
+        if ($produccion_semanal > $meta_semanal) {
+            $exceso = $produccion_semanal - $meta_semanal;
+            $bono_estimado = $exceso * 0.50;
+        }
+    } else {
+        // Calcular bono del mes completo (aproximado)
+        $meta_mensual = $meta_semanal * 4;
+        if ($produccion_mensual > $meta_mensual) {
+            $exceso = $produccion_mensual - $meta_mensual;
+            $bono_estimado = $exceso * 0.50;
+        }
     }
 
     // Determinar indicador de cumplimiento
@@ -329,6 +355,11 @@ else if ($consulta == "obtener_estadisticas") {
         $indicador = "yellow";
     }
 
+    // Nombre del mes en español
+    $meses_es = array('', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre');
+    $nombre_mes = $meses_es[$mes_solicitado];
+
     echo json_encode(array(
         "produccion_diaria" => $produccion_diaria,
         "produccion_semanal" => $produccion_semanal,
@@ -338,6 +369,10 @@ else if ($consulta == "obtener_estadisticas") {
         "bono_estimado" => $bono_estimado,
         "indicador" => $indicador,
         "fecha_actual" => $hoy,
+        "es_mes_actual" => $es_mes_actual,
+        "mes" => $mes_solicitado,
+        "anio" => $anio_solicitado,
+        "nombre_mes" => $nombre_mes,
         "rango_semana" => array(
             "inicio" => $inicio_semana,
             "fin" => $fin_semana

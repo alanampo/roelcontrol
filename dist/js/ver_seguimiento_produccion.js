@@ -191,6 +191,8 @@ function renderizarTabla(datos, diasDelMes) {
   let totalSueldoLiquido = 0;
   let totalPagar1Q = 0;
   let totalPagar2Q = 0;
+  let totalCantidad1Q = 0;
+  let totalCantidad2Q = 0;
 
   datos.forEach(function (item) {
     html += renderizarFila(item, diasDelMes);
@@ -210,7 +212,30 @@ function renderizarTabla(datos, diasDelMes) {
 
     totalPagar1Q += pagar1Q;
     totalPagar2Q += pagar2Q;
+    totalCantidad1Q += cantidad1Q;
+    totalCantidad2Q += cantidad2Q;
   });
+
+  // Agregar fila de totales solo si hay datos
+  if (datos.length > 0) {
+    html += "<tr style='background-color: #f0f0f0; font-weight: bold; border-top: 3px solid #333;'>";
+    html += "<td colspan='2' class='text-right' style='padding-right: 20px;'>TOTALES:</td>";
+
+    // Celdas vacías para los días del mes
+    for (let dia = 1; dia <= diasDelMes; dia++) {
+      html += "<td></td>";
+    }
+
+    // Totales de quincenas
+    html += `<td class='text-center' style='font-size: 16px;'>${formatNumber(totalCantidad1Q)}</td>`;
+    html += `<td class='text-center' style='font-size: 16px;'>${formatNumber(totalCantidad2Q)}</td>`;
+    html += `<td class='text-center' style='font-size: 16px;'>$${formatNumber(totalPagar1Q)}</td>`;
+    html += `<td class='text-center' style='font-size: 16px;'>$${formatNumber(totalPagar2Q)}</td>`;
+
+    // Celda vacía para acciones
+    html += "<td></td>";
+    html += "</tr>";
+  }
 
   html += "</tbody>";
   html += "</table>";

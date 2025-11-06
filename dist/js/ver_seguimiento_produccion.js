@@ -216,9 +216,10 @@ function renderizarTabla(datos, diasDelMes) {
   html += "<div class='col-md-6'>";
   html += `<p style='font-size: 15px; margin-bottom: 8px;'>Total a Pagar 1ª Quincena: <strong>$${formatNumber(totalPagar1Q)}</strong></p>`;
   html += `<p style='font-size: 15px; margin-bottom: 8px;'>Total a Pagar 2ª Quincena: <strong>$${formatNumber(totalPagar2Q)}</strong></p>`;
+  html += `<p style='font-size: 16px; margin-bottom: 0; margin-top: 10px; border-top: 2px solid #ddd; padding-top: 10px;'>Total Mes: <strong class='text-primary'>$${formatNumber(totalSueldoLiquido)}</strong></p>`;
   html += "</div>";
   html += "<div class='col-md-6 text-right'>";
-  html += `<p style='font-size: 18px; margin-bottom: 0;'>Sueldo Líquido: <strong class='text-success'>$${formatNumber(totalSueldoLiquido)}</strong></p>`;
+  //html += `<p style='font-size: 18px; margin-bottom: 0;'>Sueldo Líquido: <strong class='text-success'>$${formatNumber(totalSueldoLiquido)}</strong></p>`;
   html += "</div>";
   html += "</div>";
   html += "</div>";

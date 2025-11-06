@@ -53,6 +53,35 @@
     td.dia-actual {
       background-color: #e3f2fd !important; /* Azul muy suave / celeste claro */
     }
+
+    /* Estilos para estados de registros */
+    td.estado-aprobado {
+      background-color: #d4edda !important; /* Verde claro */
+      border-left: 3px solid #28a745 !important;
+    }
+
+    td.estado-pendiente {
+      background-color: #fff3cd !important; /* Amarillo claro */
+      border-left: 3px solid #ffc107 !important;
+    }
+
+    td.estado-rechazado {
+      background-color: #f8d7da !important; /* Rojo claro */
+      border-left: 3px solid #dc3545 !important;
+    }
+
+    /* Combinación: día actual + estado */
+    td.dia-actual.estado-aprobado {
+      background: linear-gradient(135deg, #e3f2fd 0%, #d4edda 100%) !important;
+    }
+
+    td.dia-actual.estado-pendiente {
+      background: linear-gradient(135deg, #e3f2fd 0%, #fff3cd 100%) !important;
+    }
+
+    td.dia-actual.estado-rechazado {
+      background: linear-gradient(135deg, #e3f2fd 0%, #f8d7da 100%) !important;
+    }
   </style>
 </head>
 

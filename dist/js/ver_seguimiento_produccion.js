@@ -2,6 +2,7 @@ let mesActual = new Date().getMonth() + 1; // 1-12
 let anioActual = new Date().getFullYear();
 let usuarioSeleccionado = null;
 let totalMensual = 0;
+let estadosDias = {}; // Almacena el estado de cada día por item
 
 const meses = [
   "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
@@ -110,38 +111,46 @@ function getDiasDelMes(mes, anio) {
 function cargarDatosProduccion() {
   const diasDelMes = getDiasDelMes(mesActual, anioActual);
 
-  $.ajax({
-    beforeSend: function () {
-      $("#tabla_produccion").html("<h4>Cargando datos...</h4>");
-    },
-    url: "data_ver_seguimiento_produccion.php",
-    type: "POST",
-    data: {
-      consulta: "obtener_produccion",
-      mes: mesActual,
-      anio: anioActual,
-      id_usuario: usuarioSeleccionado,
-    },
-    success: function (x) {
-      if (x.length) {
-        try {
-          const data = JSON.parse(x);
-          renderizarTabla(data, diasDelMes);
-        } catch (error) {
-          console.error("Error al parsear datos:", error);
-          $("#tabla_produccion").html(
-            "<div class='callout callout-danger'><b>Error al cargar los datos</b></div>"
-          );
-        }
-      } else {
-        renderizarTabla([], diasDelMes);
+  $("#tabla_produccion").html("<h4>Cargando datos...</h4>");
+
+  // Cargar ambos: producción y estados
+  Promise.all([
+    $.ajax({
+      url: "data_ver_seguimiento_produccion.php",
+      type: "POST",
+      data: {
+        consulta: "obtener_produccion",
+        mes: mesActual,
+        anio: anioActual,
+        id_usuario: usuarioSeleccionado,
       }
-    },
-    error: function (jqXHR, estado, error) {
+    }),
+    $.ajax({
+      url: "data_ver_seguimiento_produccion.php",
+      type: "POST",
+      data: {
+        consulta: "obtener_estados_dias",
+        mes: mesActual,
+        anio: anioActual,
+        id_usuario: usuarioSeleccionado,
+      }
+    })
+  ]).then(function(results) {
+    try {
+      const dataProduccion = results[0] ? JSON.parse(results[0]) : [];
+      estadosDias = results[1] ? JSON.parse(results[1]) : {};
+      renderizarTabla(dataProduccion, diasDelMes);
+    } catch (error) {
+      console.error("Error al parsear datos:", error);
       $("#tabla_produccion").html(
-        "<div class='callout callout-danger'><b>Error: " + error + "</b></div>"
+        "<div class='callout callout-danger'><b>Error al cargar los datos</b></div>"
       );
-    },
+    }
+  }).catch(function(error) {
+    console.error("Error al cargar datos:", error);
+    $("#tabla_produccion").html(
+      "<div class='callout callout-danger'><b>Error de conexión</b></div>"
+    );
   });
 }
 
@@ -269,6 +278,11 @@ function renderizarFila(item, diasDelMes) {
   const mesHoy = hoy.getMonth() + 1;
   const anioHoy = hoy.getFullYear();
 
+  // Construir clave del item para buscar estados (debe coincidir con el backend)
+  const itemKey = item.item_tipo === 'variedad'
+    ? `var_${item.id_variedad}`
+    : `man_${hashString(item.descripcion_manual || '')}`;
+
   for (let dia = 1; dia <= diasDelMes; dia++) {
     const diaStr = String(dia).padStart(2, '0');
     const valor = item[`dia_${diaStr}`] || 0;
@@ -280,7 +294,20 @@ function renderizarFila(item, diasDelMes) {
     const esDiaHoy = (dia === diaActual && mesActual === mesHoy && anioActual === anioHoy);
     const claseHoy = esDiaHoy ? 'dia-actual' : '';
 
-    html += `<td class="${claseHoy}" style="position:relative;">
+    // Determinar clase según estado del registro más reciente de este día
+    let claseEstado = '';
+    if (parseInt(valor) > 0 && estadosDias[itemKey] && estadosDias[itemKey][`dia_${diaStr}`]) {
+      const estado = estadosDias[itemKey][`dia_${diaStr}`];
+      if (estado === 'aprobado') {
+        claseEstado = 'estado-aprobado';
+      } else if (estado === 'pendiente') {
+        claseEstado = 'estado-pendiente';
+      } else if (estado === 'rechazado') {
+        claseEstado = 'estado-rechazado';
+      }
+    }
+
+    html += `<td class="${claseHoy} ${claseEstado}" style="position:relative;">
               <input type="number" class="form-control text-center input-dia" style="min-width:120px;" value="${valor}" min="0" disabled data-id="${itemId}" data-campo="dia_${diaStr}" />
               <button type="button" class="btn btn-xs btn-warning" style="position:absolute;top:2px;left:2px;padding:1px 4px;font-size:10px;"
                       onclick="habilitarEdicion(this)" title="Editar cantidad">
@@ -315,7 +342,22 @@ function renderizarFila(item, diasDelMes) {
   html += `<td class='text-center'><strong>$${formatNumber(pagar2Q)}</strong></td>`;
 
   // Acciones
-  html += `<td class='text-center'><button class='btn btn-danger btn-xs' onclick='eliminarFila(${itemId})'><i class='fa fa-trash'></i></button></td>`;
+  html += `<td class='text-center'>`;
+
+  // Botón Aprobar Todo (solo para filas existentes)
+  if (itemId !== 'new') {
+    const itemData = {
+      item_tipo: item.item_tipo,
+      id_variedad: item.id_variedad || null,
+      descripcion_manual: item.descripcion_manual || null
+    };
+    html += `<button class='btn btn-success btn-xs' onclick='aprobarTodosFila(${JSON.stringify(itemData)})' title='Aprobar registros del mes' style='margin-right:5px;'>
+               <i class='fa fa-check-circle'></i> Aprobar Todo
+             </button>`;
+  }
+
+  html += `<button class='btn btn-danger btn-xs' onclick='eliminarFila(${itemId})'><i class='fa fa-trash'></i></button>`;
+  html += `</td>`;
 
   html += "</tr>";
   return html;
@@ -908,6 +950,72 @@ function rechazarRegistro(id_registro) {
   });
 }
 
+function aprobarTodosFila(itemData) {
+  if (!usuarioSeleccionado) {
+    toastr.warning("Selecciona un usuario primero");
+    return;
+  }
+
+  const descripcion = itemData.item_tipo === 'variedad'
+    ? `variedad ID ${itemData.id_variedad}`
+    : `"${itemData.descripcion_manual}"`;
+
+  swal({
+    title: "¿Aprobar todos los registros?",
+    text: `Se aprobarán automáticamente los registros más recientes de cada día del mes para ${descripcion}`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#28a745",
+    confirmButtonText: "Sí, aprobar todos",
+    cancelButtonText: "Cancelar",
+    closeOnConfirm: false
+  }).then(function(isConfirm) {
+    switch (isConfirm) {
+      case true:
+        $.ajax({
+          url: "data_ver_seguimiento_produccion.php",
+          type: "POST",
+          data: {
+            consulta: "aprobar_todos_item",
+            id_usuario: usuarioSeleccionado,
+            mes: mesActual,
+            anio: anioActual,
+            item_tipo: itemData.item_tipo,
+            id_variedad: itemData.id_variedad,
+            descripcion_manual: itemData.descripcion_manual
+          },
+          success: function(x) {
+            try {
+              const response = JSON.parse(x);
+              if (response.success) {
+                swal({
+                  title: "¡Completado!",
+                  text: response.mensaje,
+                  icon: "success",
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+                // Recargar tabla
+                cargarDatosProduccion();
+              } else {
+                swal("Error", response.error || "No se pudo completar la operación", "error");
+              }
+            } catch (error) {
+              swal("Error", "Error al procesar la respuesta", "error");
+              console.error(error);
+            }
+          },
+          error: function() {
+            swal("Error", "Error en la conexión", "error");
+          }
+        });
+        break;
+      case false:
+        break;
+    }
+  });
+}
+
 // ==================== FUNCIONES DE EDICIÓN ====================
 
 function habilitarEdicion(btn) {
@@ -1275,4 +1383,18 @@ function scrollToDiaActual() {
   $contenedor.animate({
     scrollLeft: scrollTarget
   }, 800, 'swing');
+}
+
+// ==================== FUNCIONES AUXILIARES ====================
+
+// Función simple de hash para generar claves consistentes (similar a md5 de PHP)
+function hashString(str) {
+  if (!str) return '';
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
 }

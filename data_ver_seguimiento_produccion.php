@@ -485,5 +485,156 @@ function actualizarTablaMensual($con, $registro, $operacion) {
     }
 }
 
+if ($consulta == "obtener_estados_dias") {
+    $id_usuario = intval($_POST["id_usuario"]);
+    $mes = intval($_POST["mes"]);
+    $anio = intval($_POST["anio"]);
+
+    // Obtener todos los registros del mes
+    $query = "SELECT
+              rpd.id_variedad,
+              rpd.descripcion_manual,
+              rpd.item_tipo,
+              DAY(rpd.fecha) as dia,
+              rpd.estado,
+              rpd.fecha
+              FROM registro_produccion_diario rpd
+              WHERE rpd.id_usuario = $id_usuario
+              AND MONTH(rpd.fecha) = $mes
+              AND YEAR(rpd.fecha) = $anio
+              ORDER BY rpd.fecha DESC, rpd.id DESC";
+
+    $result = mysqli_query($con, $query);
+    $estados_por_item = array();
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $registros_procesados = array(); // Para rastrear qué días ya procesamos por item
+
+        while ($row = mysqli_fetch_assoc($result)) {
+            // Crear clave única para el item
+            $item_key = $row['item_tipo'] == 'variedad'
+                ? "var_" . $row['id_variedad']
+                : "man_" . md5($row['descripcion_manual']);
+
+            $dia = intval($row['dia']);
+            $dia_key = "dia_" . str_pad($dia, 2, '0', STR_PAD_LEFT);
+
+            // Inicializar array del item si no existe
+            if (!isset($estados_por_item[$item_key])) {
+                $estados_por_item[$item_key] = array();
+                $registros_procesados[$item_key] = array();
+            }
+
+            // Solo tomar el primer registro de cada día (el más reciente por el ORDER BY DESC)
+            if (!isset($registros_procesados[$item_key][$dia])) {
+                $estados_por_item[$item_key][$dia_key] = $row['estado'];
+                $registros_procesados[$item_key][$dia] = true;
+            }
+        }
+    }
+
+    echo json_encode($estados_por_item);
+}
+
+if ($consulta == "aprobar_todos_item") {
+    $id_usuario = intval($_POST["id_usuario"]);
+    $mes = intval($_POST["mes"]);
+    $anio = intval($_POST["anio"]);
+    $item_tipo = mysqli_real_escape_string($con, $_POST["item_tipo"]);
+    $id_admin = intval($_SESSION["id_usuario"]);
+
+    $where_item = "";
+    if ($item_tipo == "variedad") {
+        $id_variedad = intval($_POST["id_variedad"]);
+        $where_item = "id_variedad = $id_variedad";
+    } else {
+        $descripcion_manual = mysqli_real_escape_string($con, $_POST["descripcion_manual"]);
+        $where_item = "descripcion_manual = '$descripcion_manual'";
+    }
+
+    // Obtener todos los días del mes que tienen registros de este item
+    $query_dias = "SELECT DISTINCT DATE(fecha) as fecha_dia
+                   FROM registro_produccion_diario
+                   WHERE id_usuario = $id_usuario
+                   AND item_tipo = '$item_tipo'
+                   AND $where_item
+                   AND MONTH(fecha) = $mes
+                   AND YEAR(fecha) = $anio
+                   ORDER BY fecha_dia";
+
+    $result_dias = mysqli_query($con, $query_dias);
+    $ids_a_aprobar = array();
+
+    if ($result_dias && mysqli_num_rows($result_dias) > 0) {
+        while ($row_dia = mysqli_fetch_assoc($result_dias)) {
+            $fecha_dia = $row_dia['fecha_dia'];
+
+            // Para cada día, obtener el registro MÁS RECIENTE (por fecha completa con hora)
+            $query_mas_reciente = "SELECT id, estado
+                                   FROM registro_produccion_diario
+                                   WHERE id_usuario = $id_usuario
+                                   AND item_tipo = '$item_tipo'
+                                   AND $where_item
+                                   AND DATE(fecha) = '$fecha_dia'
+                                   ORDER BY fecha DESC, id DESC
+                                   LIMIT 1";
+
+            $result_reciente = mysqli_query($con, $query_mas_reciente);
+            if ($result_reciente && mysqli_num_rows($result_reciente) > 0) {
+                $row_reciente = mysqli_fetch_assoc($result_reciente);
+                $id_registro = $row_reciente['id'];
+                $estado_actual = $row_reciente['estado'];
+
+                // Solo aprobar si no está ya aprobado
+                if ($estado_actual != 'aprobado') {
+                    $ids_a_aprobar[] = $id_registro;
+                }
+            }
+        }
+    }
+
+    // Aprobar todos los registros encontrados
+    $aprobados = 0;
+    foreach ($ids_a_aprobar as $id_registro) {
+        // Obtener estado anterior para sincronización
+        $query_anterior = "SELECT estado FROM registro_produccion_diario WHERE id = $id_registro";
+        $res_anterior = mysqli_query($con, $query_anterior);
+        $estado_anterior = 'pendiente';
+        if ($res_anterior && mysqli_num_rows($res_anterior) > 0) {
+            $row_anterior = mysqli_fetch_assoc($res_anterior);
+            $estado_anterior = $row_anterior['estado'];
+        }
+
+        // Actualizar estado a aprobado
+        $query_aprobar = "UPDATE registro_produccion_diario
+                         SET estado = 'aprobado', validado = 1, fecha_validacion = NOW(), validado_por = $id_admin
+                         WHERE id = $id_registro";
+
+        if (mysqli_query($con, $query_aprobar)) {
+            $aprobados++;
+
+            // Si estaba rechazado, volver a sumar en la tabla mensual
+            if ($estado_anterior == 'rechazado') {
+                // Obtener datos del registro para sincronización
+                $query_datos = "SELECT fecha, cantidad_plantines, id_variedad, descripcion_manual, item_tipo
+                               FROM registro_produccion_diario
+                               WHERE id = $id_registro";
+                $res_datos = mysqli_query($con, $query_datos);
+
+                if ($res_datos && mysqli_num_rows($res_datos) > 0) {
+                    $datos = mysqli_fetch_assoc($res_datos);
+                    actualizarTablaMensual($con, $datos, 'sumar');
+                }
+            }
+        }
+    }
+
+    echo json_encode(array(
+        "success" => true,
+        "aprobados" => $aprobados,
+        "mensaje" => "$aprobados registro(s) aprobado(s)"
+    ));
+}
+
 mysqli_close($con);
 ?>

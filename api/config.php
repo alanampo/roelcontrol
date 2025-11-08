@@ -3,10 +3,6 @@
 
 date_default_timezone_set('America/Santiago');
 
-/* ===== Telegram ===== */
-define('BOT_TOKEN', '8067521751:AAHHQodpFvkGEY1cRleocJsNYc9Yh67nxgk');
-define('API_URL', 'https://api.telegram.org/bot' . BOT_TOKEN . '/');
-
 /* ===== Exposici��n temporal del bot =====
    true  => cualquiera puede escribir
    false => solo IDs permitidos en el webhook

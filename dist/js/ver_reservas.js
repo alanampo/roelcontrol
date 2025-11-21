@@ -144,7 +144,7 @@ function entregar(id_reserva, nombre_producto, cantidad, cantidad_disponible) {
 
 function guardarEntrega() {
   const cantidad = $("#input-cantidad").val().trim();
-  const comentario = $("#input-comentario").val().trim();
+  const comentario = $("#input-comentario-entrega").val().trim();
 
   if (!cantidad || !cantidad.length || isNaN(cantidad) || parseInt(cantidad) <= 0) {
     swal("Ingresa la cantidad que quieres Entregar", "", "error")
@@ -358,7 +358,7 @@ function modalReservar(id_variedad, nombre_producto, cantidad) {
 
 function guardarReserva() {
   const cantidad = $("#input-cantidad-reserva").val().trim();
-  const comentario = $("#input-comentario").val().trim();
+  const comentario = $("#input-comentario-reserva").val().trim();
   const id_cliente = $("#select-cliente").val();
   if (!id_cliente) {
     swal("Selecciona un Cliente", "", "error")

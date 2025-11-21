@@ -95,8 +95,8 @@
           </div>
           <div class="row">
             <div class="col-md-12 form-group">
-              <label class="col-form-label" for="input-comentario">Comentario:</label>
-              <input type="search" autocomplete="off" class="form-control" name="input-comentario" id="input-comentario"
+              <label class="col-form-label" for="input-comentario-entrega">Comentario:</label>
+              <input type="search" autocomplete="off" class="form-control" name="input-comentario-entrega" id="input-comentario-entrega"
                 maxlength="100" />
             </div>
           </div>
@@ -151,8 +151,8 @@
           </div>
           <div class="row">
             <div class="col-md-12 form-group">
-              <label class="col-form-label" for="input-comentario">Comentario:</label>
-              <input type="search" autocomplete="off" class="form-control" name="input-comentario" id="input-comentario"
+              <label class="col-form-label" for="input-comentario-reserva">Comentario:</label>
+              <input type="search" autocomplete="off" class="form-control" name="input-comentario-reserva" id="input-comentario-reserva"
                 maxlength="100" />
             </div>
           </div>

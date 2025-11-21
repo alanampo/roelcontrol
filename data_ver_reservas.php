@@ -619,7 +619,7 @@ if ($consulta == "busca_stock_actual") {
                     fecha,
                     id_variedad,
                     id_cliente,
-                    comentario,
+                    comentario_empresa,
                     estado,
                     origen,
                     id_usuario

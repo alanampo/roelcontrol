@@ -27,8 +27,8 @@ if ($consulta == "busca_stock_actual") {
   (SELECT IFNULL(SUM(r.cantidad),0) FROM reservas_productos r
         WHERE r.id_variedad = v.id AND (r.estado = 0 OR r.estado = 1)) as cantidad_reservada,
   (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e
-        INNER JOIN reservas_productos r ON e.id_reserva = r.id
-        WHERE r.id_variedad = v.id AND r.estado = 2) as cantidad_entregada
+        INNER JOIN reservas_productos rp ON e.id_reserva_producto = rp.id
+        WHERE rp.id_variedad = v.id AND rp.estado = 2) as cantidad_entregada
   FROM stock_productos s
   INNER JOIN articulospedidos ap
   ON s.id_artpedido = ap.id
@@ -47,6 +47,9 @@ if ($consulta == "busca_stock_actual") {
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
         echo "<h3 class='box-title'>Stock Actual</h3>";
+        echo "<div class='box-tools pull-right'>";
+        echo "<button class='btn btn-success' onclick='modalReservar()'><i class='fa fa-shopping-basket'></i> CREAR RESERVA</button>";
+        echo "</div>";
         echo "</div>";
         echo "<div class='box-body'>";
         echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
@@ -73,8 +76,6 @@ if ($consulta == "busca_stock_actual") {
                   <td>
                   <div class='d-flex flex-row justify-content-center' style='gap:5px;'>  
                     <button onclick='modalEditStock($ww[id_variedad])' class='btn btn-primary btn-sm'><i class='fa fa-edit'></i></button>
-                    
-                    <button onclick='modalReservar($ww[id_variedad], \"$ww[nombre_variedad]\", $disponible_reserva)' class='btn btn-success btn-sm'><i class='fa fa-shopping-basket'></i> RESERVAR</button>
                   </div>
                     </td>
                 </tr>";
@@ -87,44 +88,57 @@ if ($consulta == "busca_stock_actual") {
     } else {
         echo "<div class='callout callout-danger'><b>No se encontraron productos en stock...</b></div>";
     }
+} else if ($consulta == "get_productos_para_reserva") {
+    $query = "SELECT
+        v.id as id_variedad,
+        v.nombre as nombre_variedad,
+        t.codigo,
+        v.id_interno,
+        (SUM(s.cantidad) - 
+         IFNULL((SELECT SUM(r.cantidad) FROM reservas_productos r WHERE r.id_variedad = v.id AND r.estado >= 0), 0)
+        ) as disponible
+    FROM stock_productos s
+    INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id
+    INNER JOIN variedades_producto v ON v.id = ap.id_variedad
+    INNER JOIN tipos_producto t ON t.id = v.id_tipo
+    WHERE ap.estado = 8
+    GROUP BY v.id
+    HAVING disponible > 0;
+    ";
+    $val = mysqli_query($con, $query);
+    $productos = array();
+    while ($ww = mysqli_fetch_assoc($val)) {
+        $productos[] = $ww;
+    }
+    echo json_encode($productos);
+} else if ($consulta == "get_clientes") {
+    try {
+        $query = "SELECT ID_CLIENTE, nombre FROM clientes WHERE activo = 1 ORDER BY nombre ASC";
+        $val = mysqli_query($con, $query);
+        $clientes = array();
+        while ($ww = mysqli_fetch_assoc($val)) {
+            $clientes[] = $ww;
+        }
+        echo json_encode($clientes);
+    } catch (\Throwable $th) {
+        echo "error: " . $th->getMessage()." ".$th->getTraceAsString() ;
+    }
+
 } else if ($consulta == "busca_reservas") {
     $query = "SELECT
             r.id as id_reserva,
-            t.nombre as nombre_tipo,
-            v.nombre as nombre_variedad,
-            t.id as id_tipo,
-            t.codigo,
             cl.nombre as nombre_cliente,
             cl.id_cliente,
-            v.id_interno,
-            r.comentario,
-            r.comentario_empresa,
-            v.id as id_variedad,
-            r.visto,
-            r.cantidad,
-            r.origen,
+            r.observaciones,
             u.nombre_real as nombre_usuario,
-            DATE_FORMAT(r.fecha, '%d/%m/%y<br>%H:%i') as fecha,
-            DATE_FORMAT(r.fecha, '%Y%m%d %H:%i') as fecha_raw,
-            (SELECT IFNULL(SUM(s.cantidad),0) FROM stock_productos s
-            INNER JOIN articulospedidos p ON p.id = s.id_artpedido
-        INNER JOIN variedades_producto v ON v.id = p.id_variedad
-        WHERE p.id_variedad = r.id_variedad) as cantidad_stock,
-        (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e
-        INNER JOIN reservas_productos r ON e.id_reserva = r.id
-        WHERE r.id_variedad = v.id) as cantidad_entregada_total,
-        (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e
-        WHERE e.id_reserva = r.id) as cantidad_entregada,
-            r.estado
+            DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha,
+            DATE_FORMAT(r.fecha, '%Y%m%d%H%i') as fecha_raw,
+            (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) as estado
             FROM
-            reservas_productos r
-            INNER JOIN variedades_producto v
-            ON v.id = r.id_variedad
-            INNER JOIN tipos_producto t
-            ON t.id = v.id_tipo
+            reservas r
             INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
             LEFT JOIN usuarios u ON u.id = r.id_usuario
-            GROUP BY r.id
+            ORDER BY r.fecha DESC
             ;
         ";
 
@@ -134,52 +148,86 @@ if ($consulta == "busca_stock_actual") {
 
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
-        echo "<h3 class='box-title'>Compras</h3>";
+        echo "<h3 class='box-title'>Reservas</h3>";
         echo "</div>";
         echo "<div class='box-body'>";
-        echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
+        echo "<table id='tabla-reservas' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>ID</th><th>Producto</th><th>F.<br>Reserva</th><th>Cliente</th><th>Origen</th><th>Vendedor</th><th>Cant.<br>Reservada</th><th>Cant.<br>Entregada</th><th style='max-width:250px'>Comentarios</th><th>Estado</th><th style='max-width:50px'></th>";
+        echo "<th>ID</th><th>Fecha Reserva</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
 
         while ($ww = mysqli_fetch_array($val)) {
-            $btn_cancelar = ($ww["estado"] == 0 || $ww["estado"] == 1 ? "<button onclick='cancelarReserva($ww[id_reserva])' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
-            $btn_visto = ($ww["estado"] == 0 && $ww["visto"] == 0 ? "<button onclick='marcarVisto($ww[id_reserva])' class='btn btn-info btn-sm d-inline-block mb-2' title='Marcar como Visto'><i class='fa fa-book'></i></button>" : "");
-            $btn_proceso = ($ww["estado"] == 0 ? "<button onclick='marcarEnProceso($ww[id_reserva])' class='btn btn-primary btn-sm d-inline-block' title='Marcar como En Proceso'><i class='fa fa-spinner'></i></button>" : "");
+            $id_reserva = $ww['id_reserva'];
 
-            $cant_disponible = (int) $ww["cantidad_stock"] - (int) $ww["cantidad_entregada_total"];
-            $btn_entregar = ($ww["estado"] == 0 || $ww["estado"] == 1 ? "<button onclick='entregar($ww[id_reserva], \"$ww[nombre_variedad]\", $ww[cantidad], $cant_disponible)' class='btn btn-success btn-sm d-inline-block' title='Entregar'><i class='fa fa-truck'></i></button>" : "");
+            $productos_query = "SELECT 
+                                    rp.id as id_reserva_producto,
+                                    v.nombre as nombre_variedad,
+                                    t.codigo,
+                                    v.id_interno,
+                                    rp.cantidad,
+                                    rp.id_variedad,
+                                    (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_entregada,
+                                    rp.estado,
+                                    (
+                                        (SELECT IFNULL(SUM(s.cantidad),0) 
+                                         FROM stock_productos s 
+                                         INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id 
+                                         WHERE ap.id_variedad = rp.id_variedad AND ap.estado = 8) 
+                                        - 
+                                        (SELECT IFNULL(SUM(r.cantidad),0) 
+                                         FROM reservas_productos r 
+                                         WHERE r.id_variedad = rp.id_variedad AND r.estado >= 0 AND r.id != rp.id)
+                                    ) as stock_disponible
+                                FROM reservas_productos rp
+                                INNER JOIN variedades_producto v ON v.id = rp.id_variedad
+                                INNER JOIN tipos_producto t ON t.id = v.id_tipo
+                                WHERE rp.id_reserva = $id_reserva";
 
-            $comentario_cliente = ($ww["comentario"] != null ? "<p><small>CLIENTE: $ww[comentario]</small></p>" : "");
-            $comentario_empresa = ($ww["comentario_empresa"] != null ? "<p class='text-danger'><small>EMPRESA: $ww[comentario_empresa]</small></p>" : "");
+            $productos_result = mysqli_query($con, $productos_query);
+            $productos_html = "<ul class='list-group'>";
+
+            while ($producto = mysqli_fetch_array($productos_result)) {
+                $estado_producto = boxEstadoReserva($producto['estado'], true);
+                $cantidad_entregada_info = $producto['cantidad_entregada'] > 0 ? " (Entregado: {$producto['cantidad_entregada']})" : "";
+                $nombre_prod = "{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']})";
+                $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
+
+                $btn_entregar_producto = "";
+                if ($producto['estado'] < 2) {
+                    $stock_disponible_real = $producto['stock_disponible'] + $cantidad_pendiente;
+                    $btn_entregar_producto = "<button onclick='entregarProducto({$producto['id_reserva_producto']}, \"$nombre_prod\", $cantidad_pendiente, $stock_disponible_real)' class='btn btn-success btn-sm pull-right'><i class='fa fa-truck'></i> ENTREGAR</button>";
+                }
+
+                $productos_html .= "<li class='list-group-item'>";
+                $productos_html .= "{$nombre_prod} - Cant: {$producto['cantidad']}{$cantidad_entregada_info} ";
+                $productos_html .= "<span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span>";
+                $productos_html .= $btn_entregar_producto;
+                $productos_html .= "</li>";
+            }
+            $productos_html .= "</ul>";
+
+            $estado_general = boxEstadoReserva($ww["estado"], true);
+
+            $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
 
             echo "
-        <tr class='text-center' style='cursor:pointer; " . ($ww["estado"] == 0 && $ww["visto"] == 0 ? "background-color:#CEF6F5" : "") . "'>
-          <td><small>$ww[id_reserva]</small></td>
-          <td>$ww[nombre_variedad] ($ww[codigo]$ww[id_interno])</td>
-          <td><span style='display:none'>$ww[fecha_raw]</span>$ww[fecha]</td>
-          <td>$ww[nombre_cliente] ($ww[id_cliente])</td>
-          <td>$ww[origen]</td>
-          <td>$ww[nombre_usuario]</td>
-          <td>$ww[cantidad]</td>
-          <td>$ww[cantidad_entregada]</td>
-          <td style='text-transform:uppercase'>$comentario_cliente $comentario_empresa</td>
-          <td>" . boxEstadoReserva($ww["estado"], true) . "</td>
-          <td>
-            <div class='d-flex flex-row justify-content-between'>
-              $btn_cancelar
-              $btn_visto
-            </div>
-            <div class='d-flex flex-row justify-content-between'>
-              $btn_proceso
-              $btn_entregar
-            </div>
-          </td>
-        </tr>";
-
+            <tr class='text-center'>
+              <td><small>$id_reserva</small></td>
+              <td><span style='display:none'>$ww[fecha_raw]</span>$ww[fecha]</td>
+              <td>$ww[nombre_cliente] ($ww[id_cliente])</td>
+              <td>$ww[nombre_usuario]</td>
+              <td class='text-left'>$productos_html</td>
+              <td class='text-left'>$ww[observaciones]</td>
+              <td>{$estado_general}</td>
+              <td>
+                <div class='d-flex flex-column'>
+                  $btn_cancelar
+                </div>
+              </td>
+            </tr>";
         }
         echo "</tbody>";
         echo "</table>";
@@ -192,98 +240,65 @@ if ($consulta == "busca_stock_actual") {
     $id_reserva = $_POST["id_reserva"];
 
     try {
+        mysqli_autocommit($con, false);
         $errors = array();
 
-        // Obtener información de la reserva
-        $query = "SELECT t.codigo, rp.id_variedad, v.id_interno, rp.cantidad, rp.estado 
-                  FROM reservas_productos rp 
-                  INNER JOIN variedades_producto v ON rp.id_variedad = v.id 
-                  INNER JOIN tipos_producto t ON t.id = v.id_tipo 
-                  WHERE rp.id = $id_reserva";
+        // Verificar que la reserva no esté ya cancelada o entregada
+        $query_check = "SELECT * FROM reservas_productos WHERE id_reserva = $id_reserva AND estado >= 2";
+        $res_check = mysqli_query($con, $query_check);
+        if (mysqli_num_rows($res_check) > 0) {
+            $errors[] = "La reserva contiene productos que ya fueron entregados, no se puede cancelar.";
+        }
 
-        $val = mysqli_query($con, $query);
-
-        if ($val && mysqli_num_rows($val)) {
-            $v = mysqli_fetch_assoc($val);
-
-            // Verificar que la reserva no esté ya cancelada
-            if ($v["estado"] < 0) {
-                echo "error: La reserva ya está cancelada";
-                mysqli_close($con);
-                return;
-            }
-
-            mysqli_autocommit($con, false);
-
-            // Actualizar estado de la reserva a cancelada (-1)
-            $query = "UPDATE reservas_productos SET estado = -1 WHERE id = $id_reserva";
+        if (count($errors) == 0) {
+            // Actualizar estado de todos los productos de la reserva a cancelada (-1)
+            $query = "UPDATE reservas_productos SET estado = -1 WHERE id_reserva = $id_reserva";
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con);
             }
-
-            // Confirmar o revertir transacción
-            if (count($errors) === 0) {
-                if (mysqli_commit($con)) {
-                    echo "success";
-                } else {
-                    mysqli_rollback($con);
-                    echo "error: No se pudo confirmar la transacción";
-                }
-            } else {
-                mysqli_rollback($con);
-                echo "error: " . implode(", ", $errors);
-            }
-
-        } else {
-            echo "error: No se encontró la reserva";
         }
 
-        mysqli_close($con);
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
 
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
-    }
-} else if ($consulta == "marcar_visto") {
-    if (mysqli_query($con, "UPDATE reservas_productos SET visto = 1 WHERE id = $_POST[id_reserva];")) {
-        echo "success";
-    }
-} else if ($consulta == "marcar_en_proceso") {
-    $id_reserva = $_POST["id_reserva"];
-    try {
-        if (mysqli_query($con, "UPDATE reservas_productos SET estado = 1, visto = 1 WHERE id = $id_reserva")) {
-            echo "success";
-        } else {
-            print_r(mysqli_error($con));
-        }
-
-    } catch (\Throwable $th) {
-        //throw $th;
-        echo "error: $th";
+    } finally {
+        mysqli_close($con);
     }
 } else if ($consulta == "guardar_entrega") {
-    $id_reserva = $_POST["id_reserva"];
+    $id_reserva_producto = $_POST["id_reserva_producto"];
     $cantidad = mysqli_real_escape_string($con, $_POST["cantidad"]);
     $comentario = mysqli_real_escape_string($con, $_POST["comentario"]);
     $errors = array();
 
-    $query = "SELECT * FROM (
-              (SELECT IFNULL(SUM(s.cantidad),0) as cantidad_stock FROM stock_productos s
-                INNER JOIN articulospedidos p ON s.id_artpedido = p.id
-                INNER JOIN variedades_producto v ON v.id = p.id_variedad
-                WHERE p.id_variedad = (
-                  SELECT r.id_variedad FROM reservas_productos r WHERE r.id = $id_reserva
-                )
-              ) as q1,
-                (SELECT IFNULL(SUM(e.cantidad),0) as cantidad_entregada FROM entregas_stock e
-                INNER JOIN reservas_productos r ON e.id_reserva = r.id
-                INNER JOIN variedades_producto v ON v.id = r.id_variedad
-                WHERE r.id_variedad = (
-                  SELECT r.id_variedad FROM reservas_productos r WHERE r.id = $id_reserva
-                ) AND r.estado >= 0) as q2,
-                (SELECT r.estado as estado FROM reservas_productos r WHERE r.id = $id_reserva) as q3,
-                (SELECT t.codigo, rp.id_variedad, rp.cantidad as canti FROM reservas_productos rp INNER JOIN variedades_producto v ON rp.id_variedad = v.id INNER JOIN tipos_producto t ON t.id = v.id_tipo WHERE rp.id = $id_reserva) as q4
-              )";
+    $query = "SELECT 
+        rp.cantidad as cantidad_reservada,
+        rp.id_variedad,
+        (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_ya_entregada,
+        (
+            (SELECT IFNULL(SUM(s.cantidad),0) 
+             FROM stock_productos s 
+             INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id 
+             WHERE ap.id_variedad = rp.id_variedad AND ap.estado = 8) 
+            - 
+            (SELECT IFNULL(SUM(r.cantidad),0) 
+             FROM reservas_productos r 
+             WHERE r.id_variedad = rp.id_variedad AND r.estado >= 0 AND r.id != rp.id)
+        ) as stock_disponible,
+        rp.estado
+        FROM reservas_productos rp
+        WHERE rp.id = $id_reserva_producto";
 
     $val = mysqli_query($con, $query);
 
@@ -295,32 +310,25 @@ if ($consulta == "busca_stock_actual") {
         } else {
             mysqli_autocommit($con, false);
 
-            // Calcular disponible (nota: parece que falta cantidad_reservada en la consulta original)
-            // Asumo que querías validar contra el stock disponible
-            $disponible = ((int) $ww["cantidad_stock"] - (int) $ww["cantidad_entregada"]);
+            $disponible_para_entregar = $ww["cantidad_reservada"] - $ww["cantidad_ya_entregada"];
+            $stock_real_disponible = $ww["stock_disponible"];
 
-            if ((int) $disponible >= (int) $cantidad) { // HAY STOCK DISPONIBLE
+            if ((int) $stock_real_disponible >= (int) $cantidad && (int) $disponible_para_entregar >= (int) $cantidad) {
                 // Insertar entrega
-                $query = "INSERT INTO entregas_stock (
-                    cantidad,
-                    fecha,
-                    id_reserva
-                ) VALUES (
-                    $cantidad,
-                    NOW(),
-                    $id_reserva
-                )";
-                if (!mysqli_query($con, $query)) {
-                    $errors[] = mysqli_error($con) . $query;
+                $query_entrega = "INSERT INTO entregas_stock (cantidad, fecha, id_reserva_producto) VALUES ($cantidad, NOW(), $id_reserva_producto)";
+                if (!mysqli_query($con, $query_entrega)) {
+                    $errors[] = mysqli_error($con) . $query_entrega;
                 }
 
                 // Actualizar estado de la reserva
-                $query = "UPDATE reservas_productos SET estado = 2, visto = 1, comentario_empresa = '$comentario' WHERE id = $id_reserva;";
-                if (!mysqli_query($con, $query)) {
+                $total_entregado = $ww["cantidad_ya_entregada"] + $cantidad;
+                $nuevo_estado = ($total_entregado >= $ww["cantidad_reservada"]) ? 2 : 1;
+
+                $query_update = "UPDATE reservas_productos SET estado = $nuevo_estado, comentario_empresa = '$comentario' WHERE id = $id_reserva_producto;";
+                if (!mysqli_query($con, $query_update)) {
                     $errors[] = mysqli_error($con);
                 }
 
-                // Confirmar o revertir transacción
                 if (count($errors) === 0) {
                     if (mysqli_commit($con)) {
                         echo "success";
@@ -334,11 +342,11 @@ if ($consulta == "busca_stock_actual") {
                 }
 
             } else {
-                echo "max:" . ($disponible <= 0 ? "0" : $disponible);
+                echo "max:" . min($disponible_para_entregar, $stock_real_disponible);
             }
         }
     } else {
-        echo "error: No se encontró la reserva";
+        echo "error: No se encontró el producto de la reserva";
     }
 
     mysqli_close($con);
@@ -580,88 +588,79 @@ if ($consulta == "busca_stock_actual") {
         }
     }
 } else if ($consulta == "guardar_reserva") {
-    $id_variedad = $_POST["id_variedad"];
     $id_cliente = $_POST["id_cliente"];
-    $cantidad = mysqli_real_escape_string($con, $_POST["cantidad"]);
-    $comentario = mysqli_real_escape_string($con, $_POST["comentario"]);
+    $observaciones = mysqli_real_escape_string($con, $_POST["observaciones"]);
+    $productos = json_decode($_POST["productos"], true);
 
     try {
+        mysqli_autocommit($con, false);
         $errors = array();
 
-        // Obtener stock disponible y cantidad reservada
-        $query = "SELECT * FROM (
-            (SELECT IFNULL(SUM(s.cantidad),0) as cantidad_stock FROM stock_productos s
-            INNER JOIN articulospedidos p ON s.id_artpedido = p.id
-            INNER JOIN variedades_producto v ON v.id = p.id_variedad
-            WHERE p.id_variedad = $id_variedad) as q1,
-            (SELECT IFNULL(SUM(r.cantidad),0) as cantidad_reservada FROM reservas_productos r
-            INNER JOIN variedades_producto v ON v.id = r.id_variedad
-            WHERE r.id_variedad = $id_variedad AND r.estado >= 0) as q2,
-            (SELECT t.codigo, v.id_interno FROM variedades_producto v 
-            INNER JOIN tipos_producto t ON t.id = v.id_tipo 
-            WHERE v.id = $id_variedad) as q4
-        )";
+        // 1. Validar stock para todos los productos ANTES de insertar nada.
+        foreach ($productos as $producto) {
+            $id_variedad = (int) $producto['id_variedad'];
+            $cantidad_solicitada = (int) $producto['cantidad'];
 
-        $val = mysqli_query($con, $query);
+            $query_stock = "SELECT
+                (SUM(s.cantidad) - 
+                 IFNULL((SELECT SUM(r.cantidad) FROM reservas_productos r WHERE r.id_variedad = $id_variedad AND r.estado >= 0), 0)
+                ) as disponible
+                FROM stock_productos s
+                INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id
+                WHERE ap.id_variedad = $id_variedad AND ap.estado = 8";
 
-        if (mysqli_num_rows($val) > 0) {
-            $ww = mysqli_fetch_assoc($val);
+            $res_stock = mysqli_query($con, $query_stock);
+            $stock_data = mysqli_fetch_assoc($res_stock);
+            $disponible = (int) $stock_data['disponible'];
 
-            mysqli_autocommit($con, false);
-
-            // Calcular cantidad disponible
-            $disponible = ((int) $ww["cantidad_stock"] - (int) $ww["cantidad_reservada"]);
-
-            if ((int) $disponible >= (int) $cantidad) {
-                // Insertar la reserva
-                $query = "INSERT INTO reservas_productos (
-                    cantidad,
-                    fecha,
-                    id_variedad,
-                    id_cliente,
-                    comentario_empresa,
-                    estado,
-                    origen,
-                    id_usuario
-                ) VALUES (
-                    $cantidad,
-                    NOW(),
-                    $id_variedad,
-                    $id_cliente,
-                    '$comentario',
-                    0,
-                    'ADMINISTRACION',
-                    $_SESSION[id_usuario]
-                )";
-
-                if (!mysqli_query($con, $query)) {
-                    $errors[] = mysqli_error($con) . $query;
-                }
-
-                // Confirmar o revertir transacción
-                if (count($errors) === 0) {
-                    if (mysqli_commit($con)) {
-                        echo "success";
-                    } else {
-                        mysqli_rollback($con);
-                        echo "error: No se pudo confirmar la transacción";
-                    }
-                } else {
-                    mysqli_rollback($con);
-                    echo "error: " . implode(", ", $errors);
-                }
-
-            } else {
-                echo "max:" . ($disponible <= 0 ? "0" : $disponible);
+            if ($disponible < $cantidad_solicitada) {
+                $errors[] = "Stock insuficiente para el producto con ID $id_variedad. Solicitado: $cantidad_solicitada, Disponible: $disponible";
             }
-        } else {
-            echo "error: No se pudo obtener información de la variedad";
         }
 
-        mysqli_close($con);
+        if (count($errors) > 0) {
+            mysqli_rollback($con);
+            echo "error: " . implode("; ", $errors);
+            exit;
+        }
+
+        // 2. Si hay stock para todo, proceder con las inserciones.
+        $query_reserva = "INSERT INTO reservas (fecha, id_cliente, observaciones, id_usuario) VALUES (NOW(), $id_cliente, '$observaciones', $_SESSION[id_usuario])";
+
+        if (!mysqli_query($con, $query_reserva)) {
+            $errors[] = "Error al crear la reserva: " . mysqli_error($con);
+        } else {
+            $id_reserva = mysqli_insert_id($con);
+
+            foreach ($productos as $producto) {
+                $id_variedad = (int) $producto['id_variedad'];
+                $cantidad = (int) $producto['cantidad'];
+
+                $query_producto = "INSERT INTO reservas_productos (id_reserva, id_variedad, cantidad, estado, origen, id_usuario) VALUES ($id_reserva, $id_variedad, $cantidad, 0, 'ADMINISTRACION', $_SESSION[id_usuario])";
+
+                if (!mysqli_query($con, $query_producto)) {
+                    $errors[] = "Error al reservar producto ID $id_variedad: " . mysqli_error($con);
+                }
+            }
+        }
+
+        // 3. Commit o Rollback final.
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción.";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode("; ", $errors);
+        }
 
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
     }
 }

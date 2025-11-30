@@ -1,8 +1,18 @@
 <?php
 error_reporting(0);
-$filePath = $_SERVER['DOCUMENT_ROOT'] . '/.env';
+
+if (php_sapi_name() === 'cli') {
+    $filePath = __DIR__ . '/../.env';
+} else {
+    $docRoot = $_SERVER['DOCUMENT_ROOT'];
+    if (empty($docRoot)) {
+        $docRoot = getcwd();
+    }
+    $filePath = $docRoot . '/.env';
+}
+
 if (!file_exists($filePath)) {
-	throw new Exception("Archivo .env no encontrado.");
+	throw new Exception("Archivo .env no encontrado en: " . $filePath);
 }
 
 $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);

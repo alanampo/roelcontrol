@@ -110,6 +110,35 @@ function cancelarReserva(id_reserva) {
     });
 }
 
+function entregaRapida(id_reserva) {
+    swal("Estás seguro/a de realizar la de toda la Reserva?", "Se entregarán todos los productos pendientes de la misma.", {
+        icon: "warning",
+        buttons: {
+            cancel: "NO",
+            catch: {
+                text: "SI, ENTREGAR",
+                value: "catch",
+            },
+        },
+    }).then((value) => {
+        if (value === "catch") {
+            $.ajax({
+                type: "POST",
+                url: phpFile,
+                data: { consulta: "entrega_rapida", id_reserva: id_reserva },
+                success: function (data) {
+                    if (data.trim() == "success") {
+                        swal("La entrega rápida se ha realizado correctamente!", "", "success");
+                        busca_entradas(currentTab);
+                    } else {
+                        swal("Ocurrió un error al realizar la entrega rápida", data, "error");
+                    }
+                },
+            });
+        }
+    });
+}
+
 function entregarProducto(id_reserva_producto, nombre_producto, cantidad_pendiente, stock_disponible) {
   max = stock_disponible;
   currentReserva = id_reserva_producto;

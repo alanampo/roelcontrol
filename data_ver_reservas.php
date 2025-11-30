@@ -188,6 +188,7 @@ if ($consulta == "busca_stock_actual") {
 
             $productos_result = mysqli_query($con, $productos_query);
             $productos_html = "<ul class='list-group'>";
+            $productos_pendientes = 0;
 
             while ($producto = mysqli_fetch_array($productos_result)) {
                 $estado_producto = boxEstadoReserva($producto['estado'], true);
@@ -197,6 +198,7 @@ if ($consulta == "busca_stock_actual") {
 
                 $btn_entregar_producto = "";
                 if ($producto['estado'] < 2) {
+                    $productos_pendientes++;
                     $stock_disponible_real = $producto['stock_disponible'] + $cantidad_pendiente;
                     $btn_entregar_producto = "<button onclick='entregarProducto({$producto['id_reserva_producto']}, \"$nombre_prod\", $cantidad_pendiente, $stock_disponible_real)' class='btn btn-success btn-sm pull-right'><i class='fa fa-truck'></i> ENTREGAR</button>";
                 }
@@ -210,6 +212,11 @@ if ($consulta == "busca_stock_actual") {
             $productos_html .= "</ul>";
 
             $estado_general = boxEstadoReserva($ww["estado"], true);
+            
+            $btn_entrega_rapida = "";
+            if($productos_pendientes > 0){
+                $btn_entrega_rapida = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-rocket'></i></button>";
+            }
 
             $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
 
@@ -224,6 +231,7 @@ if ($consulta == "busca_stock_actual") {
               <td>{$estado_general}</td>
               <td>
                 <div class='d-flex flex-column'>
+                  $btn_entrega_rapida
                   $btn_cancelar
                 </div>
               </td>
@@ -257,6 +265,84 @@ if ($consulta == "busca_stock_actual") {
                 $errors[] = mysqli_error($con);
             }
         }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+} else if ($consulta == "entrega_rapida") {
+    $id_reserva = $_POST["id_reserva"];
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        $query_productos = "SELECT 
+                                rp.id as id_reserva_producto,
+                                rp.cantidad,
+                                rp.id_variedad,
+                                (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_entregada,
+                                (
+                                    (SELECT IFNULL(SUM(s.cantidad),0) 
+                                     FROM stock_productos s 
+                                     INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id 
+                                     WHERE ap.id_variedad = rp.id_variedad AND ap.estado = 8) 
+                                    - 
+                                    (SELECT IFNULL(SUM(r.cantidad),0) 
+                                     FROM reservas_productos r 
+                                     WHERE r.id_variedad = rp.id_variedad AND r.estado >= 0 AND r.id != rp.id)
+                                ) as stock_disponible
+                            FROM reservas_productos rp
+                            WHERE rp.id_reserva = $id_reserva AND rp.estado < 2";
+        
+        $productos_result = mysqli_query($con, $query_productos);
+
+        if(mysqli_num_rows($productos_result) > 0){
+            $productos_a_entregar = [];
+            while($producto = mysqli_fetch_assoc($productos_result)){
+                $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
+                if($cantidad_pendiente > 0){
+                    if($producto['stock_disponible'] < $cantidad_pendiente){
+                        $errors[] = "Stock insuficiente para el producto con ID de variedad: {$producto['id_variedad']}. Solicitado: $cantidad_pendiente, Disponible: {$producto['stock_disponible']}";
+                    }
+                    $productos_a_entregar[] = $producto;
+                }
+            }
+
+            if(count($errors) == 0){
+                foreach($productos_a_entregar as $producto){
+                    $id_reserva_producto = $producto['id_reserva_producto'];
+                    $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
+
+                    $query_entrega = "INSERT INTO entregas_stock (cantidad, fecha, id_reserva_producto) VALUES ($cantidad_pendiente, NOW(), $id_reserva_producto)";
+                    if (!mysqli_query($con, $query_entrega)) {
+                        $errors[] = "Error al registrar entrega para el producto $id_reserva_producto: " . mysqli_error($con);
+                    }
+
+                    $query_update = "UPDATE reservas_productos SET estado = 2 WHERE id = $id_reserva_producto;";
+                    if (!mysqli_query($con, $query_update)) {
+                        $errors[] = "Error al actualizar estado para el producto $id_reserva_producto: " . mysqli_error($con);
+                    }
+                }
+            }
+        } else {
+            $errors[] = "No se encontraron productos pendientes de entrega para esta reserva.";
+        }
+
 
         if (count($errors) === 0) {
             if (mysqli_commit($con)) {

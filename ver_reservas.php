@@ -58,6 +58,19 @@
             </div>
           </div>
 
+          <div class="row mt-3" id="filtro-estado-reservas" style="display:none;">
+            <div class="col-md-4">
+              <label for="select-estado-reserva" class="control-label">Filtrar por Estado:</label>
+              <select id="select-estado-reserva" class="selectpicker" multiple data-actions-box="true" data-live-search="true" title="Seleccione estados..." data-width="100%">
+                <option value="-1">CANCELADA</option>
+                <option value="0">PENDIENTE</option>
+                <option value="1">EN PROCESO</option>
+                <option value="2">ENTREGADA</option>
+                <option value="3">EN REVISIÓN</option>
+              </select>
+            </div>
+          </div>
+
           <div class="row mt-3">
             <div class="col">
               <div id='tabla_entradas'></div>

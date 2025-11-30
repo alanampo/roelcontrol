@@ -125,6 +125,17 @@ if ($consulta == "busca_stock_actual") {
     }
 
 } else if ($consulta == "busca_reservas") {
+    $estados_filter = "";
+    if (isset($_POST["estados"]) && !empty($_POST["estados"])) {
+        $selected_estados = json_decode($_POST["estados"], true);
+        if (!empty($selected_estados)) {
+            // Sanitize each state value
+            $sanitized_estados = array_map('intval', $selected_estados);
+            $estados_list = implode(",", $sanitized_estados);
+            $estados_filter = " AND (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) IN ($estados_list)";
+        }
+    }
+
     $query = "SELECT
             r.id as id_reserva,
             cl.nombre as nombre_cliente,
@@ -138,6 +149,7 @@ if ($consulta == "busca_stock_actual") {
             reservas r
             INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
             LEFT JOIN usuarios u ON u.id = r.id_usuario
+            WHERE 1=1 " . $estados_filter . "
             ORDER BY r.fecha DESC
             ;
         ";

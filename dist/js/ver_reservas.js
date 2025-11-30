@@ -14,6 +14,28 @@ $(document).ready(function () {
         this.value = this.value.replace(/\D/g, "");
     });
 
+    // Initialize selectpicker for states
+    $('#select-estado-reserva').selectpicker();
+
+    // Load saved states from localStorage or set defaults
+    let savedStates = localStorage.getItem('reservas_filter_estados');
+    if (savedStates) {
+        savedStates = JSON.parse(savedStates);
+        $('#select-estado-reserva').selectpicker('val', savedStates);
+    } else {
+        // Default selected states: PENDIENTE (0), EN PROCESO (1), EN REVISIÓN (3)
+        $('#select-estado-reserva').selectpicker('val', ['0', '1', '3']);
+    }
+
+    // Event listener for state filter changes
+    $('#select-estado-reserva').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+        let selected = $(this).val();
+        localStorage.setItem('reservas_filter_estados', JSON.stringify(selected));
+        if (currentTab === 'reservas') { // Only re-search if 'RESERVAS' tab is active
+            busca_entradas('reservas', selected);
+        }
+    });
+
     document.getElementById("defaultOpen").click();
     
     $('#select-producto-reserva').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
@@ -38,13 +60,32 @@ function abrirTab(evt, tabName) {
         tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
     evt.currentTarget.className += " active";
-    busca_entradas(tabName);
+    
+    // Show/hide filter for 'RESERVAS' tab
+    if (tabName === 'reservas') {
+        $('#filtro-estado-reservas').show();
+        // Pass selected states to busca_entradas when opening the reservas tab
+        let selectedStates = $('#select-estado-reserva').val();
+        busca_entradas(tabName, selectedStates);
+    } else {
+        $('#filtro-estado-reservas').hide();
+        busca_entradas(tabName);
+    }
 }
 
-function busca_entradas(tabName) {
+// Modify busca_entradas to accept selectedStates
+function busca_entradas(tabName, selectedStates = []) {
     let consulta = "";
+    let postData = {
+        consulta: consulta,
+    };
+
     if(tabName == "reservas"){
         consulta = "busca_reservas";
+        // If selectedStates are provided and it's the reservas tab, include them
+        if (selectedStates.length > 0) {
+            postData.estados = JSON.stringify(selectedStates);
+        }
     } else if (tabName == "actual"){
         consulta = "busca_stock_actual";
     } else if (tabName == "picking"){
@@ -52,6 +93,7 @@ function busca_entradas(tabName) {
     } else if (tabName == "packing"){
         consulta = "busca_packing";
     }
+    postData.consulta = consulta; // Update consulta in postData after conditional assignments
 
     $.ajax({
         beforeSend: function () {
@@ -59,9 +101,7 @@ function busca_entradas(tabName) {
         },
         url: phpFile,
         type: "POST",
-        data: {
-            consulta: consulta,
-        },
+        data: postData,
         success: function (x) {
             let tipo = tabName;
             $("#tabla_entradas").html(x);
@@ -111,7 +151,13 @@ function cancelarReserva(id_reserva) {
                 success: function (data) {
                     if (data.trim() == "success") {
                         swal("Cancelaste la Reserva correctamente!", "", "success");
-                        busca_entradas(currentTab);
+                        // After action, re-fetch based on current tab and filters
+                        if (currentTab === 'reservas') {
+                            let selectedStates = $('#select-estado-reserva').val();
+                            busca_entradas('reservas', selectedStates);
+                        } else {
+                            busca_entradas(currentTab);
+                        }
                     } else {
                         swal("Ocurrió un error al cancelar la Reserva", data, "error");
                     }
@@ -129,7 +175,13 @@ function cambiarEstadoProducto(id_reserva_producto, estado) {
         success: function (data) {
             if (data.trim() == "success") {
                 swal("El estado del producto ha sido actualizado.", "", "success");
-                busca_entradas(currentTab);
+                // After action, re-fetch based on current tab and filters
+                if (currentTab === 'reservas') {
+                    let selectedStates = $('#select-estado-reserva').val();
+                    busca_entradas('reservas', selectedStates);
+                } else {
+                    busca_entradas(currentTab);
+                }
             } else {
                 swal("Ocurrió un error al cambiar el estado del producto", data, "error");
             }
@@ -156,7 +208,13 @@ function enviarAPickingReserva(id_reserva) {
                 success: function (data) {
                     if (data.trim() == "success") {
                         swal("La reserva ha sido enviada a picking.", "", "success");
-                        busca_entradas(currentTab);
+                        // After action, re-fetch based on current tab and filters
+                        if (currentTab === 'reservas') {
+                            let selectedStates = $('#select-estado-reserva').val();
+                            busca_entradas('reservas', selectedStates);
+                        } else {
+                            busca_entradas(currentTab);
+                        }
                     } else {
                         swal("Ocurrió un error al enviar la reserva a picking", data, "error");
                     }
@@ -185,7 +243,13 @@ function enviarAPackingReserva(id_reserva) {
                 success: function (data) {
                     if (data.trim() == "success") {
                         swal("La reserva ha sido enviada a packing.", "", "success");
-                        busca_entradas(currentTab);
+                        // After action, re-fetch based on current tab and filters
+                        if (currentTab === 'reservas') {
+                            let selectedStates = $('#select-estado-reserva').val();
+                            busca_entradas('reservas', selectedStates);
+                        } else {
+                            busca_entradas(currentTab);
+                        }
                     } else {
                         swal("Ocurrió un error al enviar la reserva a packing", data, "error");
                     }
@@ -214,7 +278,13 @@ function entregaRapida(id_reserva) {
                 success: function (data) {
                     if (data.trim() == "success") {
                         swal("La entrega rápida se ha realizado correctamente!", "", "success");
-                        busca_entradas(currentTab);
+                        // After action, re-fetch based on current tab and filters
+                        if (currentTab === 'reservas') {
+                            let selectedStates = $('#select-estado-reserva').val();
+                            busca_entradas('reservas', selectedStates);
+                        } else {
+                            busca_entradas(currentTab);
+                        }
                     } else {
                         swal("Ocurrió un error al realizar la entrega rápida", data, "error");
                     }
@@ -264,7 +334,13 @@ function guardarEntrega() {
       console.log(x)
       if (x.trim() == "success") {
         swal("Realizaste la Entrega correctamente!", "", "success");
-        busca_entradas(currentTab);
+        // After action, re-fetch based on current tab and filters
+        if (currentTab === 'reservas') {
+            let selectedStates = $('#select-estado-reserva').val();
+            busca_entradas('reservas', selectedStates);
+        } else {
+            busca_entradas(currentTab);
+        }
       }
       else if (x.trim().includes("cancelada:")) {
         swal("ERROR! El cliente u otro usuario CANCELARON la reserva", "", "error");
@@ -434,7 +510,13 @@ function guardarReserva() {
         success: function (x) {
             if (x.trim() == "success") {
                 swal("Éxito", "La reserva se ha guardado correctamente.", "success");
-                busca_entradas(currentTab);
+                // After action, re-fetch based on current tab and filters
+                if (currentTab === 'reservas') {
+                    let selectedStates = $('#select-estado-reserva').val();
+                    busca_entradas('reservas', selectedStates);
+                } else {
+                    busca_entradas(currentTab);
+                }
             } else {
                 swal("Ocurrió un error al guardar la Reserva", x, "error");
                 $("#modal-reservar").modal("show");
@@ -506,7 +588,13 @@ function guardarStockArticulo(id_artpedido, id_variedad) {
         swal("Stock actualizado correctamente!", "", "success");
 
         // Refrescar tablas/modales si hace falta
-        busca_entradas("actual");
+        // After action, re-fetch based on current tab and filters
+        if (currentTab === 'reservas') {
+            let selectedStates = $('#select-estado-reserva').val();
+            busca_entradas('reservas', selectedStates);
+        } else {
+            busca_entradas(currentTab);
+        }
         modalEditStock(id_variedad);
       } else if (response.trim().includes("error:")) {
         const errorMsg = response.trim().replace("error:", "");

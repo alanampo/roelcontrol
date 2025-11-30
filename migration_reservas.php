@@ -3,7 +3,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Set environment to local to load correct db credentials
-$_SERVER['HTTP_HOST'] = 'local';
+//$_SERVER['HTTP_HOST'] = 'local';
 
 require 'class_lib/class_conecta_mysql.php';
 

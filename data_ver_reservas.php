@@ -854,7 +854,12 @@ else if ($consulta == "busca_picking") {
 
     if (mysqli_num_rows($val) > 0) {
         echo "<div class='box box-primary'>";
-        echo "<div class='box-header with-border'><h3 class='box-title'>Reservas en Picking</h3></div>";
+        echo "<div class='box-header with-border'>";
+        echo "<h3 class='box-title'>Reservas en Picking</h3>";
+        echo "<div class='box-tools pull-right'>";
+        echo "<button class='btn btn-primary btn-sm' onclick='printTable(\"tabla-picking\")'><i class='fa fa-print'></i> IMPRIMIR</button>";
+        echo "</div>";
+        echo "</div>";
         echo "<div class='box-body'>";
         echo "<table id='tabla-picking' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         // Table headers
@@ -926,7 +931,12 @@ else if ($consulta == "busca_packing") {
 
     if (mysqli_num_rows($val) > 0) {
         echo "<div class='box box-primary'>";
-        echo "<div class='box-header with-border'><h3 class='box-title'>Reservas en Packing</h3></div>";
+        echo "<div class='box-header with-border'>";
+        echo "<h3 class='box-title'>Reservas en Packing</h3>";
+        echo "<div class='box-tools pull-right'>";
+        echo "<button class='btn btn-primary btn-sm' onclick='printTable(\"tabla-packing\")'><i class='fa fa-print'></i> IMPRIMIR</button>";
+        echo "</div>";
+        echo "</div>";
         echo "<div class='box-body'>";
         echo "<table id='tabla-packing' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
 

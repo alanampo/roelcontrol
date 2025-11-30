@@ -525,3 +525,66 @@ function guardarStockArticulo(id_artpedido, id_variedad) {
     }
   });
 }
+
+function printTable(tableId) {
+    const table = $(`#${tableId}`).DataTable();
+    const tableTitle = $(`#${tableId}`).closest('.box-body').prev('.box-header').find('.box-title').text();
+
+    // Get all data from the DataTable, including hidden rows and columns (if any)
+    const allData = table.rows({ search: 'applied' }).data().toArray(); // 'search: applied' ensures filtered data if search is active
+    const headers = table.columns().header().toArray().map(th => th.innerHTML);
+
+    let printContents = `
+        <html>
+        <head>
+            <title>${tableTitle} - Impresión</title>
+            <style>
+                body { font-family: sans-serif; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+                h1 { text-align: center; margin-bottom: 20px; }
+            </style>
+        </head>
+        <body>
+            <h1>${tableTitle}</h1>
+            <table>
+                <thead>
+                    <tr>`;
+    // Add headers to print content
+    headers.forEach(header => {
+        // Exclude the last header (actions column)
+        if (headers.indexOf(header) < headers.length - 1) {
+            printContents += `<th>${header}</th>`;
+        }
+    });
+    printContents += `
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    // Add all rows to print content
+    allData.forEach(rowData => {
+        printContents += `<tr>`;
+        // Iterate over cells, excluding the last one (actions column)
+        rowData.forEach((cellData, index) => {
+            if (index < rowData.length - 1) { // Exclude the last column
+                // Clean up HTML from cell data (e.g., remove buttons, spans for styling)
+                const cleanedCellData = $('<div>').html(cellData).text(); // Use jQuery to parse HTML and get text content
+                printContents += `<td>${cleanedCellData}</td>`;
+            }
+        });
+        printContents += `</tr>`;
+    });
+
+    printContents += `
+                </tbody>
+            </table>
+        </body>
+        </html>`;
+
+    const printWindow = window.open('', '', 'height=600,width=800');
+    printWindow.document.write(printContents);
+    printWindow.document.close();
+    printWindow.print();
+}

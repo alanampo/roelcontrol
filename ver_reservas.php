@@ -49,6 +49,7 @@
             <div class="col">
               <div class="tab">
                 <button id="defaultOpen" class="tablinks" onclick="abrirTab(event, 'reservas');">RESERVAS</button>
+                <button class="tablinks" onclick="abrirTab(event, 'picking');">PICKING</button>
                 <button class="tablinks" onclick="abrirTab(event, 'actual');">PRODUCTOS EN
                   STOCK</button>
 

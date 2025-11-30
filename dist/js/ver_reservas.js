@@ -42,6 +42,15 @@ function abrirTab(evt, tabName) {
 }
 
 function busca_entradas(tabName) {
+    let consulta = "";
+    if(tabName == "reservas"){
+        consulta = "busca_reservas";
+    } else if (tabName == "actual"){
+        consulta = "busca_stock_actual";
+    } else if (tabName == "picking"){
+        consulta = "busca_picking";
+    }
+
     $.ajax({
         beforeSend: function () {
             $("#tabla_entradas").html("Buscando, espere...");
@@ -49,14 +58,14 @@ function busca_entradas(tabName) {
         url: phpFile,
         type: "POST",
         data: {
-            consulta: tabName == "reservas" ? "busca_reservas" : "busca_stock_actual",
+            consulta: consulta,
         },
         success: function (x) {
-            let tipo = tabName == "reservas" ? "reservas" : "productos";
+            let tipo = tabName;
             $("#tabla_entradas").html(x);
-            $("#tabla-reservas, #tabla").DataTable({
+            $("#tabla-reservas, #tabla, #tabla-picking").DataTable({
                 pageLength: 50,
-                order: [tabName == "reservas" ? [1, "desc"] : [0, "asc"]],
+                order: [tabName == "reservas" || tabName == "picking" ? [1, "desc"] : [0, "asc"]],
                 language: {
                     lengthMenu: `Mostrando _MENU_ ${tipo} por página`,
                     zeroRecords: `No hay ${tipo}`,
@@ -148,6 +157,35 @@ function enviarAPickingReserva(id_reserva) {
                         busca_entradas(currentTab);
                     } else {
                         swal("Ocurrió un error al enviar la reserva a picking", data, "error");
+                    }
+                },
+            });
+        }
+    });
+}
+
+function enviarAPackingReserva(id_reserva) {
+    swal("Estás seguro/a de ENVIAR A PACKING todos los productos de esta reserva?", "", {
+        icon: "warning",
+        buttons: {
+            cancel: "NO",
+            catch: {
+                text: "SI, ENVIAR",
+                value: "catch",
+            },
+        },
+    }).then((value) => {
+        if (value === "catch") {
+            $.ajax({
+                type: "POST",
+                url: phpFile,
+                data: { consulta: "enviar_a_packing_reserva", id_reserva: id_reserva },
+                success: function (data) {
+                    if (data.trim() == "success") {
+                        swal("La reserva ha sido enviada a packing.", "", "success");
+                        busca_entradas(currentTab);
+                    } else {
+                        swal("Ocurrió un error al enviar la reserva a packing", data, "error");
                     }
                 },
             });

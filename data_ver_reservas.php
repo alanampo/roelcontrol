@@ -161,6 +161,7 @@ if ($consulta == "busca_stock_actual") {
 
         while ($ww = mysqli_fetch_array($val)) {
             $id_reserva = $ww['id_reserva'];
+            $all_rp_comments_for_this_reservation = [];
 
             $productos_query = "SELECT 
                                     rp.id as id_reserva_producto,
@@ -169,6 +170,8 @@ if ($consulta == "busca_stock_actual") {
                                     v.id_interno,
                                     rp.cantidad,
                                     rp.id_variedad,
+                                    rp.comentario,
+                                    rp.comentario_empresa,
                                     (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_entregada,
                                     rp.estado,
                                     (
@@ -193,8 +196,14 @@ if ($consulta == "busca_stock_actual") {
             while ($producto = mysqli_fetch_array($productos_result)) {
                 $estado_producto = boxEstadoReserva($producto['estado'], true);
                 $cantidad_entregada_info = $producto['cantidad_entregada'] > 0 ? " (Entregado: {$producto['cantidad_entregada']})" : "";
-                $nombre_prod = "{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']})";
                 $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
+
+                if (!empty($producto['comentario'])) {
+                    $all_rp_comments_for_this_reservation[] = $producto['comentario'];
+                }
+                if (!empty($producto['comentario_empresa'])) {
+                    $all_rp_comments_for_this_reservation[] = $producto['comentario_empresa'];
+                }
 
                 $botones_producto = "<div class='d-flex flex-column' style='gap: 5px;'>";
                 if ($producto['estado'] < 4) { // General condition for buttons
@@ -231,6 +240,14 @@ if ($consulta == "busca_stock_actual") {
 
             $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
 
+            $final_observaciones_to_display = $ww['observaciones'];
+            if (empty($final_observaciones_to_display)) {
+                $unique_rp_comments = array_unique($all_rp_comments_for_this_reservation);
+                if (!empty($unique_rp_comments)) {
+                    $final_observaciones_to_display = implode('<br>', $unique_rp_comments);
+                }
+            }
+
             echo "
             <tr class='text-center'>
               <td><small>$id_reserva</small></td>
@@ -238,7 +255,7 @@ if ($consulta == "busca_stock_actual") {
               <td>$ww[nombre_cliente] ($ww[id_cliente])</td>
               <td>$ww[nombre_usuario]</td>
               <td class='text-left'>$productos_html</td>
-              <td class='text-left'>$ww[observaciones]</td>
+              <td class='text-left'>$final_observaciones_to_display</td>
               <td>{$estado_general}</td>
               <td>
                 <div class='d-flex flex-column'>

@@ -58,7 +58,7 @@
             </div>
           </div>
 
-          <div class="row mt-3" id="filtro-estado-reservas" style="display:none;">
+          <div class="row mt-3" id="filtro-estado-reservas">
             <div class="col-md-4">
               <label for="select-estado-reserva" class="control-label">Filtrar por Estado:</label>
               <select id="select-estado-reserva" class="selectpicker" multiple data-actions-box="true" data-live-search="true" title="Seleccione estados..." data-width="100%">

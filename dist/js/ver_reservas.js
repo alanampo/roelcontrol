@@ -21,10 +21,10 @@ $(document).ready(function () {
     let savedStates = localStorage.getItem('reservas_filter_estados');
     if (savedStates) {
         savedStates = JSON.parse(savedStates);
-        $('#select-estado-reserva').selectpicker('val', savedStates);
+        $('#select-estado-reserva').selectpicker('val', savedStates).trigger('changed.bs.select');
     } else {
         // Default selected states: PENDIENTE (0), EN PROCESO (1), EN REVISIÓN (3)
-        $('#select-estado-reserva').selectpicker('val', ['0', '1', '3']);
+        $('#select-estado-reserva').selectpicker('val', ['0', '1', '3']).trigger("changed.bs.select");
     }
 
     // Event listener for state filter changes

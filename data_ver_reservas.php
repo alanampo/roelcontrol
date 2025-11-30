@@ -894,3 +894,90 @@ else if ($consulta == "busca_picking") {
         echo "<div class='callout callout-info'><b>No se encontraron reservas en la etapa de picking.</b></div>";
     }
 }
+else if ($consulta == "busca_packing") {
+
+    $query = "SELECT r.*, cl.nombre as nombre_cliente, u.nombre_real as nombre_usuario,
+              (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) as estado_general,
+              DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha_formatted
+              FROM reservas r
+              INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
+              LEFT JOIN usuarios u ON u.id = r.id_usuario
+              WHERE EXISTS (SELECT 1 FROM reservas_productos rp WHERE rp.id_reserva = r.id AND rp.estado = 5)
+              ORDER BY r.fecha DESC";
+
+    $val = mysqli_query($con, $query);
+
+    if (mysqli_num_rows($val) > 0) {
+        echo "<div class='box box-primary'>";
+        echo "<div class='box-header with-border'><h3 class='box-title'>Reservas en Packing</h3></div>";
+        echo "<div class='box-body'>";
+        echo "<table id='tabla-packing' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
+
+        echo "<thead><tr><th>ID</th><th>Fecha Reserva</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th></tr></thead>";
+        echo "<tbody>";
+
+        while ($ww = mysqli_fetch_array($val)) {
+            $id_reserva = $ww['id'];
+            $productos_pendientes_packing = 0;
+
+            $productos_query = "SELECT rp.id as id_reserva_producto, v.nombre as nombre_variedad, t.codigo, v.id_interno, rp.cantidad, rp.estado,
+                                   (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_entregada,
+                                   (
+                                       (SELECT IFNULL(SUM(s.cantidad),0)
+                                        FROM stock_productos s 
+                                        INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id 
+                                        WHERE ap.id_variedad = rp.id_variedad AND ap.estado = 8) 
+                                       - 
+                                       (SELECT IFNULL(SUM(r.cantidad),0)
+                                        FROM reservas_productos r 
+                                        WHERE r.id_variedad = rp.id_variedad AND r.estado >= 0 AND r.id != rp.id)
+                                   ) as stock_disponible
+                                 FROM reservas_productos rp
+                                 INNER JOIN variedades_producto v ON v.id = rp.id_variedad
+                                 INNER JOIN tipos_producto t ON t.id = v.id_tipo
+                                 WHERE rp.id_reserva = $id_reserva";
+
+            $productos_result = mysqli_query($con, $productos_query);
+            $productos_html = "<ul class='list-group'>";
+
+            while ($producto = mysqli_fetch_array($productos_result)) {
+                if($producto['estado'] == 5) { 
+                    $productos_pendientes_packing++;
+                    $botones_producto = "<div class='d-flex flex-column' style='gap:5px;'>";
+                    $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)' class='btn btn-info btn-sm'><i class='fa fa-search'></i> A REVISIÓN</button>";
+
+                    $stock_disponible_real = $producto['stock_disponible'] + ($producto['cantidad'] - $producto['cantidad_entregada']);
+
+                    $botones_producto .= "<button onclick='entregarProducto({$producto['id_reserva_producto']}, \"{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']})\", {$producto['cantidad']} - {$producto['cantidad_entregada']}, $stock_disponible_real)' class='btn btn-success btn-sm'><i class='fa fa-truck'></i> ENTREGAR</button>";
+                    $botones_producto .= "</div>";
+
+                    $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
+                    $productos_html .= $botones_producto;
+                    $productos_html .= "</li>";
+                }
+            }
+
+            $productos_html .= "</ul>";
+
+            if($productos_pendientes_packing > 0){
+                $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i></button>";
+
+                echo "<tr class='text-center'>";
+                echo "<td><small>$id_reserva</small></td>";
+                echo "<td>{$ww['fecha_formatted']}</td>";
+                echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
+                echo "<td>{$ww['nombre_usuario']}</td>";
+                echo "<td class='text-left'>$productos_html</td>";
+                echo "<td class='text-left'>{$ww['observaciones']}</td>";
+                echo "<td>".boxEstadoReserva($ww['estado_general'], true)."</td>";
+                echo "<td><div class='d-flex flex-column'>$btn_quick_entrega</div></td>";
+                echo "</tr>";
+            }
+        }
+
+        echo "</tbody></table></div></div>";
+    } else {
+        echo "<div class='callout callout-info'><b>No se encontraron reservas en la etapa de packing.</b></div>";
+    }
+}

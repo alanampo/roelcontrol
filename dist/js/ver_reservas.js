@@ -49,6 +49,8 @@ function busca_entradas(tabName) {
         consulta = "busca_stock_actual";
     } else if (tabName == "picking"){
         consulta = "busca_picking";
+    } else if (tabName == "packing"){
+        consulta = "busca_packing";
     }
 
     $.ajax({
@@ -63,9 +65,9 @@ function busca_entradas(tabName) {
         success: function (x) {
             let tipo = tabName;
             $("#tabla_entradas").html(x);
-            $("#tabla-reservas, #tabla, #tabla-picking").DataTable({
+            $("#tabla-reservas, #tabla, #tabla-picking, #tabla-packing").DataTable({
                 pageLength: 50,
-                order: [tabName == "reservas" || tabName == "picking" ? [1, "desc"] : [0, "asc"]],
+                order: [tabName == "reservas" || tabName == "picking" || tabName == "packing" ? [1, "desc"] : [0, "asc"]],
                 language: {
                     lengthMenu: `Mostrando _MENU_ ${tipo} por página`,
                     zeroRecords: `No hay ${tipo}`,

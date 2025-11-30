@@ -110,6 +110,51 @@ function cancelarReserva(id_reserva) {
     });
 }
 
+function cambiarEstadoProducto(id_reserva_producto, estado) {
+    $.ajax({
+        type: "POST",
+        url: phpFile,
+        data: { consulta: "cambiar_estado_producto", id_reserva_producto: id_reserva_producto, estado: estado },
+        success: function (data) {
+            if (data.trim() == "success") {
+                swal("El estado del producto ha sido actualizado.", "", "success");
+                busca_entradas(currentTab);
+            } else {
+                swal("Ocurrió un error al cambiar el estado del producto", data, "error");
+            }
+        },
+    });
+}
+
+function enviarAPickingReserva(id_reserva) {
+    swal("Estás seguro/a de ENVIAR A PICKING todos los productos de esta reserva?", "", {
+        icon: "warning",
+        buttons: {
+            cancel: "NO",
+            catch: {
+                text: "SI, ENVIAR",
+                value: "catch",
+            },
+        },
+    }).then((value) => {
+        if (value === "catch") {
+            $.ajax({
+                type: "POST",
+                url: phpFile,
+                data: { consulta: "enviar_a_picking_reserva", id_reserva: id_reserva },
+                success: function (data) {
+                    if (data.trim() == "success") {
+                        swal("La reserva ha sido enviada a picking.", "", "success");
+                        busca_entradas(currentTab);
+                    } else {
+                        swal("Ocurrió un error al enviar la reserva a picking", data, "error");
+                    }
+                },
+            });
+        }
+    });
+}
+
 function entregaRapida(id_reserva) {
     swal("Estás seguro/a de realizar la de toda la Reserva?", "Se entregarán todos los productos pendientes de la misma.", {
         icon: "warning",

@@ -196,22 +196,33 @@ if ($consulta == "busca_stock_actual") {
                 $nombre_prod = "{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']})";
                 $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
 
-                $btn_entregar_producto = "";
-                if ($producto['estado'] < 2) {
-                    $productos_pendientes++;
-                    $stock_disponible_real = $producto['stock_disponible'] + $cantidad_pendiente;
-                    $btn_entregar_producto = "<button onclick='entregarProducto({$producto['id_reserva_producto']}, \"$nombre_prod\", $cantidad_pendiente, $stock_disponible_real)' class='btn btn-success btn-sm pull-right'><i class='fa fa-truck'></i> ENTREGAR</button>";
+                $botones_producto = "<div class='d-flex flex-column' style='gap: 5px;'>";
+                if ($producto['estado'] < 4) { // General condition for buttons
+                    if ($producto['estado'] != 2) {
+                        $productos_pendientes++;
+                    }
+                    if(in_array($producto['estado'], [0, 1])) { // PENDIENTE or EN PROCESO
+                        $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)' class='btn btn-info btn-sm'><i class='fa fa-search'></i> A REVISIÓN</button>";
+                    }
+                    if(in_array($producto['estado'], [0, 1, 3])) { // PENDIENTE, EN PROCESO or REVISAR STOCK
+                        $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 4)' class='btn btn-primary btn-sm'><i class='fa fa-arrow-right'></i> A PICKING</button>";
+                    }
                 }
+                $botones_producto .= "</div>";
 
-                $productos_html .= "<li class='list-group-item'>";
-                $productos_html .= "{$nombre_prod} - Cant: {$producto['cantidad']}{$cantidad_entregada_info} ";
-                $productos_html .= "<span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span>";
-                $productos_html .= $btn_entregar_producto;
+                $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
+                $productos_html .= "<div>{$nombre_prod} - Cant: {$producto['cantidad']}{$cantidad_entregada_info} <span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span></div>";
+                $productos_html .= $botones_producto;
                 $productos_html .= "</li>";
             }
             $productos_html .= "</ul>";
 
             $estado_general = boxEstadoReserva($ww["estado"], true);
+            
+            $btn_quick_picking = "";
+            if($productos_pendientes > 0){
+                 $btn_quick_picking = "<button onclick='enviarAPickingReserva($id_reserva)' class='btn btn-primary btn-sm mb-2' title='Enviar a Picking'><i class='fa fa-arrow-right'></i></button>";
+            }
             
             $btn_entrega_rapida = "";
             if($productos_pendientes > 0){
@@ -231,6 +242,7 @@ if ($consulta == "busca_stock_actual") {
               <td>{$estado_general}</td>
               <td>
                 <div class='d-flex flex-column'>
+                  $btn_quick_picking
                   $btn_entrega_rapida
                   $btn_cancelar
                 </div>
@@ -264,6 +276,67 @@ if ($consulta == "busca_stock_actual") {
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con);
             }
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+} else if ($consulta == "cambiar_estado_producto") {
+    $id_reserva_producto = $_POST["id_reserva_producto"];
+    $estado = $_POST["estado"];
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        $query = "UPDATE reservas_productos SET estado = $estado WHERE id = $id_reserva_producto";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+} else if ($consulta == "enviar_a_picking_reserva") {
+    $id_reserva = $_POST["id_reserva"];
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        $query = "UPDATE reservas_productos SET estado = 4 WHERE id_reserva = $id_reserva AND estado < 2";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
         }
 
         if (count($errors) === 0) {

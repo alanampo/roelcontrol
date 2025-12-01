@@ -594,7 +594,40 @@ else if ($consulta == "entrega_rapida") {
             )
         );
     }
-} else if ($consulta == "get_stock_variedad") {
+}
+else if ($consulta == "update_general_observacion") {
+    $id_reserva = $_POST["id_reserva"];
+    $observaciones = mysqli_real_escape_string($con, $_POST["observaciones"]);
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        $query = "UPDATE reservas SET observaciones = '$observaciones' WHERE id = $id_reserva";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+}
+else if ($consulta == "get_stock_variedad") {
     $id_variedad = $_POST["id_variedad"];
 
     $query = "SELECT

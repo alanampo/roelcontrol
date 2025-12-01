@@ -141,6 +141,8 @@ if ($consulta == "busca_stock_actual") {
             cl.nombre as nombre_cliente,
             cl.id_cliente,
             r.observaciones,
+            r.observaciones_picking,
+            r.observaciones_packing,
             u.nombre_real as nombre_usuario,
             DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha,
             DATE_FORMAT(r.fecha, '%Y%m%d%H%i') as fecha_raw,
@@ -253,12 +255,9 @@ if ($consulta == "busca_stock_actual") {
             $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
 
             $final_observaciones_to_display = $ww['observaciones'];
-            if (empty($final_observaciones_to_display)) {
-                $unique_rp_comments = array_unique($all_rp_comments_for_this_reservation);
-                if (!empty($unique_rp_comments)) {
-                    $final_observaciones_to_display = implode('<br>', $unique_rp_comments);
-                }
-            }
+            $obs_general_text = htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8');
+            $obs_picking_text = !empty($ww['observaciones_picking']) ? "<br><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "</small>" : "";
+            $obs_packing_text = !empty($ww['observaciones_packing']) ? "<br><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . "</small>" : "";
 
             echo "
             <tr class='text-center'>
@@ -267,7 +266,14 @@ if ($consulta == "busca_stock_actual") {
               <td>$ww[nombre_cliente] ($ww[id_cliente])</td>
               <td>$ww[nombre_usuario]</td>
               <td class='text-left'>$productos_html</td>
-              <td class='text-left'>$final_observaciones_to_display</td>
+              <td class='text-left'>
+                <div>
+                  {$obs_general_text} 
+                  <button class='btn btn-default btn-xs' onclick='modalEditarObservacionGeneral(\"$id_reserva\", \"$obs_general_text\")'><i class='fa fa-pencil'></i></button>
+                </div>
+                {$obs_picking_text}
+                {$obs_packing_text}
+              </td>
               <td>{$estado_general}</td>
               <td>
                 <div class='d-flex flex-column'>

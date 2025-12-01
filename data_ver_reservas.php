@@ -659,6 +659,38 @@ else if ($consulta == "update_picking_observacion") {
         mysqli_close($con);
     }
 }
+else if ($consulta == "update_packing_observacion") {
+    $id_reserva = $_POST["id_reserva"];
+    $observaciones_packing = mysqli_real_escape_string($con, $_POST["observaciones_packing"]);
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        $query = "UPDATE reservas SET observaciones_packing = '$observaciones_packing' WHERE id = $id_reserva";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+}
 else if ($consulta == "get_stock_variedad") {
     $id_variedad = $_POST["id_variedad"];
 
@@ -1116,7 +1148,11 @@ else if ($consulta == "busca_packing") {
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
                 echo "<td>{$ww['nombre_usuario']}</td>";
                 echo "<td class='text-left'>$productos_html</td>";
-                echo "<td class='text-left'>{$ww['observaciones']}</td>";
+                echo "<td class='text-left'>";
+                echo "  <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . "</div>"; // General observations
+                echo "  <div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "</small></div>"; // Picking observations (non-editable here)
+                echo "  <div><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPacking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>"; // Packing observations with edit button
+                echo "</td>";
                 echo "<td>".boxEstadoReserva($ww['estado_general'], true)."</td>";
                 echo "<td><div class='d-flex flex-column'>$btn_quick_entrega</div></td>";
                 echo "</tr>";

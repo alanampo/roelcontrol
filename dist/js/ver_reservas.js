@@ -774,3 +774,54 @@ function guardarObservacionPicking() {
         }
     });
 }
+
+function modalEditarObservacionPacking(id_reserva, observacion_packing_text) {
+    $("#hidden-id-reserva-observacion-packing").val(id_reserva);
+    $("#textarea-observacion-packing").val(observacion_packing_text);
+    $("#modal-editar-observacion-packing").css({display:'block'});
+    $("#textarea-observacion-packing").focus();
+}
+
+function guardarObservacionPacking() {
+    const id_reserva = $("#hidden-id-reserva-observacion-packing").val();
+    const observaciones_packing = $("#textarea-observacion-packing").val().trim();
+
+    if (!id_reserva) {
+        swal("Error", "No se pudo obtener el ID de la reserva.", "error");
+        return;
+    }
+
+    $("#modal-editar-observacion-packing").css({display:'none'});
+
+    $.ajax({
+        type: "POST",
+        url: phpFile,
+        data: {
+            consulta: "update_packing_observacion",
+            id_reserva: id_reserva,
+            observaciones_packing: observaciones_packing
+        },
+        success: function (x) {
+            if (x.trim() === "success") {
+                swal("Éxito", "Observación de Packing actualizada correctamente.", "success");
+
+                if (currentTab === 'packing') {
+                    busca_entradas('packing');
+                } else {
+                    let selectedStates = [];
+                    if (currentTab === 'reservas') {
+                        selectedStates = $('#select-estado-reserva').val();
+                    }
+                    busca_entradas(currentTab, selectedStates);
+                }
+            } else {
+                swal("Error", "Ocurrió un error al guardar la observación de Packing: " + x, "error");
+                $("#modal-editar-observacion-packing").css({display:'block'});
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            swal("Error de conexión", "No se pudo conectar con el servidor: " + textStatus, "error");
+            $("#modal-editar-observacion-packing").css({display:'block'});
+        }
+    });
+}

@@ -289,6 +289,33 @@
       </div>
     </div> <!-- FIN MODAL EDITAR OBSERVACION PICKING -->
 
+    <div id="modal-editar-observacion-packing" class="modal">
+      <div class="modal-entregar-reserva"> <!-- Reusing modal-entregar-reserva styling for simplicity -->
+        <div class='box box-primary'>
+          <div class='box-header with-border'>
+            <h3 class='box-title'>Editar Observación de Packing</h3>
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-editar-observacion-packing').css({display:'none'});">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
+        <div class='box-body'>
+          <div class="row">
+            <div class="col-md-12 form-group">
+              <label class="col-form-label" for="textarea-observacion-packing">Observación Packing:</label>
+              <textarea class="form-control" name="textarea-observacion-packing" id="textarea-observacion-packing" rows="5"></textarea>
+              <input type="hidden" id="hidden-id-reserva-observacion-packing">
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col">
+              <button onclick="guardarObservacionPacking()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- FIN MODAL EDITAR OBSERVACION PACKING -->
+
 
     <!-- Main Footer -->
     <?php

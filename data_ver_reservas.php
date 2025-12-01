@@ -232,7 +232,7 @@ if ($consulta == "busca_stock_actual") {
                 $botones_producto .= "</div>";
 
                 $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
-                $productos_html .= "<div>{$nombre_prod} - Cant: {$producto['cantidad']}{$cantidad_entregada_info} <span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span></div>";
+                $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']}{$cantidad_entregada_info} <span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span></div>";
                 $productos_html .= $botones_producto;
                 $productos_html .= "</li>";
             }

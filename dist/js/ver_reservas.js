@@ -676,3 +676,51 @@ function printTable(tableId) {
     printWindow.document.close();
     printWindow.print();
 }
+
+function modalEditarObservacionGeneral(id_reserva, observacion_text) {
+    $("#hidden-id-reserva-observacion").val(id_reserva);
+    $("#textarea-observacion-general").val(observacion_text);
+    $("#modal-editar-observacion").css({display:'block'});
+    $("#textarea-observacion-general").focus();
+}
+
+function guardarObservacionGeneral() {
+    const id_reserva = $("#hidden-id-reserva-observacion").val();
+    const observaciones = $("#textarea-observacion-general").val().trim();
+
+    if (!id_reserva) {
+        swal("Error", "No se pudo obtener el ID de la reserva.", "error");
+        return;
+    }
+
+    $("#modal-editar-observacion").css({display:'none'});
+
+    $.ajax({
+        type: "POST",
+        url: phpFile,
+        data: {
+            consulta: "update_general_observacion",
+            id_reserva: id_reserva,
+            observaciones: observaciones
+        },
+        success: function (x) {
+            if (x.trim() === "success") {
+                swal("Éxito", "Observación actualizada correctamente.", "success");
+
+                if (currentTab === 'reservas') {
+                    let selectedStates = $('#select-estado-reserva').val();
+                    busca_entradas('reservas', selectedStates);
+                } else {
+                    busca_entradas(currentTab);
+                }
+            } else {
+                swal("Error", "Ocurrió un error al guardar la observación: " + x, "error");
+                $("#modal-editar-observacion").css({display:'block'});
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            swal("Error de conexión", "No se pudo conectar con el servidor: " + textStatus, "error");
+            $("#modal-editar-observacion").css({display:'block'});
+        }
+    });
+}

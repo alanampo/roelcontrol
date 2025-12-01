@@ -409,7 +409,7 @@ if ($consulta == "busca_stock_actual") {
                                      WHERE r.id_variedad = rp.id_variedad AND r.estado >= 0 AND r.id != rp.id)
                                 ) as stock_disponible
                             FROM reservas_productos rp
-                            WHERE rp.id_reserva = $id_reserva AND rp.estado < 2";
+                            WHERE rp.id_reserva = $id_reserva AND rp.estado = 5";
         
         $productos_result = mysqli_query($con, $query_productos);
 

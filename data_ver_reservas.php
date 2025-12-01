@@ -246,9 +246,9 @@ if ($consulta == "busca_stock_actual") {
             }
             
             $btn_entrega_rapida = "";
-            if($productos_pendientes > 0){
-                $btn_entrega_rapida = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-rocket'></i></button>";
-            }
+            // if($productos_pendientes > 0){
+            //     $btn_entrega_rapida = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-rocket'></i></button>";
+            // }
 
             $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
 

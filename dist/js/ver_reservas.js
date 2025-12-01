@@ -676,7 +676,7 @@ function printTable(tableId) {
     printWindow.document.close();
     printWindow.print();
 }
-
+// Add these functions at the end of dist/js/ver_reservas.js
 function modalEditarObservacionGeneral(id_reserva, observacion_text) {
     $("#hidden-id-reserva-observacion").val(id_reserva);
     $("#textarea-observacion-general").val(observacion_text);
@@ -693,13 +693,13 @@ function guardarObservacionGeneral() {
         return;
     }
 
-    $("#modal-editar-observacion").css({display:'none'});
+    $("#modal-editar-observacion").css({display:'none'}); // Hide modal while processing
 
     $.ajax({
         type: "POST",
         url: phpFile,
         data: {
-            consulta: "update_general_observacion",
+            consulta: "update_general_observacion", // New consulta type
             id_reserva: id_reserva,
             observaciones: observaciones
         },
@@ -721,6 +721,56 @@ function guardarObservacionGeneral() {
         error: function(jqXHR, textStatus, errorThrown) {
             swal("Error de conexión", "No se pudo conectar con el servidor: " + textStatus, "error");
             $("#modal-editar-observacion").css({display:'block'});
+        }
+    });
+}
+
+// Add these functions at the end of dist/js/ver_reservas.js
+function modalEditarObservacionPicking(id_reserva, observacion_picking_text) {
+    $("#hidden-id-reserva-observacion-picking").val(id_reserva);
+    $("#textarea-observacion-picking").val(observacion_picking_text);
+    $("#modal-editar-observacion-picking").css({display:'block'});
+    $("#textarea-observacion-picking").focus();
+}
+
+function guardarObservacionPicking() {
+    const id_reserva = $("#hidden-id-reserva-observacion-picking").val();
+    const observaciones_picking = $("#textarea-observacion-picking").val().trim();
+
+    if (!id_reserva) {
+        swal("Error", "No se pudo obtener el ID de la reserva.", "error");
+        return;
+    }
+
+    $("#modal-editar-observacion-picking").css({display:'none'}); // Hide modal while processing
+
+    $.ajax({
+        type: "POST",
+        url: phpFile,
+        data: {
+            consulta: "update_picking_observacion", // New consulta type
+            id_reserva: id_reserva,
+            observaciones_picking: observaciones_picking
+        },
+        success: function (x) {
+            if (x.trim() === "success") {
+                swal("Éxito", "Observación de Picking actualizada correctamente.", "success");
+                // Refresh the PICKING tab to show updated observations
+                if (currentTab === 'picking') {
+                    busca_entradas('picking'); // Refresh the picking tab
+                } else {
+                    // If not on picking tab, refresh current tab
+                    let selectedStates = $('#select-estado-reserva').val(); // Get current filter states if any
+                    busca_entradas(currentTab, selectedStates);
+                }
+            } else {
+                swal("Error", "Ocurrió un error al guardar la observación de Picking: " + x, "error");
+                $("#modal-editar-observacion-picking").css({display:'block'}); // Show modal again on error
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            swal("Error de conexión", "No se pudo conectar con el servidor: " + textStatus, "error");
+            $("#modal-editar-observacion-picking").css({display:'block'}); // Show modal again on error
         }
     });
 }

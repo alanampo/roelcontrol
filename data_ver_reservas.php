@@ -627,6 +627,38 @@ else if ($consulta == "update_general_observacion") {
         mysqli_close($con);
     }
 }
+else if ($consulta == "update_picking_observacion") {
+    $id_reserva = $_POST["id_reserva"];
+    $observaciones_picking = mysqli_real_escape_string($con, $_POST["observaciones_picking"]);
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        $query = "UPDATE reservas SET observaciones_picking = '$observaciones_picking' WHERE id = $id_reserva";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+}
 else if ($consulta == "get_stock_variedad") {
     $id_variedad = $_POST["id_variedad"];
 
@@ -990,7 +1022,10 @@ else if ($consulta == "busca_picking") {
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
                 echo "<td>{$ww['nombre_usuario']}</td>";
                 echo "<td class='text-left'>$productos_html</td>";
-                echo "<td class='text-left'>{$ww['observaciones']}</td>";
+                echo "<td class='text-left'>";
+                echo "  <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . "</div>"; // General observations
+                echo "  <div><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPicking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>"; // Picking observations with edit button
+                echo "</td>";
                 echo "<td>".boxEstadoReserva($ww['estado_general'], true)."</td>";
                 echo "<td><div class='d-flex flex-column'>$btn_quick_packing</div></td>";
                 echo "</tr>";

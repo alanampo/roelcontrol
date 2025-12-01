@@ -262,6 +262,33 @@
       </div>
     </div> <!-- FIN MODAL EDITAR OBSERVACION -->
 
+    <div id="modal-editar-observacion-picking" class="modal">
+      <div class="modal-entregar-reserva"> <!-- Reusing modal-entregar-reserva styling for simplicity -->
+        <div class='box box-primary'>
+          <div class='box-header with-border'>
+            <h3 class='box-title'>Editar Observación de Picking</h3>
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-editar-observacion-picking').css({display:'none'});">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
+        <div class='box-body'>
+          <div class="row">
+            <div class="col-md-12 form-group">
+              <label class="col-form-label" for="textarea-observacion-picking">Observación Picking:</label>
+              <textarea class="form-control" name="textarea-observacion-picking" id="textarea-observacion-picking" rows="5"></textarea>
+              <input type="hidden" id="hidden-id-reserva-observacion-picking">
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col">
+              <button onclick="guardarObservacionPicking()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- FIN MODAL EDITAR OBSERVACION PICKING -->
+
 
     <!-- Main Footer -->
     <?php

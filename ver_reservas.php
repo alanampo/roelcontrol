@@ -235,6 +235,33 @@
       </div>
     </div> <!-- FIN MODAL VER -->
 
+    <div id="modal-editar-observacion" class="modal">
+      <div class="modal-entregar-reserva"> <!-- Reusing modal-entregar-reserva styling for simplicity -->
+        <div class='box box-primary'>
+          <div class='box-header with-border'>
+            <h3 class='box-title'>Editar Observación General</h3>
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-editar-observacion').css({display:'none'});">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
+        <div class='box-body'>
+          <div class="row">
+            <div class="col-md-12 form-group">
+              <label class="col-form-label" for="textarea-observacion-general">Observación:</label>
+              <textarea class="form-control" name="textarea-observacion-general" id="textarea-observacion-general" rows="5"></textarea>
+              <input type="hidden" id="hidden-id-reserva-observacion">
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col">
+              <button onclick="guardarObservacionGeneral()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- FIN MODAL EDITAR OBSERVACION -->
+
 
     <!-- Main Footer -->
     <?php

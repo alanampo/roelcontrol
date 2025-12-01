@@ -386,7 +386,41 @@ if ($consulta == "busca_stock_actual") {
     } finally {
         mysqli_close($con);
     }
-} else if ($consulta == "entrega_rapida") {
+}
+else if ($consulta == "enviar_a_packing_reserva") {
+    $id_reserva = $_POST["id_reserva"];
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        // Update all products for this reservation to state 5 (A PACKING)
+        // only if their current state is 4 (A PICKING)
+        $query = "UPDATE reservas_productos SET estado = 5 WHERE id_reserva = $id_reserva AND estado = 4";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+}
+else if ($consulta == "entrega_rapida") {
     $id_reserva = $_POST["id_reserva"];
 
     try {

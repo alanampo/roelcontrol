@@ -117,7 +117,7 @@ function busca_entradas(tabName, selectedStates = []) {
                     tabName == "packing" ||
                     tabName == "en_transporte" ||
                     tabName == "entregadas"
-                        ? [1, "desc"]
+                        ? [0, "desc"]
                         : [0, "asc"]
                 ],
                 language: {

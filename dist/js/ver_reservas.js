@@ -259,6 +259,44 @@ function enviarAPackingReserva(id_reserva) {
     });
 }
 
+// NEW FUNCTION FOR ENVIAR A TRANSPORTE
+function enviarATransporteReserva(id_reserva) {
+    swal("Estás seguro/a de ENVIAR A TRANSPORTE todos los productos de esta reserva?", "", {
+        icon: "warning",
+        buttons: {
+            cancel: "NO",
+            catch: {
+                text: "SI, ENVIAR",
+                value: "catch",
+            },
+        },
+    }).then((value) => {
+        if (value === "catch") {
+            $.ajax({
+                type: "POST",
+                url: phpFile,
+                data: { consulta: "enviar_a_transporte_reserva", id_reserva: id_reserva },
+                success: function (data) {
+                    if (data.trim() == "success") {
+                        swal("La reserva ha sido enviada a Transporte.", "", "success");
+                        // After action, re-fetch based on current tab and filters
+                        if (currentTab === 'packing') { // Refresh packing tab after sending to transporte
+                            busca_entradas('packing');
+                        } else {
+                            // If not on packing tab, refresh current tab
+                            let selectedStates = $('#select-estado-reserva').val();
+                            busca_entradas(currentTab, selectedStates);
+                        }
+                    } else {
+                        swal("Ocurrió un error al enviar la reserva a Transporte", data, "error");
+                    }
+                },
+            });
+        }
+    });
+}
+// END NEW FUNCTION
+
 function entregaRapida(id_reserva) {
     swal("Estás seguro/a de realizar la de toda la Reserva?", "Se entregarán todos los productos pendientes de la misma.", {
         icon: "warning",

@@ -426,6 +426,39 @@ else if ($consulta == "enviar_a_packing_reserva") {
         mysqli_close($con);
     }
 }
+else if ($consulta == "enviar_a_transporte_reserva") {
+    $id_reserva = $_POST["id_reserva"];
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        // Update all products for this reservation to state 6 (EN TRANSPORTE)
+        // only if their current state is 5 (A PACKING)
+        $query = "UPDATE reservas_productos SET estado = 6 WHERE id_reserva = $id_reserva AND estado = 5";
+        if (!mysqli_query($con, $query)) {
+            $errors[] = mysqli_error($con);
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
+}
 else if ($consulta == "entrega_rapida") {
     $id_reserva = $_POST["id_reserva"];
 
@@ -1140,7 +1173,8 @@ else if ($consulta == "busca_packing") {
             $productos_html .= "</ul>";
 
             if($productos_pendientes_packing > 0){
-                $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i></button>";
+                $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i> ENTREGAR</button>";
+                $btn_enviar_a_transporte = "<button onclick='enviarATransporteReserva($id_reserva)' class='btn btn-primary btn-sm mb-2' title='Enviar a Transporte'><i class='fa fa-shipping-fast'></i> A TRANSPORTE</button>";
 
                 echo "<tr class='text-center'>";
                 echo "<td><small>$id_reserva</small></td>";
@@ -1154,7 +1188,7 @@ else if ($consulta == "busca_packing") {
                 echo "  <div><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPacking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>"; // Packing observations with edit button
                 echo "</td>";
                 echo "<td>".boxEstadoReserva($ww['estado_general'], true)."</td>";
-                echo "<td><div class='d-flex flex-column'>$btn_quick_entrega</div></td>";
+                echo "<td><div class='d-flex flex-column'> $btn_quick_entrega $btn_enviar_a_transporte </div></td>"; // Modified
                 echo "</tr>";
             }
         }

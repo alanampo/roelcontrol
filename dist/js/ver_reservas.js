@@ -93,8 +93,9 @@ function busca_entradas(tabName, selectedStates = []) {
         consulta = "busca_packing";
     } else if (tabName == "en_transporte") {
         consulta = "busca_en_transporte";
+    } else if (tabName == "entregadas") {
+        consulta = "busca_entregadas";
     }
-
     postData.consulta = consulta;
 
     $.ajax({
@@ -108,13 +109,14 @@ function busca_entradas(tabName, selectedStates = []) {
             let tipo = tabName;
             $("#tabla_entradas").html(x);
 
-            $("#tabla-reservas, #tabla, #tabla-picking, #tabla-packing, #tabla-en-transporte").DataTable({
+            $("#tabla-reservas, #tabla, #tabla-picking, #tabla-packing, #tabla-en-transporte, #tabla-entregadas").DataTable({ // UPDATED SELECTOR
                 pageLength: 50,
                 order: [
                     tabName == "reservas" ||
                     tabName == "picking" ||
                     tabName == "packing" ||
-                    tabName == "en_transporte"
+                    tabName == "en_transporte" ||
+                    tabName == "entregadas"
                         ? [1, "desc"]
                         : [0, "asc"]
                 ],

@@ -80,20 +80,22 @@ function busca_entradas(tabName, selectedStates = []) {
         consulta: consulta,
     };
 
-    if(tabName == "reservas"){
+    if (tabName == "reservas") {
         consulta = "busca_reservas";
-        // If selectedStates are provided and it's the reservas tab, include them
         if (selectedStates.length > 0) {
             postData.estados = JSON.stringify(selectedStates);
         }
-    } else if (tabName == "actual"){
+    } else if (tabName == "actual") {
         consulta = "busca_stock_actual";
-    } else if (tabName == "picking"){
+    } else if (tabName == "picking") {
         consulta = "busca_picking";
-    } else if (tabName == "packing"){
+    } else if (tabName == "packing") {
         consulta = "busca_packing";
+    } else if (tabName == "en_transporte") {
+        consulta = "busca_en_transporte";
     }
-    postData.consulta = consulta; // Update consulta in postData after conditional assignments
+
+    postData.consulta = consulta;
 
     $.ajax({
         beforeSend: function () {
@@ -105,9 +107,17 @@ function busca_entradas(tabName, selectedStates = []) {
         success: function (x) {
             let tipo = tabName;
             $("#tabla_entradas").html(x);
-            $("#tabla-reservas, #tabla, #tabla-picking, #tabla-packing").DataTable({
+
+            $("#tabla-reservas, #tabla, #tabla-picking, #tabla-packing, #tabla-en-transporte").DataTable({
                 pageLength: 50,
-                order: [tabName == "reservas" || tabName == "picking" || tabName == "packing" ? [1, "desc"] : [0, "asc"]],
+                order: [
+                    tabName == "reservas" ||
+                    tabName == "picking" ||
+                    tabName == "packing" ||
+                    tabName == "en_transporte"
+                        ? [1, "desc"]
+                        : [0, "asc"]
+                ],
                 language: {
                     lengthMenu: `Mostrando _MENU_ ${tipo} por página`,
                     zeroRecords: `No hay ${tipo}`,
@@ -131,6 +141,7 @@ function busca_entradas(tabName, selectedStates = []) {
         },
     });
 }
+
 
 function cancelarReserva(id_reserva) {
     swal("Estás seguro/a de CANCELAR la Reserva?", "", {

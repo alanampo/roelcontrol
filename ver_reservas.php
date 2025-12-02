@@ -52,6 +52,7 @@
                 <button class="tablinks" onclick="abrirTab(event, 'picking');">PICKING</button>
                 <button class="tablinks" onclick="abrirTab(event, 'packing');">PACKING</button>
                 <button class="tablinks" onclick="abrirTab(event, 'en_transporte');">EN TRANSPORTE</button> <!-- NEW -->
+                <button class="tablinks" onclick="abrirTab(event, 'entregadas');">ENTREGADAS</button>
                 <button class="tablinks" onclick="abrirTab(event, 'actual');">PRODUCTOS EN
                   STOCK</button>
 

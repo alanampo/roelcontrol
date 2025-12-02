@@ -102,7 +102,7 @@ function boxEstadoReserva($estado,$fullWidth){
       return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:#F5BCA9; padding:3px; cursor:pointer;'><div>LISTO PARA PACKING</div></div>";
     }
     else if ($estado == 6){
-      return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:#F5A9A9; padding:3px; cursor:pointer;'><div>PROBLEMA DETECTADO</div></div>";
+      return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:#F5E0A9; padding:3px; cursor:pointer;'><div>EN TRANSPORTE</div></div>";
     }
 	  else if ($estado == -1){
 		  return "<div class='d-inline-block cajita w-100' style='word-wrap:break-word;text-align:center;background-color:#FA5858; padding:3px; cursor:pointer;'>CANCELADA</div>";

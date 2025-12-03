@@ -50,6 +50,7 @@ if ($consulta == "busca_pedidos") {
         ap.problema,
         ap.observacionproblema,
         ap.observacion,
+        p.observaciones as observaciones_pedido,
         p.id_pedido,
         u.iniciales,
         e.nombre as nombre_especie,
@@ -130,7 +131,7 @@ if ($consulta == "busca_pedidos") {
         echo "<table id='tabla' class='table-pedidos table table-responsive w-100 d-block d-md-table'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>Ped</th><th>Fecha</th><th>Producto</th><th>Cliente</th><th>Plantas/Bandejas<br>Pedidas</th><th>F. Ingreso</th><th>F. Entrega Aprox</th><th>Etapa</th><th>ID Prod.</th><th></th>";
+        echo "<th>Ped</th><th>Fecha</th><th>Producto</th><th>Cliente</th><th>Plantas/Bandejas<br>Pedidas</th><th>F. Ingreso</th><th>F. Entrega Aprox</th><th>Etapa</th><th>Observaciones</th><th>ID Prod.</th><th></th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
@@ -178,6 +179,20 @@ if ($consulta == "busca_pedidos") {
             echo "<td $onclick style='text-align: center;'><span style='display:none'>$ww[fecha_ingreso_solicitada_raw]</span>$ww[fecha_ingreso_solicitada]</td>";
             echo "<td $onclick style='text-align: center;'><span style='display:none'>$ww[fecha_entrega_solicitada_raw]</span>$ww[fecha_entrega_solicitada]</td>";
             echo "<td $onclick><div style='cursor:pointer'>$estado</div></td>";
+            
+            $observaciones = "";
+            $observacion_prod_texto = !empty($ww['observacion']) ? $ww['observacion'] : '';
+            $observacion_problema_texto = !empty($ww['observacionproblema']) ? $ww['observacionproblema'] : '';
+
+            $observaciones .= "<b>Obs. Prod:</b> " . $observacion_prod_texto . " <button class='btn btn-sm btn-primary' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"producto\", \"" . htmlspecialchars($observacion_prod_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button><br>";
+            $observaciones .= "<b>Problema:</b> " . $observacion_problema_texto . " <button class='btn btn-sm btn-danger' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"problema\", \"" . htmlspecialchars($observacion_problema_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button><br>";
+
+            if (!in_array($ww['id_pedido'], $array)) {
+                $observacion_pedido_texto = !empty($ww['observaciones_pedido']) ? $ww['observaciones_pedido'] : '';
+                $observaciones .= "<b>Obs. Pedido:</b> " . $observacion_pedido_texto . " <button class='btn btn-sm btn-info' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"pedido\", \"" . htmlspecialchars($observacion_pedido_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button>";
+            }
+            echo "<td>$observaciones</td>";
+
             echo "<td $onclick style='text-align: center; font-size:1.0em; font-weight:bold'>
                 <span style='font-size:1em;'>$id_producto</span>
                 </td>";
@@ -699,4 +714,29 @@ else if ($consulta == "migrar_semillas"){
         }
         mysqli_close($con);
     }
+} else if ($consulta == "guardar_observacion") {
+    $id_artpedido = $_POST["id_artpedido"];
+    $id_pedido = $_POST["id_pedido"];
+    $type = $_POST["type"];
+    $text = mysqli_real_escape_string($con, $_POST["text"]);
+
+    $query = "";
+    if ($type == "producto") {
+        $query = "UPDATE articulospedidos SET observacion = '$text' WHERE id = $id_artpedido";
+    } else if ($type == "problema") {
+        $query = "UPDATE articulospedidos SET observacionproblema = '$text' WHERE id = $id_artpedido";
+    } else if ($type == "pedido") {
+        $query = "UPDATE pedidos SET observaciones = '$text' WHERE ID_PEDIDO = $id_pedido";
+    }
+
+    if (!empty($query)) {
+        if (mysqli_query($con, $query)) {
+            echo "success";
+        } else {
+            echo "Error: " . mysqli_error($con);
+        }
+    } else {
+        echo "Error: Tipo de observación no válido.";
+    }
+    mysqli_close($con);
 }

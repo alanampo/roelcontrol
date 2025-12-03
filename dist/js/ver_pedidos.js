@@ -1109,15 +1109,15 @@ function guardarObservacion() {
         },
         success: function (response) {
             if (response.trim() === 'success') {
-                Swal.fire('Guardado!', 'La observación ha sido guardada.', 'success');
+                swal('Guardado!', 'La observación ha sido guardada.', 'success');
                 $('#modal-editar-observacion').modal('hide');
                 busca_entradas(currentTab); // Refresh table
             } else {
-                Swal.fire('Error', 'Hubo un error al guardar la observación: ' + response, 'error');
+                swal('Error', 'Hubo un error al guardar la observación: ' + response, 'error');
             }
         },
         error: function (xhr, status, error) {
-            Swal.fire('Error', 'Hubo un error de conexión: ' + error, 'error');
+            swal('Error', 'Hubo un error de conexión: ' + error, 'error');
         }
     });
 }

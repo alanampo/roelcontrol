@@ -184,12 +184,12 @@ if ($consulta == "busca_pedidos") {
             $observacion_prod_texto = !empty($ww['observacion']) ? $ww['observacion'] : '';
             $observacion_problema_texto = !empty($ww['observacionproblema']) ? $ww['observacionproblema'] : '';
 
-            $observaciones .= "<b>Obs. Prod:</b> " . $observacion_prod_texto . " <button class='btn btn-sm btn-primary' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"producto\", \"" . htmlspecialchars($observacion_prod_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button><br>";
-            $observaciones .= "<b>Problema:</b> " . $observacion_problema_texto . " <button class='btn btn-sm btn-danger' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"problema\", \"" . htmlspecialchars($observacion_problema_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button><br>";
+            $observaciones .= "<b><small>Obs. Prod:</small></b> " . $observacion_prod_texto . " <button type='button' style='background: none; border: none; padding: 0;' class='text-primary' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"producto\", \"" . htmlspecialchars($observacion_prod_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button><br>";
+            $observaciones .= "<b><small>Problema:</small></b> " . $observacion_problema_texto . " <button type='button' style='background: none; border: none; padding: 0;' class='text-danger' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"problema\", \"" . htmlspecialchars($observacion_problema_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button><br>";
 
             if (!in_array($ww['id_pedido'], $array)) {
                 $observacion_pedido_texto = !empty($ww['observaciones_pedido']) ? $ww['observaciones_pedido'] : '';
-                $observaciones .= "<b>Obs. Pedido:</b> " . $observacion_pedido_texto . " <button class='btn btn-sm btn-info' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"pedido\", \"" . htmlspecialchars($observacion_pedido_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button>";
+                $observaciones .= "<b><small>Obs. Pedido:</small></b> " . $observacion_pedido_texto . " <button type='button' style='background: none; border: none; padding: 0;' class='text-info' onclick='event.stopPropagation(); abrirModalEditarObservacion(" . $ww['id_artpedido'] . ", " . $ww['id_pedido'] . ", \"pedido\", \"" . htmlspecialchars($observacion_pedido_texto, ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-edit'></i></button>";
             }
             echo "<td>$observaciones</td>";
 

@@ -208,6 +208,7 @@
 
       <?php include("./modal_ver_estado.php"); ?>
       <?php include("./modal_modificar_cliente.php"); ?>
+      <?php include("./modal_editar_observaciones.php"); ?>
 
       <div id="modal-modificar-pedido" class="modal">
         <div class="modal-content-verpedido">

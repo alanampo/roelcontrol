@@ -1067,3 +1067,57 @@ function getQueryVariable(variable) {
   }
   return null;
 }
+
+function abrirModalEditarObservacion(idArticuloPedido, idPedido, tipo, texto) {
+    $('#obs-id-artpedido').val(idArticuloPedido);
+    $('#obs-id-pedido').val(idPedido);
+    $('#obs-type').val(tipo);
+    $('#obs-text').val(texto);
+
+    let titulo = '';
+    switch (tipo) {
+        case 'producto':
+            titulo = 'Observación del Producto';
+            break;
+        case 'problema':
+            titulo = 'Problema del Producto';
+            break;
+        case 'pedido':
+            titulo = 'Observación del Pedido';
+            break;
+    }
+    $('#modal-obs-title').text(titulo);
+    $('#modal-editar-observacion').modal('show');
+}
+
+function guardarObservacion() {
+    const id_artpedido = $('#obs-id-artpedido').val();
+    const id_pedido = $('#obs-id-pedido').val();
+    const type = $('#obs-type').val();
+    const text = $('#obs-text').val();
+
+    $.ajax({
+        url: 'data_ver_pedidos.php',
+        type: 'POST',
+        dataType: 'html',
+        data: {
+            consulta: 'guardar_observacion',
+            id_artpedido: id_artpedido,
+            id_pedido: id_pedido,
+            type: type,
+            text: text
+        },
+        success: function (response) {
+            if (response.trim() === 'success') {
+                Swal.fire('Guardado!', 'La observación ha sido guardada.', 'success');
+                $('#modal-editar-observacion').modal('hide');
+                busca_entradas(currentTab); // Refresh table
+            } else {
+                Swal.fire('Error', 'Hubo un error al guardar la observación: ' + response, 'error');
+            }
+        },
+        error: function (xhr, status, error) {
+            Swal.fire('Error', 'Hubo un error de conexión: ' + error, 'error');
+        }
+    });
+}

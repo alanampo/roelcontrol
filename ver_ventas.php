@@ -35,7 +35,8 @@
         <section class="content-header">
           <h1>
             Ventas y Stock
-            <button id="btn-cambiar-estado-masa" class="btn btn-primary ml-3" style="display:none;"><i class="fa fa-pencil"></i> Cambiar Estado</button>
+            <button id="btn-cambiar-estado-masa" class="btn btn-primary ml-3" style="display:none;"><i
+                class="fa fa-pencil"></i> Cambiar Estado</button>
           </h1>
           <ol class="breadcrumb">
             <li><a href="inicio.php"> Inicio</a></li>
@@ -49,6 +50,22 @@
           <style>
             .selected-row {
               background-color: #f2f2f2 !important;
+            }
+
+            /* Border color for list group container */
+            .list-group {
+              border: 1px solid #d3d3d3 !important;
+            }
+
+            /* Remove default borders from list items and add separator */
+            .list-group-item {
+              border: none !important;
+              border-top: 1px solid #d3d3d3 !important;
+            }
+
+            /* Remove border from first item */
+            .list-group-item:first-child {
+              border-top: none !important;
             }
           </style>
 
@@ -70,7 +87,8 @@
           <div class="row mt-3" id="filtro-estado-reservas">
             <div class="col-md-4">
               <label for="select-estado-reserva" class="control-label">Filtrar por Estado:</label>
-              <select id="select-estado-reserva" class="selectpicker" multiple data-actions-box="true" data-live-search="true" title="Seleccione estados..." data-width="100%">
+              <select id="select-estado-reserva" class="selectpicker" multiple data-actions-box="true"
+                data-live-search="true" title="Seleccione estados..." data-width="100%">
                 <option value="-1">CANCELADA</option>
                 <option value="0">PAGO ACEPTADO</option>
                 <option value="100">En espera de pago por Paypal/Flow</option>
@@ -134,8 +152,8 @@
           <div class="row">
             <div class="col-md-12 form-group">
               <label class="col-form-label" for="input-comentario-entrega">Comentario:</label>
-              <input type="search" autocomplete="off" class="form-control" name="input-comentario-entrega" id="input-comentario-entrega"
-                maxlength="100" />
+              <input type="search" autocomplete="off" class="form-control" name="input-comentario-entrega"
+                id="input-comentario-entrega" maxlength="100" />
             </div>
           </div>
           <div class="row mt-2">
@@ -152,7 +170,7 @@
 
 
     </div>
-    
+
     <div id="modal-reservar" class="modal">
       <div class="modal-reservar">
         <div class='box box-primary'>
@@ -175,9 +193,10 @@
           <hr>
           <div class="row">
             <div class="col-md-5 form-group">
-                <label class="col-form-label" for="select-producto-reserva">Producto:</label>
-                <select id="select-producto-reserva" data-size="10" data-live-search="true" title="Producto" class="selectpicker" data-style="btn-primary" data-width="100%">
-                </select>
+              <label class="col-form-label" for="select-producto-reserva">Producto:</label>
+              <select id="select-producto-reserva" data-size="10" data-live-search="true" title="Producto"
+                class="selectpicker" data-style="btn-primary" data-width="100%">
+              </select>
             </div>
             <div class="col-md-3 form-group">
               <label class="col-form-label" for="input-cantidad-reserva">Cantidad a Vender:</label>
@@ -185,35 +204,37 @@
                 id="input-cantidad-reserva" maxlength="20" />
             </div>
             <div class="col-md-2 form-group">
-                <label class="col-form-label text-primary" for="input-cantidad-disponible2">Disponible:</label>
-                <input type="text" autocomplete="off" class="form-control font-weight-bold"
-                           name="input-cantidad-disponible2" id="input-cantidad-disponible2" maxlength="20" readonly />
+              <label class="col-form-label text-primary" for="input-cantidad-disponible2">Disponible:</label>
+              <input type="text" autocomplete="off" class="form-control font-weight-bold"
+                name="input-cantidad-disponible2" id="input-cantidad-disponible2" maxlength="20" readonly />
             </div>
             <div class="col-md-2">
-                <label class="col-form-label">&nbsp;</label>
-                <button onclick="agregarProductoReserva()" class="btn btn-primary btn-block"><i class="fa fa-plus"></i> AÑADIR</button>
+              <label class="col-form-label">&nbsp;</label>
+              <button onclick="agregarProductoReserva()" class="btn btn-primary btn-block"><i class="fa fa-plus"></i>
+                AÑADIR</button>
             </div>
           </div>
           <hr>
           <div class="row">
             <div class="col-md-12">
-                <table id="tabla-productos-reserva" class="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Cantidad</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
+              <table id="tabla-productos-reserva" class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                </tbody>
+              </table>
             </div>
           </div>
           <div class="row">
             <div class="col-md-12 form-group">
               <label class="col-form-label" for="input-comentario-reserva">Observaciones:</label>
-              <textarea class="form-control" name="input-comentario-reserva" id="input-comentario-reserva" rows="3"></textarea>
+              <textarea class="form-control" name="input-comentario-reserva" id="input-comentario-reserva"
+                rows="3"></textarea>
             </div>
           </div>
           <div class="row mt-2">
@@ -263,7 +284,8 @@
         <div class='box box-primary'>
           <div class='box-header with-border'>
             <h3 class='box-title'>Editar Observación General</h3>
-            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-editar-observacion').css({display:'none'});">
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close"
+              onclick="$('#modal-editar-observacion').css({display:'none'});">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -272,13 +294,15 @@
           <div class="row">
             <div class="col-md-12 form-group">
               <label class="col-form-label" for="textarea-observacion-general">Observación:</label>
-              <textarea class="form-control" name="textarea-observacion-general" id="textarea-observacion-general" rows="5"></textarea>
+              <textarea class="form-control" name="textarea-observacion-general" id="textarea-observacion-general"
+                rows="5"></textarea>
               <input type="hidden" id="hidden-id-reserva-observacion">
             </div>
           </div>
           <div class="row mt-2">
             <div class="col">
-              <button onclick="guardarObservacionGeneral()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR</button>
+              <button onclick="guardarObservacionGeneral()" class="btn btn-success pull-right"><i
+                  class="fa fa-save"></i> GUARDAR</button>
             </div>
           </div>
         </div>
@@ -290,7 +314,8 @@
         <div class='box box-primary'>
           <div class='box-header with-border'>
             <h3 class='box-title'>Editar Observación de Picking</h3>
-            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-editar-observacion-picking').css({display:'none'});">
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close"
+              onclick="$('#modal-editar-observacion-picking').css({display:'none'});">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -299,13 +324,15 @@
           <div class="row">
             <div class="col-md-12 form-group">
               <label class="col-form-label" for="textarea-observacion-picking">Observación Picking:</label>
-              <textarea class="form-control" name="textarea-observacion-picking" id="textarea-observacion-picking" rows="5"></textarea>
+              <textarea class="form-control" name="textarea-observacion-picking" id="textarea-observacion-picking"
+                rows="5"></textarea>
               <input type="hidden" id="hidden-id-reserva-observacion-picking">
             </div>
           </div>
           <div class="row mt-2">
             <div class="col">
-              <button onclick="guardarObservacionPicking()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR</button>
+              <button onclick="guardarObservacionPicking()" class="btn btn-success pull-right"><i
+                  class="fa fa-save"></i> GUARDAR</button>
             </div>
           </div>
         </div>
@@ -317,7 +344,8 @@
         <div class='box box-primary'>
           <div class='box-header with-border'>
             <h3 class='box-title'>Editar Observación de Packing</h3>
-            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-editar-observacion-packing').css({display:'none'});">
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close"
+              onclick="$('#modal-editar-observacion-packing').css({display:'none'});">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -326,13 +354,15 @@
           <div class="row">
             <div class="col-md-12 form-group">
               <label class="col-form-label" for="textarea-observacion-packing">Observación Packing:</label>
-              <textarea class="form-control" name="textarea-observacion-packing" id="textarea-observacion-packing" rows="5"></textarea>
+              <textarea class="form-control" name="textarea-observacion-packing" id="textarea-observacion-packing"
+                rows="5"></textarea>
               <input type="hidden" id="hidden-id-reserva-observacion-packing">
             </div>
           </div>
           <div class="row mt-2">
             <div class="col">
-              <button onclick="guardarObservacionPacking()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR</button>
+              <button onclick="guardarObservacionPacking()" class="btn btn-success pull-right"><i
+                  class="fa fa-save"></i> GUARDAR</button>
             </div>
           </div>
         </div>
@@ -345,7 +375,8 @@
         <div class='box box-primary'>
           <div class='box-header with-border'>
             <h3 class='box-title'>Cambiar Estado de Ventas Seleccionadas</h3>
-            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-cambiar-estado-masa').css({display:'none'});">
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close"
+              onclick="$('#modal-cambiar-estado-masa').css({display:'none'});">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
@@ -379,7 +410,8 @@
           </div>
           <div class="row mt-2">
             <div class="col">
-              <button onclick="guardarCambioEstadoMasa()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR CAMBIOS</button>
+              <button onclick="guardarCambioEstadoMasa()" class="btn btn-success pull-right"><i class="fa fa-save"></i>
+                GUARDAR CAMBIOS</button>
             </div>
           </div>
         </div>

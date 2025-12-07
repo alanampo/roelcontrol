@@ -233,7 +233,7 @@ if ($consulta == "busca_stock_actual") {
                 }
                 $botones_producto .= "</div>";
 
-                $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
+                $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
                 $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']}{$cantidad_entregada_info} <span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span></div>";
                 $productos_html .= $botones_producto;
                 $productos_html .= "</li>";
@@ -1071,7 +1071,7 @@ else if ($consulta == "busca_picking") {
                     $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 5)' class='btn btn-warning btn-sm'><i class='fa fa-archive'></i> A PACKING</button>";
                     $botones_producto .= "</div>";
 
-                    $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
+                    $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
                     $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";
@@ -1211,7 +1211,7 @@ else if ($consulta == "busca_packing") {
 
                     $botones_producto .= "</div>";
 
-                    $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
+                    $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
                     $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) 
                                         - Cant: {$producto['cantidad']}
                                         <span class='badge' style='background-color:unset;color:black;'>" 
@@ -1334,7 +1334,7 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
                     $botones_producto .= "<button onclick='entregarProducto({$producto['id_reserva_producto']}, \"{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']})\", {$producto['cantidad']} - {$producto['cantidad_entregada']}, $stock_disponible_real)' class='btn btn-success btn-sm'><i class='fa fa-truck'></i> ENTREGAR</button>";
                     $botones_producto .= "</div>";
 
-                    $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
+                    $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
                     $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";

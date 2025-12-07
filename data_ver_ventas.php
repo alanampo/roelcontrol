@@ -144,6 +144,9 @@ if ($consulta == "busca_stock_actual") {
             r.observaciones_picking,
             r.observaciones_packing,
             u.nombre_real as nombre_usuario,
+            u_obs.nombre_real as usuario_obs,
+            u_obs_picking.nombre_real as usuario_obs_picking,
+            u_obs_packing.nombre_real as usuario_obs_packing,
             DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha,
             DATE_FORMAT(r.fecha, '%Y%m%d%H%i') as fecha_raw,
             (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) as estado
@@ -151,6 +154,9 @@ if ($consulta == "busca_stock_actual") {
             reservas r
             INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
             LEFT JOIN usuarios u ON u.id = r.id_usuario
+            LEFT JOIN usuarios u_obs ON u_obs.id = r.id_usuario_obs
+            LEFT JOIN usuarios u_obs_picking ON u_obs_picking.id = r.id_usuario_obs_picking
+            LEFT JOIN usuarios u_obs_packing ON u_obs_packing.id = r.id_usuario_obs_packing
             WHERE 1=1 " . $estados_filter . "
             ORDER BY r.fecha DESC
             ;
@@ -256,8 +262,12 @@ if ($consulta == "busca_stock_actual") {
 
             $final_observaciones_to_display = $ww['observaciones'];
             $obs_general_text = htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8');
-            $obs_picking_text = !empty($ww['observaciones_picking']) ? "<br><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "</small>" : "";
-            $obs_packing_text = !empty($ww['observaciones_packing']) ? "<br><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . "</small>" : "";
+            $usuario_obs_suffix = !empty($ww['usuario_obs']) ? " <small>(" . htmlentities($ww['usuario_obs'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+            $usuario_obs_picking_suffix = !empty($ww['usuario_obs_picking']) ? " <small>(" . htmlentities($ww['usuario_obs_picking'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+            $usuario_obs_packing_suffix = !empty($ww['usuario_obs_packing']) ? " <small>(" . htmlentities($ww['usuario_obs_packing'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+
+            $obs_picking_text = !empty($ww['observaciones_picking']) ? "<br><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . "</small>" : "";
+            $obs_packing_text = !empty($ww['observaciones_packing']) ? "<br><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . $usuario_obs_packing_suffix . "</small>" : "";
 
             echo "
             <tr class='text-center'>
@@ -269,7 +279,7 @@ if ($consulta == "busca_stock_actual") {
               <td class='text-left'>$productos_html</td>
               <td class='text-left'>
                 <div>
-                  {$obs_general_text} 
+                  {$obs_general_text}{$usuario_obs_suffix}
                   <button class='btn btn-default btn-xs' onclick='modalEditarObservacionGeneral(\"$id_reserva\", \"$obs_general_text\")'><i class='fa fa-pencil'></i></button>
                 </div>
                 {$obs_picking_text}
@@ -632,12 +642,13 @@ else if ($consulta == "entrega_rapida") {
 else if ($consulta == "update_general_observacion") {
     $id_reserva = $_POST["id_reserva"];
     $observaciones = mysqli_real_escape_string($con, $_POST["observaciones"]);
+    $id_usuario = $_SESSION['id_usuario'];
 
     try {
         mysqli_autocommit($con, false);
         $errors = array();
 
-        $query = "UPDATE reservas SET observaciones = '$observaciones' WHERE id = $id_reserva";
+        $query = "UPDATE reservas SET observaciones = '$observaciones', id_usuario_obs = $id_usuario WHERE id = $id_reserva";
         if (!mysqli_query($con, $query)) {
             $errors[] = mysqli_error($con);
         }
@@ -664,12 +675,13 @@ else if ($consulta == "update_general_observacion") {
 else if ($consulta == "update_picking_observacion") {
     $id_reserva = $_POST["id_reserva"];
     $observaciones_picking = mysqli_real_escape_string($con, $_POST["observaciones_picking"]);
+    $id_usuario = $_SESSION['id_usuario'];
 
     try {
         mysqli_autocommit($con, false);
         $errors = array();
 
-        $query = "UPDATE reservas SET observaciones_picking = '$observaciones_picking' WHERE id = $id_reserva";
+        $query = "UPDATE reservas SET observaciones_picking = '$observaciones_picking', id_usuario_obs_picking = $id_usuario WHERE id = $id_reserva";
         if (!mysqli_query($con, $query)) {
             $errors[] = mysqli_error($con);
         }
@@ -696,12 +708,13 @@ else if ($consulta == "update_picking_observacion") {
 else if ($consulta == "update_packing_observacion") {
     $id_reserva = $_POST["id_reserva"];
     $observaciones_packing = mysqli_real_escape_string($con, $_POST["observaciones_packing"]);
+    $id_usuario = $_SESSION['id_usuario'];
 
     try {
         mysqli_autocommit($con, false);
         $errors = array();
 
-        $query = "UPDATE reservas SET observaciones_packing = '$observaciones_packing' WHERE id = $id_reserva";
+        $query = "UPDATE reservas SET observaciones_packing = '$observaciones_packing', id_usuario_obs_packing = $id_usuario WHERE id = $id_reserva";
         if (!mysqli_query($con, $query)) {
             $errors[] = mysqli_error($con);
         }
@@ -1025,11 +1038,17 @@ else if ($consulta == "get_stock_variedad") {
 }
 else if ($consulta == "busca_picking") {
     $query = "SELECT r.*, cl.nombre as nombre_cliente, u.nombre_real as nombre_usuario,
+              u_obs.nombre_real as usuario_obs,
+              u_obs_picking.nombre_real as usuario_obs_picking,
+              u_obs_packing.nombre_real as usuario_obs_packing,
               (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) as estado_general,
               DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha_formatted
               FROM reservas r
               INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
               LEFT JOIN usuarios u ON u.id = r.id_usuario
+              LEFT JOIN usuarios u_obs ON u_obs.id = r.id_usuario_obs
+              LEFT JOIN usuarios u_obs_picking ON u_obs_picking.id = r.id_usuario_obs_picking
+              LEFT JOIN usuarios u_obs_packing ON u_obs_packing.id = r.id_usuario_obs_packing
               WHERE EXISTS (SELECT 1 FROM reservas_productos rp WHERE rp.id_reserva = r.id AND rp.estado = 4)
               ORDER BY r.fecha DESC";
 
@@ -1089,9 +1108,12 @@ else if ($consulta == "busca_picking") {
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
                 echo "<td>{$ww['nombre_usuario']}</td>";
                 echo "<td class='text-left'>$productos_html</td>";
+                $usuario_obs_suffix = !empty($ww['usuario_obs']) ? " <small>(" . htmlentities($ww['usuario_obs'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+                $usuario_obs_picking_suffix = !empty($ww['usuario_obs_picking']) ? " <small>(" . htmlentities($ww['usuario_obs_picking'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+
                 echo "<td class='text-left'>";
-                echo "  <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . "</div>"; // General observations
-                echo "  <div><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPicking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>"; // Picking observations with edit button
+                echo "  <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>"; // General observations
+                echo "  <div><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPicking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>"; // Picking observations with edit button
                 echo "</td>";
                 echo "<td>".boxEstadoReserva($ww['estado_general'], true)."</td>";
                 echo "<td><div class='d-flex flex-column'>$btn_quick_packing</div></td>";
@@ -1105,17 +1127,23 @@ else if ($consulta == "busca_picking") {
 }
 else if ($consulta == "busca_packing") {
 
-    $query = "SELECT r.*, 
-                     cl.nombre AS nombre_cliente, 
+    $query = "SELECT r.*,
+                     cl.nombre AS nombre_cliente,
                      u.nombre_real AS nombre_usuario,
+                     u_obs.nombre_real as usuario_obs,
+                     u_obs_picking.nombre_real as usuario_obs_picking,
+                     u_obs_packing.nombre_real as usuario_obs_packing,
                      (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) AS estado_general,
                      DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') AS fecha_formatted
               FROM reservas r
               INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
               LEFT JOIN usuarios u ON u.id = r.id_usuario
+              LEFT JOIN usuarios u_obs ON u_obs.id = r.id_usuario_obs
+              LEFT JOIN usuarios u_obs_picking ON u_obs_picking.id = r.id_usuario_obs_picking
+              LEFT JOIN usuarios u_obs_packing ON u_obs_packing.id = r.id_usuario_obs_packing
               WHERE EXISTS (
-                  SELECT 1 
-                  FROM reservas_productos rp 
+                  SELECT 1
+                  FROM reservas_productos rp
                   WHERE rp.id_reserva = r.id AND rp.estado = 5
               )
               ORDER BY r.fecha DESC";
@@ -1243,11 +1271,15 @@ else if ($consulta == "busca_packing") {
                 echo "<td>{$ww['nombre_usuario']}</td>";
                 echo "<td class='text-left'>$productos_html</td>";
 
+                $usuario_obs_suffix = !empty($ww['usuario_obs']) ? " <small>(" . htmlentities($ww['usuario_obs'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+                $usuario_obs_picking_suffix = !empty($ww['usuario_obs_picking']) ? " <small>(" . htmlentities($ww['usuario_obs_picking'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+                $usuario_obs_packing_suffix = !empty($ww['usuario_obs_packing']) ? " <small>(" . htmlentities($ww['usuario_obs_packing'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+
                 echo "<td class='text-left'>
-                        <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . "</div>
-                        <div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "</small></div>
-                        <div><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . " 
-                            <button class='btn btn-default btn-xs' 
+                        <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>
+                        <div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . "</small></div>
+                        <div><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . $usuario_obs_packing_suffix . "
+                            <button class='btn btn-default btn-xs'
                                 onclick='modalEditarObservacionPacking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . "\")'>
                                 <i class='fa fa-pencil'></i>
                             </button>
@@ -1276,11 +1308,17 @@ else if ($consulta == "busca_packing") {
 
 else if ($consulta == "busca_en_transporte") { // NEW BLOCK
     $query = "SELECT r.*, cl.nombre as nombre_cliente, u.nombre_real as nombre_usuario,
+              u_obs.nombre_real as usuario_obs,
+              u_obs_picking.nombre_real as usuario_obs_picking,
+              u_obs_packing.nombre_real as usuario_obs_packing,
               (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) as estado_general,
               DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha_formatted
               FROM reservas r
               INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
               LEFT JOIN usuarios u ON u.id = r.id_usuario
+              LEFT JOIN usuarios u_obs ON u_obs.id = r.id_usuario_obs
+              LEFT JOIN usuarios u_obs_picking ON u_obs_picking.id = r.id_usuario_obs_picking
+              LEFT JOIN usuarios u_obs_packing ON u_obs_packing.id = r.id_usuario_obs_packing
               WHERE EXISTS (SELECT 1 FROM reservas_productos rp WHERE rp.id_reserva = r.id AND rp.estado = 6)
               ORDER BY r.fecha DESC";
 
@@ -1353,10 +1391,15 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
                 echo "<td>{$ww['nombre_usuario']}</td>";
                 echo "<td class='text-left'>$productos_html</td>";
+
+                $usuario_obs_suffix = !empty($ww['usuario_obs']) ? " <small>(" . htmlentities($ww['usuario_obs'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+                $usuario_obs_picking_suffix = !empty($ww['usuario_obs_picking']) ? " <small>(" . htmlentities($ww['usuario_obs_picking'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+                $usuario_obs_packing_suffix = !empty($ww['usuario_obs_packing']) ? " <small>(" . htmlentities($ww['usuario_obs_packing'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+
                 echo "<td class='text-left'>";
-                echo "<div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . "</div>";
-                echo "<div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "</small></div>";
-                echo "<div><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . "</small></div>";
+                echo "<div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>";
+                echo "<div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . "</small></div>";
+                echo "<div><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . $usuario_obs_packing_suffix . "</small></div>";
                 echo "</td>";
                 echo "<td>" . boxEstadoReserva($ww['estado_general'], true) . "</td>";
                 echo "<td><div class='d-flex flex-column'>$btn_quick_entrega</div></td>";
@@ -1371,11 +1414,17 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
 }
 else if ($consulta == "busca_entregadas") {
     $query = "SELECT r.*, cl.nombre as nombre_cliente, u.nombre_real as nombre_usuario,
+              u_obs.nombre_real as usuario_obs,
+              u_obs_picking.nombre_real as usuario_obs_picking,
+              u_obs_packing.nombre_real as usuario_obs_packing,
               (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) as estado_general,
               DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha_formatted
               FROM reservas r
               INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
               LEFT JOIN usuarios u ON u.id = r.id_usuario
+              LEFT JOIN usuarios u_obs ON u_obs.id = r.id_usuario_obs
+              LEFT JOIN usuarios u_obs_picking ON u_obs_picking.id = r.id_usuario_obs_picking
+              LEFT JOIN usuarios u_obs_packing ON u_obs_packing.id = r.id_usuario_obs_packing
               WHERE EXISTS (SELECT 1 FROM reservas_productos rp WHERE rp.id_reserva = r.id AND rp.estado = 2)
               ORDER BY r.fecha DESC";
 
@@ -1426,10 +1475,15 @@ else if ($consulta == "busca_entregadas") {
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
                 echo "<td>{$ww['nombre_usuario']}</td>";
                 echo "<td class='text-left'>$productos_html</td>";
+
+                $usuario_obs_suffix = !empty($ww['usuario_obs']) ? " <small>(" . htmlentities($ww['usuario_obs'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+                $usuario_obs_picking_suffix = !empty($ww['usuario_obs_picking']) ? " <small>(" . htmlentities($ww['usuario_obs_picking'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+                $usuario_obs_packing_suffix = !empty($ww['usuario_obs_packing']) ? " <small>(" . htmlentities($ww['usuario_obs_packing'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
+
                 echo "<td class='text-left'>";
-                echo "<div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . "</div>";
-                echo "<div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "</small></div>";
-                echo "<div><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . "</small></div>";
+                echo "<div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>";
+                echo "<div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . "</small></div>";
+                echo "<div><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . $usuario_obs_packing_suffix . "</small></div>";
                 echo "</td>";
                 echo "<td>" . boxEstadoReserva($ww['estado_general'], true) . "</td>";
                 echo "<td></td>";

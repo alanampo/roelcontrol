@@ -168,7 +168,7 @@ if ($consulta == "busca_stock_actual") {
         echo "<table id='tabla-reservas' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>ID</th><th>Fecha Venta</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th>";
+        echo "<th></th><th>ID</th><th>Fecha Venta</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
@@ -261,6 +261,7 @@ if ($consulta == "busca_stock_actual") {
 
             echo "
             <tr class='text-center'>
+              <td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>
               <td><small>$id_reserva</small></td>
               <td><span style='display:none'>$ww[fecha_raw]</span>$ww[fecha]</td>
               <td>$ww[nombre_cliente] ($ww[id_cliente])</td>
@@ -1045,7 +1046,7 @@ else if ($consulta == "busca_picking") {
         echo "<div class='box-body'>";
         echo "<table id='tabla-picking' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         // Table headers
-        echo "<thead><tr><th>ID</th><th>Fecha Venta</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th></tr></thead>";
+        echo "<thead><tr><th></th><th>ID</th><th>Fecha Venta</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th></tr></thead>";
         echo "<tbody>";
 
         while ($ww = mysqli_fetch_array($val)) {
@@ -1082,6 +1083,7 @@ else if ($consulta == "busca_picking") {
                 $btn_quick_packing = "<button onclick='enviarAPackingReserva($id_reserva)' class='btn btn-warning btn-sm mb-2' title='Enviar a Packing'><i class='fa fa-archive'></i></button>";
 
                 echo "<tr class='text-center'>";
+                echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
                 echo "<td>{$ww['fecha_formatted']}</td>";
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
@@ -1133,6 +1135,7 @@ else if ($consulta == "busca_packing") {
         echo "<table id='tabla-packing' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
 
         echo "<thead><tr>
+                <th></th>
                 <th>ID</th>
                 <th>Fecha Venta</th>
                 <th>Cliente</th>
@@ -1233,6 +1236,7 @@ else if ($consulta == "busca_packing") {
                                            </button>";
 
                 echo "<tr class='text-center'>";
+                echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
                 echo "<td>{$ww['fecha_formatted']}</td>";
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
@@ -1292,7 +1296,7 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
         echo "</div>";
         echo "<div class='box-body'>";
         echo "<table id='tabla-en-transporte' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
-        echo "<thead><tr><th>ID</th><th>Fecha Reserva</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th></tr></thead>";
+        echo "<thead><tr><th></th><th>ID</th><th>Fecha Reserva</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th></tr></thead>";
         echo "<tbody>";
 
         while ($ww = mysqli_fetch_array($val)) {
@@ -1343,6 +1347,7 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
                 $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i></button>";
 
                 echo "<tr class='text-center'>";
+                echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
                 echo "<td>{$ww['fecha_formatted']}</td>";
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
@@ -1436,4 +1441,63 @@ else if ($consulta == "busca_entregadas") {
     } else {
         echo "<div class='callout callout-info'><b>No se encontraron ventas entregadas.</b></div>";
     }
+} else if ($consulta == "cambiar_estado_ventas_masa") {
+    $ids = json_decode($_POST["ids"], true);
+    $estado = (int)$_POST["estado"];
+
+    if (empty($ids) || !is_numeric($estado)) {
+        echo "error: Datos inválidos.";
+        exit;
+    }
+
+    $ids_list = implode(",", array_map('intval', $ids));
+
+    try {
+        mysqli_autocommit($con, false);
+        $errors = array();
+
+        // Find products that are currently 'ENTREGADA' (estado = 2) to revert their delivery record
+        $query_productos_a_revertir = "SELECT id FROM reservas_productos WHERE id_reserva IN ($ids_list) AND estado = 2";
+        $result_revertir = mysqli_query($con, $query_productos_a_revertir);
+        $productos_ids_a_revertir = [];
+        while($row = mysqli_fetch_assoc($result_revertir)){
+            $productos_ids_a_revertir[] = $row['id'];
+        }
+
+        // If there are products to revert, delete their records from entregas_stock
+        if (!empty($productos_ids_a_revertir)) {
+            $productos_ids_list = implode(",", $productos_ids_a_revertir);
+            $query_delete_entregas = "DELETE FROM entregas_stock WHERE id_reserva_producto IN ($productos_ids_list)";
+            if (!mysqli_query($con, $query_delete_entregas)) {
+                $errors[] = "Error al eliminar registros de entrega: " . mysqli_error($con);
+            }
+        }
+
+        // Update the state of all non-cancelled products for the selected reservations
+        if(count($errors) == 0){
+            $query_update = "UPDATE reservas_productos SET estado = $estado WHERE id_reserva IN ($ids_list) AND estado != -1";
+            if (!mysqli_query($con, $query_update)) {
+                $errors[] = "Error al actualizar estados: " . mysqli_error($con);
+            }
+        }
+
+        if (count($errors) === 0) {
+            if (mysqli_commit($con)) {
+                echo "success";
+            } else {
+                mysqli_rollback($con);
+                echo "error: No se pudo confirmar la transacción.";
+            }
+        } else {
+            mysqli_rollback($con);
+            echo "error: " . implode(", ", $errors);
+        }
+
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+        echo "error: " . $th->getMessage();
+    } finally {
+        mysqli_close($con);
+    }
 }
+

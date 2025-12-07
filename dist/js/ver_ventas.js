@@ -37,6 +37,15 @@ $(document).ready(function () {
     });
 
     document.getElementById("defaultOpen").click();
+
+    $('#tabla_entradas').on('change', '.venta-checkbox', function() {
+        $(this).closest('tr').toggleClass('selected-row', $(this).is(':checked'));
+        checkSelectedVentas();
+    });
+
+    $('#btn-cambiar-estado-masa').on('click', function() {
+        $('#modal-cambiar-estado-masa').css({display:'block'});
+    });
     
     $('#select-producto-reserva').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
         let id_variedad = $(this).val();
@@ -873,6 +882,66 @@ function guardarObservacionPacking() {
         error: function(jqXHR, textStatus, errorThrown) {
             swal("Error de conexión", "No se pudo conectar con el servidor: " + textStatus, "error");
             $("#modal-editar-observacion-packing").css({display:'block'});
+        }
+    });
+}
+
+function checkSelectedVentas() {
+    const count = $('.venta-checkbox:checked').length;
+    if (count > 0) {
+        $('#btn-cambiar-estado-masa').show();
+    } else {
+        $('#btn-cambiar-estado-masa').hide();
+    }
+}
+
+function guardarCambioEstadoMasa() {
+    const selectedIds = $('.venta-checkbox:checked').map(function() {
+        return $(this).val();
+    }).get();
+
+    const nuevoEstado = $('#select-nuevo-estado').val();
+
+    if (selectedIds.length === 0) {
+        swal("Error", "No has seleccionado ninguna venta.", "error");
+        return;
+    }
+
+    swal({
+        title: "¿Estás seguro?",
+        text: `Se cambiará el estado de ${selectedIds.length} venta(s).`,
+        icon: "warning",
+        buttons: ["Cancelar", "Sí, cambiar estado"],
+        dangerMode: true,
+    }).then((willDelete) => {
+        if (willDelete) {
+            $.ajax({
+                url: 'data_ver_ventas.php',
+                type: 'POST',
+                data: {
+                    consulta: 'cambiar_estado_ventas_masa',
+                    ids: JSON.stringify(selectedIds),
+                    estado: nuevoEstado
+                },
+                success: function(response) {
+                    if (response.trim() === 'success') {
+                        swal("¡Hecho!", "El estado de las ventas ha sido actualizado.", "success");
+                        $('#modal-cambiar-estado-masa').css({display:'none'});
+                        $('#btn-cambiar-estado-masa').hide();
+                        if (currentTab === 'reservas') {
+                            let selectedStates = $('#select-estado-reserva').val();
+                            busca_entradas('reservas', selectedStates);
+                        } else {
+                            busca_entradas(currentTab);
+                        }
+                    } else {
+                        swal("Error", "Ocurrió un error al actualizar el estado: " + response, "error");
+                    }
+                },
+                error: function() {
+                    swal("Error", "No se pudo conectar con el servidor.", "error");
+                }
+            });
         }
     });
 }

@@ -35,6 +35,7 @@
         <section class="content-header">
           <h1>
             Ventas y Stock
+            <button id="btn-cambiar-estado-masa" class="btn btn-primary ml-3" style="display:none;"><i class="fa fa-pencil"></i> Cambiar Estado</button>
           </h1>
           <ol class="breadcrumb">
             <li><a href="inicio.php"> Inicio</a></li>
@@ -44,6 +45,12 @@
         <!-- Main content -->
         <section class="content">
           <!-- Your Page Content Here -->
+
+          <style>
+            .selected-row {
+              background-color: #f2f2f2 !important;
+            }
+          </style>
 
           <div class="row">
             <div class="col">
@@ -317,6 +324,39 @@
         </div>
       </div>
     </div> <!-- FIN MODAL EDITAR OBSERVACION PACKING -->
+
+
+    <div id="modal-cambiar-estado-masa" class="modal">
+      <div class="modal-entregar-reserva">
+        <div class='box box-primary'>
+          <div class='box-header with-border'>
+            <h3 class='box-title'>Cambiar Estado de Ventas Seleccionadas</h3>
+            <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close" onclick="$('#modal-cambiar-estado-masa').css({display:'none'});">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        </div>
+        <div class='box-body'>
+          <div class="row">
+            <div class="col-md-12 form-group">
+              <label class="col-form-label" for="select-nuevo-estado">Nuevo Estado:</label>
+              <select id="select-nuevo-estado" class="form-control">
+                <option value="0">PAGO ACEPTADO</option>
+                <option value="1">EN PROCESO</option>
+                <option value="3">EN REVISIÓN</option>
+                <option value="4">LISTO PARA PICKING</option>
+                <option value="5">LISTO PARA PACKING</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col">
+              <button onclick="guardarCambioEstadoMasa()" class="btn btn-success pull-right"><i class="fa fa-save"></i> GUARDAR CAMBIOS</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 
     <!-- Main Footer -->

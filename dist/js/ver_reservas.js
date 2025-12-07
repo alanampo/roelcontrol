@@ -420,7 +420,7 @@ function modalReservar() {
     refrescarTablaProductosReserva();
     pone_clientes();
     pone_productos_reserva();
-    $("#modal-reservar .box-title").html(`Crear Reserva`);
+    $("#modal-reservar .box-title").html(`Generar Venta`);
     $("#modal-reservar").modal("show");
     $("#input-cantidad-reserva").focus();
 }

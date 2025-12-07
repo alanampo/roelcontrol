@@ -48,7 +48,7 @@ if ($consulta == "busca_stock_actual") {
         echo "<div class='box-header with-border'>";
         echo "<h3 class='box-title'>Stock Actual</h3>";
         echo "<div class='box-tools pull-right'>";
-        echo "<button class='btn btn-success' onclick='modalReservar()'><i class='fa fa-shopping-basket'></i> CREAR RESERVA</button>";
+        echo "<button class='btn btn-success' onclick='modalReservar()'><i class='fa fa-shopping-basket'></i> GENERAR VENTA</button>";
         echo "</div>";
         echo "</div>";
         echo "<div class='box-body'>";

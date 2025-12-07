@@ -136,7 +136,7 @@
       <div class="modal-reservar">
         <div class='box box-primary'>
           <div class='box-header with-border'>
-            <h3 class='box-title'>Crear Reserva</h3>
+            <h3 class='box-title'>Generar Venta</h3>
             <button type="button" class="close mt-2 mt-lg-0" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>

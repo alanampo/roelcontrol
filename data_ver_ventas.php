@@ -289,7 +289,7 @@ if ($consulta == "busca_stock_actual") {
         echo "</div>";
         echo "</div>";
     } else {
-        echo "<div class='callout callout-danger'><b>No se encontraron reservas...</b></div>";
+        echo "<div class='callout callout-danger'><b>No se encontraron ventas...</b></div>";
     }
 } else if ($consulta == "cancelar_reserva") {
     $id_reserva = $_POST["id_reserva"];
@@ -1098,7 +1098,7 @@ else if ($consulta == "busca_picking") {
         }
         echo "</tbody></table></div></div>";
     } else {
-        echo "<div class='callout callout-info'><b>No se encontraron reservas en la etapa de picking.</b></div>";
+        echo "<div class='callout callout-info'><b>No se encontraron ventas en la etapa de picking.</b></div>";
     }
 }
 else if ($consulta == "busca_packing") {
@@ -1266,7 +1266,7 @@ else if ($consulta == "busca_packing") {
         echo "</tbody></table></div></div>";
 
     } else {
-        echo "<div class='callout callout-info'><b>No se encontraron reservas en la etapa de packing.</b></div>";
+        echo "<div class='callout callout-info'><b>No se encontraron ventas en la etapa de packing.</b></div>";
     }
 }
 
@@ -1361,7 +1361,7 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
 
         echo "</tbody></table></div></div>";
     } else {
-        echo "<div class='callout callout-info'><b>No se encontraron reservas en la etapa de transporte.</b></div>";
+        echo "<div class='callout callout-info'><b>No se encontraron ventas en la etapa de transporte.</b></div>";
     }
 }
 else if ($consulta == "busca_entregadas") {
@@ -1434,6 +1434,6 @@ else if ($consulta == "busca_entregadas") {
 
         echo "</tbody></table></div></div>";
     } else {
-        echo "<div class='callout callout-info'><b>No se encontraron reservas entregadas.</b></div>";
+        echo "<div class='callout callout-info'><b>No se encontraron ventas entregadas.</b></div>";
     }
 }

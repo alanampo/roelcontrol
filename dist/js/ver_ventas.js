@@ -4,7 +4,7 @@ let currentReserva = null;
 let productosReserva = [];
 let productosParaReserva = [];
 
-let phpFile = "data_ver_reservas.php";
+let phpFile = "data_ver_ventas.php";
 
 $(document).ready(function () {
     $("#input-cantidad-reserva").on("propertychange input", function (e) {
@@ -31,7 +31,7 @@ $(document).ready(function () {
     $('#select-estado-reserva').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
         let selected = $(this).val();
         localStorage.setItem('reservas_filter_estados', JSON.stringify(selected));
-        if (currentTab === 'reservas') { // Only re-search if 'RESERVAS' tab is active
+        if (currentTab === 'reservas') { // Only re-search if 'VENTAS' tab is active
             busca_entradas('reservas', selected);
         }
     });
@@ -81,7 +81,7 @@ function busca_entradas(tabName, selectedStates = []) {
     };
 
     if (tabName == "reservas") {
-        consulta = "busca_reservas";
+        consulta = "busca_ventas";
         if (selectedStates.length > 0) {
             postData.estados = JSON.stringify(selectedStates);
         }
@@ -727,7 +727,7 @@ function printTable(tableId) {
     printWindow.document.close();
     printWindow.print();
 }
-// Add these functions at the end of dist/js/ver_reservas.js
+// Add these functions at the end of dist/js/ver_ventas.js
 function modalEditarObservacionGeneral(id_reserva, observacion_text) {
     $("#hidden-id-reserva-observacion").val(id_reserva);
     $("#textarea-observacion-general").val(observacion_text);
@@ -776,7 +776,7 @@ function guardarObservacionGeneral() {
     });
 }
 
-// Add these functions at the end of dist/js/ver_reservas.js
+// Add these functions at the end of dist/js/ver_ventas.js
 function modalEditarObservacionPicking(id_reserva, observacion_picking_text) {
     $("#hidden-id-reserva-observacion-picking").val(id_reserva);
     $("#textarea-observacion-picking").val(observacion_picking_text);

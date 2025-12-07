@@ -14,7 +14,7 @@ toastr.options = {
   positionClass: "toast-bottom-right",
   preventDuplicates: false,
   onclick: () => {
-    location.href = "ver_reservas.php";
+    location.href = "ver_ventas.php";
   },
   showDuration: "300",
   hideDuration: "1000",
@@ -54,8 +54,8 @@ function checkReservas() {
   const funcion = () => {
     $.ajax({
       type: "POST",
-      url: "data_ver_reservas.php",
-      data: { consulta: "check_reservas_nuevas" },
+      url: "data_ver_ventas.php",
+      data: { consulta: "check_ventas_nuevas" },
       success: function (x) {
         if (x.trim().length) {
           //console.log(x);
@@ -65,7 +65,7 @@ function checkReservas() {
 
             if (!stored) {
               // EL USUARIO NO RECIBIO NINGUNA NOTIFICACION
-              toastr.info("Nueva Reserva de " + data.nombre_cliente);
+              toastr.info("Nueva Venta de " + data.nombre_cliente);
               playSound();
 
               localStorage.setItem("lastReserva", JSON.stringify({
@@ -78,7 +78,7 @@ function checkReservas() {
                 storedData.id_reserva &&
                 parseInt(storedData.id_reserva) < parseInt(data.id_reserva)
               ) {
-                toastr.info("Nueva Reserva de " + data.nombre_cliente);
+                toastr.info("Nueva Venta de " + data.nombre_cliente);
                 playSound();
   
                 localStorage.setItem("lastReserva", JSON.stringify({

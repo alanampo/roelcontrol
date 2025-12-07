@@ -37,7 +37,7 @@ function pone_agregar_pedidos() {
     .removeClass("d-none");
 }
 
-function pone_reservas() {
+function pone_ventas() {
   $.ajax({
     url: "pone_boxes.php",
     type: "POST",
@@ -45,7 +45,7 @@ function pone_reservas() {
     success: function (x) {
       $(".col-reservas").html(x).removeClass("d-none");
       $("#contenedor_modulos").append(
-        '<li><a href="ver_reservas.php"><i class="fa fa-arrow-circle-right"></i> Reservas</a></li>'
+        '<li><a href="ver_ventas.php"><i class="fa fa-arrow-circle-right"></i> Ventas</a></li>'
       );
     },
     error: function (jqXHR, estado, error) {},

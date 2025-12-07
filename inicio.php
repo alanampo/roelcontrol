@@ -23,7 +23,7 @@
           pone_pedidos();
           pone_planificacionpedidos();
           pone_mesadas();
-          pone_reservas();
+          pone_ventas();
           pone_historialentregas();
           pone_estadisticas();
           pone_stock();
@@ -86,7 +86,7 @@
                         //pone_cotizaciones();
                       }
                       else if (array[i] == "reservas") {
-                        pone_reservas();
+                        pone_ventas();
                       }
                       else if (array[i] == "productos"){
                         $("#contenedor_panel").html(

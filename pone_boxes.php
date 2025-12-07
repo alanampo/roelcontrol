@@ -146,10 +146,10 @@ else if ($tipo == "reservas") {
     echo "
     
     
-    <a href=\"ver_reservas.php\">
+    <a href=\"ver_ventas.php\">
     <div class=\"small-box bg-primary\">
         <div class=\"inner\"  style=\"height:7.1em;\">    
-            <p ".($r["reservas_nuevas"] > 0 ? "style='font-weight:bold'" : "").">Reservas y Stock$nuevas</p>
+            <p ".($r["reservas_nuevas"] > 0 ? "style='font-weight:bold'" : "").">Ventas y Stock$nuevas</p>
         </div>
         <div class=\"icon\">
           <i class=\"fa fa-shopping-cart".($r["reservas_nuevas"] > 0 ? " blink":"")."\"></i>

@@ -124,7 +124,7 @@ if ($consulta == "busca_stock_actual") {
         echo "error: " . $th->getMessage()." ".$th->getTraceAsString() ;
     }
 
-} else if ($consulta == "busca_reservas") {
+} else if ($consulta == "busca_ventas") {
     $estados_filter = "";
     if (isset($_POST["estados"]) && !empty($_POST["estados"])) {
         $selected_estados = json_decode($_POST["estados"], true);
@@ -611,7 +611,7 @@ else if ($consulta == "entrega_rapida") {
     }
 
     mysqli_close($con);
-} else if ($consulta == "check_reservas_nuevas") {
+} else if ($consulta == "check_ventas_nuevas") {
     if (is_array($_SESSION["arraypermisos"]) && !in_array("pedidos", $_SESSION["arraypermisos"]))
         return;
 

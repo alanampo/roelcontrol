@@ -197,7 +197,7 @@
                   <option value="informes">Informes</option>
                   <option value="inventario">Inventario</option>
                   <option value="viveros">Viveros</option>
-                  <option value="reservas">Reservas</option>
+                  <option value="reservas">Ventas</option>
                   <option value="vivero">Seguimiento Vivero</option>
                   <option value="laboratorio">Laboratorio</option>
                   <option value="seguimiento_produccion">Mi Producción (Trabajadores)</option>

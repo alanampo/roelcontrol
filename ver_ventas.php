@@ -3,11 +3,11 @@
 <html>
 
 <head>
-  <title>Reservas y Stock</title>
+  <title>Ventas y Stock</title>
   <?php include "./class_lib/links.php"; ?>
   <?php include "./class_lib/scripts.php"; ?>
   <script src="dist/js/check_permisos.js?v=<?php echo $version ?>"></script>
-  <script src="dist/js/ver_reservas.js?v=<?php echo $version ?>"></script>
+  <script src="dist/js/ver_ventas.js?v=<?php echo $version ?>"></script>
 </head>
 
 <body>
@@ -34,11 +34,11 @@
         <!-- Content Header (Page header) -->
         <section class="content-header">
           <h1>
-            Reservas y Stock
+            Ventas y Stock
           </h1>
           <ol class="breadcrumb">
             <li><a href="inicio.php"> Inicio</a></li>
-            <li class="active">Reservas y Stock</li>
+            <li class="active">Ventas y Stock</li>
           </ol>
         </section>
         <!-- Main content -->
@@ -48,7 +48,7 @@
           <div class="row">
             <div class="col">
               <div class="tab">
-                <button id="defaultOpen" class="tablinks" onclick="abrirTab(event, 'reservas');">RESERVAS</button>
+                <button id="defaultOpen" class="tablinks" onclick="abrirTab(event, 'reservas');">VENTAS</button>
                 <button class="tablinks" onclick="abrirTab(event, 'picking');">PICKING</button>
                 <button class="tablinks" onclick="abrirTab(event, 'packing');">PACKING</button>
                 <button class="tablinks" onclick="abrirTab(event, 'en_transporte');">EN TRANSPORTE</button> <!-- NEW -->

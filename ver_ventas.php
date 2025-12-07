@@ -159,7 +159,7 @@
                 </select>
             </div>
             <div class="col-md-3 form-group">
-              <label class="col-form-label" for="input-cantidad-reserva">Cantidad a Reservar:</label>
+              <label class="col-form-label" for="input-cantidad-reserva">Cantidad a Vender:</label>
               <input type="number" placeholder="Plantas" autocomplete="off" class="form-control" name="input-cantidad"
                 id="input-cantidad-reserva" maxlength="20" />
             </div>

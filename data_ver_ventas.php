@@ -55,7 +55,7 @@ if ($consulta == "busca_stock_actual") {
         echo "<table id='tabla' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>Producto</th><th>Stock Real</th><th>Disponible para Reservar</th><th></th>";
+        echo "<th>Producto</th><th>Stock Real</th><th>Disponible para Comprar</th><th></th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
@@ -162,13 +162,13 @@ if ($consulta == "busca_stock_actual") {
 
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
-        echo "<h3 class='box-title'>Reservas</h3>";
+        echo "<h3 class='box-title'>Ventas</h3>";
         echo "</div>";
         echo "<div class='box-body'>";
         echo "<table id='tabla-reservas' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         echo "<thead>";
         echo "<tr>";
-        echo "<th>ID</th><th>Fecha Reserva</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th>";
+        echo "<th>ID</th><th>Fecha Venta</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th>";
         echo "</tr>";
         echo "</thead>";
         echo "<tbody>";
@@ -252,7 +252,7 @@ if ($consulta == "busca_stock_actual") {
             //     $btn_entrega_rapida = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-rocket'></i></button>";
             // }
 
-            $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Reserva'><i class='fa fa-ban'></i></button>" : "");
+            $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Venta'><i class='fa fa-ban'></i></button>" : "");
 
             $final_observaciones_to_display = $ww['observaciones'];
             $obs_general_text = htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8');
@@ -1037,7 +1037,7 @@ else if ($consulta == "busca_picking") {
     if (mysqli_num_rows($val) > 0) {
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
-        echo "<h3 class='box-title'>Reservas en Picking</h3>";
+        echo "<h3 class='box-title'>Ventas en Picking</h3>";
         echo "<div class='box-tools pull-right'>";
         echo "<button class='btn btn-primary btn-sm' onclick='printTable(\"tabla-picking\")'><i class='fa fa-print'></i> IMPRIMIR</button>";
         echo "</div>";
@@ -1045,7 +1045,7 @@ else if ($consulta == "busca_picking") {
         echo "<div class='box-body'>";
         echo "<table id='tabla-picking' class='table table-bordered table-responsive w-100 d-block d-md-table'>";
         // Table headers
-        echo "<thead><tr><th>ID</th><th>Fecha Reserva</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th></tr></thead>";
+        echo "<thead><tr><th>ID</th><th>Fecha Venta</th><th>Cliente</th><th>Vendedor</th><th>Productos</th><th>Observaciones</th><th>Estado</th><th></th></tr></thead>";
         echo "<tbody>";
 
         while ($ww = mysqli_fetch_array($val)) {
@@ -1124,7 +1124,7 @@ else if ($consulta == "busca_packing") {
 
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
-        echo "<h3 class='box-title'>Reservas en Packing</h3>";
+        echo "<h3 class='box-title'>Ventas en Packing</h3>";
         echo "<div class='box-tools pull-right'>";
         echo "<button class='btn btn-primary btn-sm' onclick='printTable(\"tabla-packing\")'><i class='fa fa-print'></i> IMPRIMIR</button>";
         echo "</div></div>";
@@ -1134,7 +1134,7 @@ else if ($consulta == "busca_packing") {
 
         echo "<thead><tr>
                 <th>ID</th>
-                <th>Fecha Reserva</th>
+                <th>Fecha Venta</th>
                 <th>Cliente</th>
                 <th>Vendedor</th>
                 <th>Productos</th>
@@ -1285,7 +1285,7 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
     if (mysqli_num_rows($val) > 0) {
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
-        echo "<h3 class='box-title'>Reservas en Transporte</h3>";
+        echo "<h3 class='box-title'>Ventas en Transporte</h3>";
         echo "<div class='box-tools pull-right'>";
         echo "<button class='btn btn-primary btn-sm' onclick='printTable(\"tabla-en-transporte\")'><i class='fa fa-print'></i> IMPRIMIR</button>";
         echo "</div>";
@@ -1379,7 +1379,7 @@ else if ($consulta == "busca_entregadas") {
     if (mysqli_num_rows($val) > 0) {
         echo "<div class='box box-primary'>";
         echo "<div class='box-header with-border'>";
-        echo "<h3 class='box-title'>Reservas Entregadas</h3>";
+        echo "<h3 class='box-title'>Ventas Entregadas</h3>";
         echo "<div class='box-tools pull-right'>";
         echo "<button class='btn btn-primary btn-sm' onclick='printTable(\"tabla-entregadas\")'><i class='fa fa-print'></i> IMPRIMIR</button>";
         echo "</div>";

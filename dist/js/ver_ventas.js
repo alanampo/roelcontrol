@@ -146,7 +146,7 @@ function busca_entradas(tabName, selectedStates = []) {
 
 
 function cancelarReserva(id_reserva) {
-    swal("Estás seguro/a de CANCELAR la Reserva?", "", {
+    swal("Estás seguro/a de CANCELAR la Venta?", "", {
         icon: "warning",
         buttons: {
             cancel: "NO",
@@ -163,7 +163,7 @@ function cancelarReserva(id_reserva) {
                 data: { consulta: "cancelar_reserva", id_reserva: id_reserva },
                 success: function (data) {
                     if (data.trim() == "success") {
-                        swal("Cancelaste la Reserva correctamente!", "", "success");
+                        swal("Cancelaste la Venta correctamente!", "", "success");
                         // After action, re-fetch based on current tab and filters
                         if (currentTab === 'reservas') {
                             let selectedStates = $('#select-estado-reserva').val();
@@ -172,7 +172,7 @@ function cancelarReserva(id_reserva) {
                             busca_entradas(currentTab);
                         }
                     } else {
-                        swal("Ocurrió un error al cancelar la Reserva", data, "error");
+                        swal("Ocurrió un error al cancelar la Venta", data, "error");
                     }
                 },
             });
@@ -311,7 +311,7 @@ function enviarATransporteReserva(id_reserva) {
 // END NEW FUNCTION
 
 function entregaRapida(id_reserva) {
-    swal("Estás seguro/a de realizar la de toda la Reserva?", "Se entregarán todos los productos pendientes de la misma.", {
+    swal("Estás seguro/a de realizar la entrega de toda la Venta?", "Se entregarán todos los productos pendientes de la misma.", {
         icon: "warning",
         buttons: {
             cancel: "NO",
@@ -349,7 +349,7 @@ function entregarProducto(id_reserva_producto, nombre_producto, cantidad_pendien
   max = stock_disponible;
   currentReserva = id_reserva_producto;
   $("#modal-entregar-reserva input").val("")
-  $("#modal-entregar-reserva .box-title").html(`Entregar Producto de Reserva (${nombre_producto})`)
+  $("#modal-entregar-reserva .box-title").html(`Entregar Producto de Venta (${nombre_producto})`)
   $("#input-cantidad").val(cantidad_pendiente)
   $("#input-cantidad-disponible").val(stock_disponible)
   $("#modal-entregar-reserva").modal("show")

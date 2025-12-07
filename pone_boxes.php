@@ -154,7 +154,7 @@ else if ($tipo == "reservas") {
         <div class=\"icon\">
           <i class=\"fa fa-shopping-cart".($r["reservas_nuevas"] > 0 ? " blink":"")."\"></i>
         </div>
-         <span class=\"small-box-footer\">Ver Reservas <i class=\"fa fa-arrow-circle-right\"></i></span>
+         <span class=\"small-box-footer\">Ver Ventas <i class=\"fa fa-arrow-circle-right\"></i></span>
    
     </div>
 </a>

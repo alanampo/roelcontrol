@@ -84,7 +84,7 @@ function boxEstadoReserva($estado,$fullWidth){
 	}
 	
 	  if ($estado == 0){
-		  return "<div class='d-inline-block cajita w-100' style='background-color:#D8D8D8; padding:5px;'>PENDIENTE</div>";
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#D8D8D8; padding:5px;'>PAGO ACEPTADO</div>";
 	  }
 	  else if ($estado == 1){
 		return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:yellow; padding:3px; cursor:pointer;'><div>EN PROCESO</div></div>";

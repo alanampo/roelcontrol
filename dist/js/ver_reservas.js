@@ -23,7 +23,7 @@ $(document).ready(function () {
         savedStates = JSON.parse(savedStates);
         $('#select-estado-reserva').selectpicker('val', savedStates).selectpicker("refresh");
     } else {
-        // Default selected states: PENDIENTE (0), EN PROCESO (1), EN REVISIÓN (3)
+        // Default selected states: PAGO ACEPTADO (0), EN PROCESO (1), EN REVISIÓN (3)
         $('#select-estado-reserva').selectpicker('val', ['0', '1', '3']).selectpicker("refresh");
     }
 

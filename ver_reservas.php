@@ -65,7 +65,7 @@
               <label for="select-estado-reserva" class="control-label">Filtrar por Estado:</label>
               <select id="select-estado-reserva" class="selectpicker" multiple data-actions-box="true" data-live-search="true" title="Seleccione estados..." data-width="100%">
                 <option value="-1">CANCELADA</option>
-                <option value="0">PENDIENTE</option>
+                <option value="0">PAGO ACEPTADO</option>
                 <option value="1">EN PROCESO</option>
                 <option value="2">ENTREGADA</option>
                 <option value="3">EN REVISIÓN</option>
@@ -198,7 +198,7 @@
           <div class="row mt-2">
             <div class="col">
               <button onclick="guardarReserva()" class="btn btn-success pull-right"><i class="fa fa-save"></i> CONFIRMAR
-                RESERVA</button>
+                VENTA</button>
             </div>
           </div>
 

@@ -224,10 +224,10 @@ if ($consulta == "busca_stock_actual") {
                     if ($producto['estado'] != 2) {
                         $productos_pendientes++;
                     }
-                    if(in_array($producto['estado'], [0, 1])) { // PENDIENTE or EN PROCESO
+                    if(in_array($producto['estado'], [0, 1])) { // PAGO ACEPTADO or EN PROCESO
                         $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)' class='btn btn-info btn-sm'><i class='fa fa-search'></i> A REVISIÓN</button>";
                     }
-                    if(in_array($producto['estado'], [0, 1, 3])) { // PENDIENTE, EN PROCESO or REVISAR STOCK
+                    if(in_array($producto['estado'], [0, 1, 3])) { // PAGO ACEPTADO, EN PROCESO or REVISAR STOCK
                         $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 4)' class='btn btn-primary btn-sm'><i class='fa fa-arrow-right'></i> A PICKING</button>";
                     }
                 }

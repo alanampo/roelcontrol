@@ -67,7 +67,7 @@ try {
                 IFNULL((
                     SELECT SUM(e.cantidad)
                     FROM entregas_stock e
-                    JOIN reservas_productos r2 ON r2.id = e.id_reserva
+                    JOIN reservas_productos r2 ON r2.id = e.id_reserva_producto
                     WHERE r2.id_variedad = v.id AND r2.estado = 2
                 ), 0)
             ) AS disponible_para_reservar,

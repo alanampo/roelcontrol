@@ -770,7 +770,7 @@ else if ($consulta == "get_stock_variedad") {
               WHERE r.id_variedad = v.id AND (r.estado = 0 OR r.estado = 1)) +
              (SELECT IFNULL(SUM(e.cantidad),0)
               FROM entregas_stock e
-              INNER JOIN reservas_productos r2 ON e.id_reserva = r2.id
+              INNER JOIN reservas_productos r2 ON e.id_reserva_producto = r2.id
               WHERE r2.id_variedad = v.id AND r2.estado = 2)) /
             NULLIF((SELECT SUM(s2.cantidad)
                     FROM stock_productos s2
@@ -903,7 +903,7 @@ else if ($consulta == "get_stock_variedad") {
               WHERE r.id_variedad = $id_variedad AND (r.estado = 0 OR r.estado = 1)) +
              (SELECT IFNULL(SUM(e.cantidad),0)
               FROM entregas_stock e
-              INNER JOIN reservas_productos r2 ON e.id_reserva = r2.id
+              INNER JOIN reservas_productos r2 ON e.id_reserva_producto = r2.id
               WHERE r2.id_variedad = $id_variedad AND r2.estado = 2)) /
             NULLIF((SELECT SUM(s2.cantidad)
                     FROM stock_productos s2

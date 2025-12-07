@@ -682,10 +682,19 @@ function printTable(tableId) {
 
     const productosColIndex = headers.findIndex(header => header.toLowerCase() === 'productos');
 
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
+
     let printContents = `
         <html>
         <head>
-            <title>${tableTitle} - Impresión</title>
+            <title>${tableTitle} - ${timestamp}</title>
             <style>
                 body { font-family: sans-serif; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -705,7 +714,7 @@ function printTable(tableId) {
                     <tr>`;
     
     headers.forEach((header, index) => {
-        if (index < headers.length - 1 && index !== 0) { // Exclude checkbox and actions columns
+        if (index < headers.length - 1 && header.trim() !== '') { // Exclude checkbox and actions columns
             if (index === productosColIndex) {
                 printContents += `<th>Producto</th><th>Cantidad</th><th>Estado</th>`;
             } else {

@@ -220,7 +220,7 @@ function enviarAPickingReserva(id_reserva) {
                 data: { consulta: "enviar_a_picking_reserva", id_reserva: id_reserva },
                 success: function (data) {
                     if (data.trim() == "success") {
-                        swal("La reserva ha sido enviada a picking.", "", "success");
+                        swal("La venta ha sido enviada a picking.", "", "success");
                         // After action, re-fetch based on current tab and filters
                         if (currentTab === 'reservas') {
                             let selectedStates = $('#select-estado-reserva').val();
@@ -229,7 +229,7 @@ function enviarAPickingReserva(id_reserva) {
                             busca_entradas(currentTab);
                         }
                     } else {
-                        swal("Ocurrió un error al enviar la reserva a picking", data, "error");
+                        swal("Ocurrió un error al enviar La venta a picking", data, "error");
                     }
                 },
             });
@@ -255,7 +255,7 @@ function enviarAPackingReserva(id_reserva) {
                 data: { consulta: "enviar_a_packing_reserva", id_reserva: id_reserva },
                 success: function (data) {
                     if (data.trim() == "success") {
-                        swal("La reserva ha sido enviada a packing.", "", "success");
+                        swal("La venta ha sido enviada a packing.", "", "success");
                         // After action, re-fetch based on current tab and filters
                         if (currentTab === 'reservas') {
                             let selectedStates = $('#select-estado-reserva').val();
@@ -264,7 +264,7 @@ function enviarAPackingReserva(id_reserva) {
                             busca_entradas(currentTab);
                         }
                     } else {
-                        swal("Ocurrió un error al enviar la reserva a packing", data, "error");
+                        swal("Ocurrió un error al enviar La venta a packing", data, "error");
                     }
                 },
             });
@@ -291,7 +291,7 @@ function enviarATransporteReserva(id_reserva) {
                 data: { consulta: "enviar_a_transporte_reserva", id_reserva: id_reserva },
                 success: function (data) {
                     if (data.trim() == "success") {
-                        swal("La reserva ha sido enviada a Transporte.", "", "success");
+                        swal("La venta ha sido enviada a Transporte.", "", "success");
                         // After action, re-fetch based on current tab and filters
                         if (currentTab === 'packing') { // Refresh packing tab after sending to transporte
                             busca_entradas('packing');
@@ -301,7 +301,7 @@ function enviarATransporteReserva(id_reserva) {
                             busca_entradas(currentTab, selectedStates);
                         }
                     } else {
-                        swal("Ocurrió un error al enviar la reserva a Transporte", data, "error");
+                        swal("Ocurrió un error al enviar La venta a Transporte", data, "error");
                     }
                 },
             });
@@ -394,7 +394,7 @@ function guardarEntrega() {
         }
       }
       else if (x.trim().includes("cancelada:")) {
-        swal("ERROR! El cliente u otro usuario CANCELARON la reserva", "", "error");
+        swal("ERROR! El cliente u otro usuario CANCELARON La venta", "", "error");
       }
       else if (x.trim().includes("max:")) {
         swal("La cantidad ingresada ya no está disponible", "", "error")
@@ -543,7 +543,7 @@ function guardarReserva() {
         return;
     }
     if (productosReserva.length === 0) {
-        swal("Error", "Debes agregar al menos un producto a la reserva.", "error");
+        swal("Error", "Debes agregar al menos un producto a La venta.", "error");
         return;
     }
 
@@ -560,7 +560,7 @@ function guardarReserva() {
         },
         success: function (x) {
             if (x.trim() == "success") {
-                swal("Éxito", "La reserva se ha guardado correctamente.", "success");
+                swal("Éxito", "La venta se ha guardado correctamente.", "success");
                 // After action, re-fetch based on current tab and filters
                 if (currentTab === 'reservas') {
                     let selectedStates = $('#select-estado-reserva').val();
@@ -569,7 +569,7 @@ function guardarReserva() {
                     busca_entradas(currentTab);
                 }
             } else {
-                swal("Ocurrió un error al guardar la Reserva", x, "error");
+                swal("Ocurrió un error al guardar La venta", x, "error");
                 $("#modal-reservar").modal("show");
             }
         },
@@ -740,7 +740,7 @@ function guardarObservacionGeneral() {
     const observaciones = $("#textarea-observacion-general").val().trim();
 
     if (!id_reserva) {
-        swal("Error", "No se pudo obtener el ID de la reserva.", "error");
+        swal("Error", "No se pudo obtener el ID de La venta.", "error");
         return;
     }
 
@@ -789,7 +789,7 @@ function guardarObservacionPicking() {
     const observaciones_picking = $("#textarea-observacion-picking").val().trim();
 
     if (!id_reserva) {
-        swal("Error", "No se pudo obtener el ID de la reserva.", "error");
+        swal("Error", "No se pudo obtener el ID de La venta.", "error");
         return;
     }
 
@@ -838,7 +838,7 @@ function guardarObservacionPacking() {
     const observaciones_packing = $("#textarea-observacion-packing").val().trim();
 
     if (!id_reserva) {
-        swal("Error", "No se pudo obtener el ID de la reserva.", "error");
+        swal("Error", "No se pudo obtener el ID de La venta.", "error");
         return;
     }
 

@@ -298,15 +298,15 @@ if ($consulta == "busca_stock_actual") {
         mysqli_autocommit($con, false);
         $errors = array();
 
-        // Verificar que la reserva no esté ya cancelada o entregada
+        // Verificar que La venta no esté ya cancelada o entregada
         $query_check = "SELECT * FROM reservas_productos WHERE id_reserva = $id_reserva AND estado >= 2";
         $res_check = mysqli_query($con, $query_check);
         if (mysqli_num_rows($res_check) > 0) {
-            $errors[] = "La reserva contiene productos que ya fueron entregados, no se puede cancelar.";
+            $errors[] = "La venta contiene productos que ya fueron entregados, no se puede cancelar.";
         }
 
         if (count($errors) == 0) {
-            // Actualizar estado de todos los productos de la reserva a cancelada (-1)
+            // Actualizar estado de todos los productos de La venta a cancelada (-1)
             $query = "UPDATE reservas_productos SET estado = -1 WHERE id_reserva = $id_reserva";
             if (!mysqli_query($con, $query)) {
                 $errors[] = mysqli_error($con);
@@ -581,7 +581,7 @@ else if ($consulta == "entrega_rapida") {
                     $errors[] = mysqli_error($con) . $query_entrega;
                 }
 
-                // Actualizar estado de la reserva
+                // Actualizar estado de La venta
                 $total_entregado = $ww["cantidad_ya_entregada"] + $cantidad;
                 $nuevo_estado = ($total_entregado >= $ww["cantidad_reservada"]) ? 2 : 1;
 
@@ -607,7 +607,7 @@ else if ($consulta == "entrega_rapida") {
             }
         }
     } else {
-        echo "error: No se encontró el producto de la reserva";
+        echo "error: No se encontró el producto de La venta";
     }
 
     mysqli_close($con);
@@ -986,7 +986,7 @@ else if ($consulta == "get_stock_variedad") {
         $query_reserva = "INSERT INTO reservas (fecha, id_cliente, observaciones, id_usuario) VALUES (NOW(), $id_cliente, '$observaciones', $_SESSION[id_usuario])";
 
         if (!mysqli_query($con, $query_reserva)) {
-            $errors[] = "Error al crear la reserva: " . mysqli_error($con);
+            $errors[] = "Error al crear La venta: " . mysqli_error($con);
         } else {
             $id_reserva = mysqli_insert_id($con);
 

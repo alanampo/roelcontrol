@@ -126,7 +126,7 @@ function busca_entradas(tabName, selectedStates = []) {
                     tabName == "packing" ||
                     tabName == "en_transporte" ||
                     tabName == "entregadas"
-                        ? [0, "desc"]
+                        ? [1, "desc"]
                         : [0, "asc"]
                 ],
                 language: {
@@ -677,10 +677,10 @@ function guardarStockArticulo(id_artpedido, id_variedad) {
 function printTable(tableId) {
     const table = $(`#${tableId}`).DataTable();
     const tableTitle = $(`#${tableId}`).closest('.box-body').prev('.box-header').find('.box-title').text();
-
-    // Get all data from the DataTable, including hidden rows and columns (if any)
-    const allData = table.rows({ search: 'applied' }).data().toArray(); // 'search: applied' ensures filtered data if search is active
+    const allData = table.rows({ search: 'applied' }).data().toArray();
     const headers = table.columns().header().toArray().map(th => th.innerHTML);
+
+    const productosColIndex = headers.findIndex(header => header.toLowerCase() === 'productos');
 
     let printContents = `
         <html>
@@ -689,9 +689,13 @@ function printTable(tableId) {
             <style>
                 body { font-family: sans-serif; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 11px; vertical-align: top; }
                 th { background-color: #f2f2f2; }
-                h1 { text-align: center; margin-bottom: 20px; }
+                h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    font-size: 14px;
+                }
             </style>
         </head>
         <body>
@@ -699,29 +703,69 @@ function printTable(tableId) {
             <table>
                 <thead>
                     <tr>`;
-    // Add headers to print content
-    headers.forEach(header => {
-        // Exclude the last header (actions column)
-        if (headers.indexOf(header) < headers.length - 1) {
-            printContents += `<th>${header}</th>`;
+    
+    headers.forEach((header, index) => {
+        if (index < headers.length - 1 && index !== 0) { // Exclude checkbox and actions columns
+            if (index === productosColIndex) {
+                printContents += `<th>Producto</th><th>Cantidad</th><th>Estado</th>`;
+            } else {
+                printContents += `<th>${header}</th>`;
+            }
         }
     });
+
     printContents += `
                     </tr>
                 </thead>
                 <tbody>`;
 
-    // Add all rows to print content
     allData.forEach(rowData => {
         printContents += `<tr>`;
-        // Iterate over cells, excluding the last one (actions column)
+        
         rowData.forEach((cellData, index) => {
-            if (index < rowData.length - 1) { // Exclude the last column
-                // Clean up HTML from cell data (e.g., remove buttons, spans for styling)
-                const cleanedCellData = $('<div>').html(cellData).text(); // Use jQuery to parse HTML and get text content
+            if (index >= rowData.length - 1 || index === 0) return; // Exclude checkbox and actions columns
+
+            if (index === productosColIndex) {
+                let productosContent = [];
+                let cantidadesContent = [];
+                let estadosContent = [];
+
+                const $ul = $('<div>').html(cellData).find('ul.list-group');
+                $ul.find('li').each(function() {
+                    const $li = $(this);
+                    const $mainDiv = $li.children('div').first();
+                    const $statusSpan = $mainDiv.find('span.badge');
+
+                    let productAndQuantityText = $mainDiv.clone().children().remove().end().text();
+                    let statusText = $statusSpan.text().trim();
+
+                    // Normalize whitespace before regex
+                    productAndQuantityText = productAndQuantityText.replace(/\s+/g, ' ').trim();
+
+                    const regex = /^(.*) - Cant: (\d+)/;
+                    const match = productAndQuantityText.match(regex);
+
+                    if (match) {
+                        productosContent.push(match[1].trim());
+                        cantidadesContent.push(match[2].trim());
+                        estadosContent.push(statusText);
+                    } else {
+                        productosContent.push(productAndQuantityText);
+                        cantidadesContent.push('');
+                        estadosContent.push(statusText);
+                    }
+                });
+
+                printContents += `<td>${productosContent.join('<br>')}</td>`;
+                printContents += `<td>${cantidadesContent.join('<br>')}</td>`;
+                printContents += `<td>${estadosContent.join('<br>')}</td>`;
+
+            } else {
+                const cleanedCellData = $('<div>').html(cellData).text();
                 printContents += `<td>${cleanedCellData}</td>`;
             }
         });
+        
         printContents += `</tr>`;
     });
 

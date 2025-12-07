@@ -86,6 +86,48 @@ function boxEstadoReserva($estado,$fullWidth){
 	  if ($estado == 0){
 		  return "<div class='d-inline-block cajita w-100' style='background-color:#D8D8D8; padding:5px;'>PAGO ACEPTADO</div>";
 	  }
+	  else if ($estado == 100){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>EN ESPERA PAGO PAYPAL/FLOW</div>";
+	  }
+	  else if ($estado == 101){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>EN ESPERA PAGO CHEQUE</div>";
+	  }
+	  else if ($estado == 102){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>EN ESPERA PAGO TRANSF.</div>";
+	  }
+	  else if ($estado == 103){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>EN ESPERA VALID. CONTRA REEMBOLSO</div>";
+	  }
+	  else if ($estado == 104){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>ENTREGA REPROGRAMADA</div>";
+	  }
+	  else if ($estado == 105){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>ENVIADO</div>";
+	  }
+	  else if ($estado == 106){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>ERROR EN PAGO</div>";
+	  }
+	  else if ($estado == 107){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>INTENTO ENTREGA FALLIDO</div>";
+	  }
+	  else if ($estado == 108){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>ORDEN DE WHATSAPP</div>";
+	  }
+	  else if ($estado == 109){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>PAGO REMOTO ACEPTADO</div>";
+	  }
+	  else if ($estado == 110){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>PENDIENTE POR FALTA STOCK (NO PAGADO)</div>";
+	  }
+	  else if ($estado == 111){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>PENDIENTE POR FALTA STOCK (PAGADO)</div>";
+	  }
+	  else if ($estado == 112){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>PENDING PAYMENT</div>";
+	  }
+	  else if ($estado == 113){
+		  return "<div class='d-inline-block cajita w-100' style='background-color:#EAEAEA; padding:5px;'>REEMBOLSADO</div>";
+	  }
 	  else if ($estado == 1){
 		return "<div class='d-inline-block cajita w-100' style='text-align:center;background-color:yellow; padding:3px; cursor:pointer;'><div>EN PROCESO</div></div>";
     	}

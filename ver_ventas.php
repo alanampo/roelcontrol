@@ -73,6 +73,20 @@
               <select id="select-estado-reserva" class="selectpicker" multiple data-actions-box="true" data-live-search="true" title="Seleccione estados..." data-width="100%">
                 <option value="-1">CANCELADA</option>
                 <option value="0">PAGO ACEPTADO</option>
+                <option value="100">En espera de pago por Paypal/Flow</option>
+                <option value="101">En espera de pago por cheque</option>
+                <option value="102">En espera de pago por transferencia bancaria</option>
+                <option value="103">En espera de validación por contra reembolso</option>
+                <option value="104">Entrega reprogramada</option>
+                <option value="105">Enviado</option>
+                <option value="106">Error en pago</option>
+                <option value="107">Intento de entrega fallido</option>
+                <option value="108">Orden de WhatsApp</option>
+                <option value="109">Pago remoto aceptado</option>
+                <option value="110">Pedido pendiente por falta de stock (no pagado)</option>
+                <option value="111">Pedido pendiente por falta de stock (pagado)</option>
+                <option value="112">Pending Payment</option>
+                <option value="113">Reembolsado</option>
                 <option value="1">EN PROCESO</option>
                 <option value="2">ENTREGADA</option>
                 <option value="3">EN REVISIÓN</option>
@@ -342,6 +356,20 @@
               <label class="col-form-label" for="select-nuevo-estado">Nuevo Estado:</label>
               <select id="select-nuevo-estado" class="form-control">
                 <option value="0">PAGO ACEPTADO</option>
+                <option value="100">En espera de pago por Paypal/Flow</option>
+                <option value="101">En espera de pago por cheque</option>
+                <option value="102">En espera de pago por transferencia bancaria</option>
+                <option value="103">En espera de validación por contra reembolso</option>
+                <option value="104">Entrega reprogramada</option>
+                <option value="105">Enviado</option>
+                <option value="106">Error en pago</option>
+                <option value="107">Intento de entrega fallido</option>
+                <option value="108">Orden de WhatsApp</option>
+                <option value="109">Pago remoto aceptado</option>
+                <option value="110">Pedido pendiente por falta de stock (no pagado)</option>
+                <option value="111">Pedido pendiente por falta de stock (pagado)</option>
+                <option value="112">Pending Payment</option>
+                <option value="113">Reembolsado</option>
                 <option value="1">EN PROCESO</option>
                 <option value="3">EN REVISIÓN</option>
                 <option value="4">LISTO PARA PICKING</option>

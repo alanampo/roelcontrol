@@ -125,6 +125,54 @@ if ($consulta == "busca_stock_actual") {
     }
 
 } else if ($consulta == "busca_ventas") {
+    // Eliminar automáticamente reservas con estado 100 (En espera de pago) más viejas de 5 minutos
+    try {
+        mysqli_autocommit($con, false);
+
+        // Encontrar reservas con estado 100 más viejas de 5 minutos
+        $query_reservas_expiradas = "SELECT r.id FROM reservas r
+                                      WHERE (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) = 100
+                                      AND r.fecha < DATE_SUB(NOW(), INTERVAL 5 MINUTE)";
+
+        $result_expiradas = mysqli_query($con, $query_reservas_expiradas);
+        $reservas_a_eliminar = [];
+
+        while ($row = mysqli_fetch_assoc($result_expiradas)) {
+            $reservas_a_eliminar[] = $row['id'];
+        }
+
+        if (!empty($reservas_a_eliminar)) {
+            $ids_list = implode(",", $reservas_a_eliminar);
+
+            // Obtener IDs de reservas_productos para eliminar entregas_stock
+            $query_rp = "SELECT id FROM reservas_productos WHERE id_reserva IN ($ids_list)";
+            $result_rp = mysqli_query($con, $query_rp);
+            $rp_ids = [];
+            while ($row = mysqli_fetch_assoc($result_rp)) {
+                $rp_ids[] = $row['id'];
+            }
+
+            // Eliminar entregas_stock asociadas
+            if (!empty($rp_ids)) {
+                $rp_ids_list = implode(",", $rp_ids);
+                $query_delete_entregas = "DELETE FROM entregas_stock WHERE id_reserva_producto IN ($rp_ids_list)";
+                mysqli_query($con, $query_delete_entregas);
+            }
+
+            // Eliminar reservas_productos
+            $query_delete_rp = "DELETE FROM reservas_productos WHERE id_reserva IN ($ids_list)";
+            mysqli_query($con, $query_delete_rp);
+
+            // Eliminar reservas
+            $query_delete_reservas = "DELETE FROM reservas WHERE id IN ($ids_list)";
+            mysqli_query($con, $query_delete_reservas);
+        }
+
+        mysqli_commit($con);
+    } catch (\Throwable $th) {
+        mysqli_rollback($con);
+    }
+
     $estados_filter = "";
     if (isset($_POST["estados"]) && !empty($_POST["estados"])) {
         $selected_estados = json_decode($_POST["estados"], true);

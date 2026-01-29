@@ -1558,28 +1558,48 @@ else if ($consulta == "busca_entregadas") {
         mysqli_autocommit($con, false);
         $errors = array();
 
-        // Find products that are currently 'ENTREGADA' (estado = 2) to revert their delivery record
-        $query_productos_a_revertir = "SELECT id FROM reservas_productos WHERE id_reserva IN ($ids_list) AND estado = 2";
-        $result_revertir = mysqli_query($con, $query_productos_a_revertir);
-        $productos_ids_a_revertir = [];
-        while($row = mysqli_fetch_assoc($result_revertir)){
-            $productos_ids_a_revertir[] = $row['id'];
-        }
+        // Si el estado es CANCELADO (-1), hacer validaciones especiales
+        if ($estado === -1) {
+            // Verificar que NINGUNA de las reservas tenga productos entregados (estado >= 2)
+            $query_check_entregados = "SELECT rp.id, rp.id_reserva FROM reservas_productos rp
+                                       WHERE rp.id_reserva IN ($ids_list) AND rp.estado >= 2";
+            $result_check = mysqli_query($con, $query_check_entregados);
 
-        // If there are products to revert, delete their records from entregas_stock
-        if (!empty($productos_ids_a_revertir)) {
-            $productos_ids_list = implode(",", $productos_ids_a_revertir);
-            $query_delete_entregas = "DELETE FROM entregas_stock WHERE id_reserva_producto IN ($productos_ids_list)";
-            if (!mysqli_query($con, $query_delete_entregas)) {
-                $errors[] = "Error al eliminar registros de entrega: " . mysqli_error($con);
+            if (mysqli_num_rows($result_check) > 0) {
+                // Hay productos entregados, no permitir cancelación
+                $errors[] = "No se puede cancelar. Una o más ventas contienen productos que ya fueron entregados.";
+            } else {
+                // Si todo está bien, cambiar estado de todos los productos a -1
+                $query_update = "UPDATE reservas_productos SET estado = -1 WHERE id_reserva IN ($ids_list)";
+                if (!mysqli_query($con, $query_update)) {
+                    $errors[] = mysqli_error($con);
+                }
             }
-        }
+        } else {
+            // Para otros estados, aplicar el comportamiento normal
+            // Find products that are currently 'ENTREGADA' (estado = 2) to revert their delivery record
+            $query_productos_a_revertir = "SELECT id FROM reservas_productos WHERE id_reserva IN ($ids_list) AND estado = 2";
+            $result_revertir = mysqli_query($con, $query_productos_a_revertir);
+            $productos_ids_a_revertir = [];
+            while($row = mysqli_fetch_assoc($result_revertir)){
+                $productos_ids_a_revertir[] = $row['id'];
+            }
 
-        // Update the state of all non-cancelled products for the selected reservations
-        if(count($errors) == 0){
-            $query_update = "UPDATE reservas_productos SET estado = $estado WHERE id_reserva IN ($ids_list) AND estado != -1";
-            if (!mysqli_query($con, $query_update)) {
-                $errors[] = "Error al actualizar estados: " . mysqli_error($con);
+            // If there are products to revert, delete their records from entregas_stock
+            if (!empty($productos_ids_a_revertir)) {
+                $productos_ids_list = implode(",", $productos_ids_a_revertir);
+                $query_delete_entregas = "DELETE FROM entregas_stock WHERE id_reserva_producto IN ($productos_ids_list)";
+                if (!mysqli_query($con, $query_delete_entregas)) {
+                    $errors[] = "Error al eliminar registros de entrega: " . mysqli_error($con);
+                }
+            }
+
+            // Update the state of all non-cancelled products for the selected reservations
+            if(count($errors) == 0){
+                $query_update = "UPDATE reservas_productos SET estado = $estado WHERE id_reserva IN ($ids_list) AND estado != -1";
+                if (!mysqli_query($con, $query_update)) {
+                    $errors[] = "Error al actualizar estados: " . mysqli_error($con);
+                }
             }
         }
 

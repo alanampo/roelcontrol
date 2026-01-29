@@ -960,11 +960,26 @@ function guardarCambioEstadoMasa() {
         return;
     }
 
+    // Mensaje diferente según el estado
+    let titulo = "¿Estás seguro?";
+    let mensaje = `Se cambiará el estado de ${selectedIds.length} venta(s).`;
+    let textoBoton = "Sí, cambiar estado";
+
+    if (nuevoEstado === '2') {
+        titulo = "¿Confirmar Entrega Masiva?";
+        mensaje = `Se entregarán ${selectedIds.length} venta(s) automáticamente. Los productos pendientes se marcarán como entregados.`;
+        textoBoton = "Sí, entregar";
+    } else if (nuevoEstado === '-1') {
+        titulo = "¿Confirmar Cancelación Masiva?";
+        mensaje = `Se cancelarán ${selectedIds.length} venta(s). Solo se puede cancelar si ningún producto ha sido entregado.`;
+        textoBoton = "Sí, cancelar";
+    }
+
     swal({
-        title: "¿Estás seguro?",
-        text: `Se cambiará el estado de ${selectedIds.length} venta(s).`,
+        title: titulo,
+        text: mensaje,
         icon: "warning",
-        buttons: ["Cancelar", "Sí, cambiar estado"],
+        buttons: ["Cancelar", textoBoton],
         dangerMode: true,
     }).then((willDelete) => {
         if (willDelete) {
@@ -978,17 +993,41 @@ function guardarCambioEstadoMasa() {
                 },
                 success: function(response) {
                     if (response.trim() === 'success') {
-                        swal("¡Hecho!", "El estado de las ventas ha sido actualizado.", "success");
+                        let mensajeExito = "El estado de las ventas ha sido actualizado.";
+                        if (nuevoEstado === '2') {
+                            mensajeExito = "Las entregas se han registrado correctamente.";
+                            // Para entregas masivas, refrescar tanto VENTAS como ENTREGADAS
+                            if (currentTab === 'reservas') {
+                                let selectedStates = $('#select-estado-reserva').val();
+                                busca_entradas('reservas', selectedStates);
+                            } else {
+                                busca_entradas(currentTab);
+                            }
+                            // También refrescar la pestaña ENTREGADAS para mostrar nuevos productos
+                            setTimeout(() => {
+                                busca_entradas('entregadas');
+                            }, 500);
+                        } else if (nuevoEstado === '-1') {
+                            mensajeExito = "Las ventas han sido canceladas correctamente.";
+                            if (currentTab === 'reservas') {
+                                let selectedStates = $('#select-estado-reserva').val();
+                                busca_entradas('reservas', selectedStates);
+                            } else {
+                                busca_entradas(currentTab);
+                            }
+                        } else {
+                            if (currentTab === 'reservas') {
+                                let selectedStates = $('#select-estado-reserva').val();
+                                busca_entradas('reservas', selectedStates);
+                            } else {
+                                busca_entradas(currentTab);
+                            }
+                        }
+                        swal("¡Hecho!", mensajeExito, "success");
                         $('#modal-cambiar-estado-masa').css({display:'none'});
                         $('#btn-cambiar-estado-masa').hide();
-                        if (currentTab === 'reservas') {
-                            let selectedStates = $('#select-estado-reserva').val();
-                            busca_entradas('reservas', selectedStates);
-                        } else {
-                            busca_entradas(currentTab);
-                        }
                     } else {
-                        swal("Error", "Ocurrió un error al actualizar el estado: " + response, "error");
+                        swal("Error", "Ocurrió un error al procesar la acción: " + response, "error");
                     }
                 },
                 error: function() {

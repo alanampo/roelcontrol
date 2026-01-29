@@ -406,6 +406,7 @@
                 <option value="4">LISTO PARA PICKING</option>
                 <option value="5">LISTO PARA PACKING</option>
                 <option value="-1">CANCELADO</option>
+                <option value="2">ENTREGADO</option>
               </select>
             </div>
           </div>

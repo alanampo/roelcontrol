@@ -1461,20 +1461,40 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
     }
 }
 else if ($consulta == "busca_entregadas") {
-    $query = "SELECT r.*, cl.nombre as nombre_cliente, u.nombre_real as nombre_usuario,
+    $query = "SELECT r.id,
+              r.id_cliente,
+              r.fecha,
+              r.observaciones,
+              r.observaciones_picking,
+              r.observaciones_packing,
+              r.id_usuario,
+              r.id_usuario_obs,
+              r.id_usuario_obs_picking,
+              r.id_usuario_obs_packing,
+              cl.nombre as nombre_cliente,
+              u.nombre_real as nombre_usuario,
               u_obs.nombre_real as usuario_obs,
               u_obs_picking.nombre_real as usuario_obs_picking,
               u_obs_packing.nombre_real as usuario_obs_packing,
               (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) as estado_general,
-              DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha_formatted
+              DATE_FORMAT(r.fecha, '%d/%m/%y %H:%i') as fecha_formatted,
+              (SELECT MAX(e.fecha) FROM entregas_stock e
+               INNER JOIN reservas_productos rp ON e.id_reserva_producto = rp.id
+               WHERE rp.id_reserva = r.id) as fecha_entrega_max,
+              DATE_FORMAT((SELECT MAX(e.fecha) FROM entregas_stock e
+               INNER JOIN reservas_productos rp ON e.id_reserva_producto = rp.id
+               WHERE rp.id_reserva = r.id), '%Y%m%d%H%i') as fecha_entrega_raw,
+              DATE_FORMAT((SELECT MAX(e.fecha) FROM entregas_stock e
+               INNER JOIN reservas_productos rp ON e.id_reserva_producto = rp.id
+               WHERE rp.id_reserva = r.id), '%d/%m/%y %H:%i') as fecha_entrega_formatted
               FROM reservas r
               INNER JOIN clientes cl ON cl.id_cliente = r.id_cliente
               LEFT JOIN usuarios u ON u.id = r.id_usuario
               LEFT JOIN usuarios u_obs ON u_obs.id = r.id_usuario_obs
               LEFT JOIN usuarios u_obs_picking ON u_obs_picking.id = r.id_usuario_obs_picking
               LEFT JOIN usuarios u_obs_packing ON u_obs_packing.id = r.id_usuario_obs_packing
-              WHERE EXISTS (SELECT 1 FROM reservas_productos rp WHERE rp.id_reserva = r.id AND rp.estado = 2)
-              ORDER BY r.fecha DESC";
+              WHERE (SELECT MIN(rp.estado) FROM reservas_productos rp WHERE rp.id_reserva = r.id) = 2
+              ORDER BY fecha_entrega_max DESC";
 
     $val = mysqli_query($con, $query);
 
@@ -1519,7 +1539,7 @@ else if ($consulta == "busca_entregadas") {
             if ($productos_entregados_count > 0) {
                 echo "<tr class='text-center'>";
                 echo "<td><small>$id_reserva</small></td>";
-                echo "<td>{$ww['fecha_formatted']}</td>";
+                echo "<td><span style='display:none'>{$ww['fecha_entrega_raw']}</span>{$ww['fecha_entrega_formatted']}</td>";
                 echo "<td>{$ww['nombre_cliente']} ({$ww['id_cliente']})</td>";
                 echo "<td>{$ww['nombre_usuario']}</td>";
                 echo "<td class='text-left'>$productos_html</td>";
@@ -1573,6 +1593,58 @@ else if ($consulta == "busca_entregadas") {
                 $query_update = "UPDATE reservas_productos SET estado = -1 WHERE id_reserva IN ($ids_list)";
                 if (!mysqli_query($con, $query_update)) {
                     $errors[] = mysqli_error($con);
+                }
+            }
+        } else if ($estado === 2) {
+            // ENTREGA MASIVA - Entregar automáticamente sin validar stock
+            // Primero, verificar que ninguna de las reservas esté completamente cancelada
+            $query_check_canceladas = "SELECT r.id FROM reservas r
+                                       WHERE r.id IN ($ids_list)
+                                       AND NOT EXISTS (
+                                           SELECT 1 FROM reservas_productos rp
+                                           WHERE rp.id_reserva = r.id AND rp.estado != -1
+                                       )";
+            $result_check = mysqli_query($con, $query_check_canceladas);
+
+            if (mysqli_num_rows($result_check) > 0) {
+                $errors[] = "No se puede entregar. Una o más ventas están completamente canceladas.";
+            } else {
+                // Obtener todos los productos no entregados ni cancelados de las reservas seleccionadas
+                $query_productos = "SELECT
+                                    rp.id as id_reserva_producto,
+                                    rp.cantidad as cantidad_reservada,
+                                    rp.id_variedad,
+                                    rp.estado,
+                                    (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_ya_entregada
+                                FROM reservas_productos rp
+                                WHERE rp.id_reserva IN ($ids_list) AND rp.estado != 2 AND rp.estado != -1";
+
+                $result_productos = mysqli_query($con, $query_productos);
+
+                if (mysqli_num_rows($result_productos) > 0) {
+                    while ($producto = mysqli_fetch_assoc($result_productos)) {
+                        $id_reserva_producto = $producto['id_reserva_producto'];
+                        $cantidad_reservada = (int)$producto['cantidad_reservada'];
+                        $cantidad_ya_entregada = (int)$producto['cantidad_ya_entregada'];
+                        $cantidad_pendiente = $cantidad_reservada - $cantidad_ya_entregada;
+
+                        // Solo procesar si hay cantidad pendiente
+                        if ($cantidad_pendiente > 0) {
+                            // Insertar entrega
+                            $query_entrega = "INSERT INTO entregas_stock (cantidad, fecha, id_reserva_producto) VALUES ($cantidad_pendiente, NOW(), $id_reserva_producto)";
+                            if (!mysqli_query($con, $query_entrega)) {
+                                $errors[] = "Error al registrar entrega para producto $id_reserva_producto: " . mysqli_error($con);
+                                break;
+                            }
+
+                            // Cambiar estado a ENTREGADO (2)
+                            $query_update = "UPDATE reservas_productos SET estado = 2 WHERE id = $id_reserva_producto";
+                            if (!mysqli_query($con, $query_update)) {
+                                $errors[] = "Error al actualizar estado para producto $id_reserva_producto: " . mysqli_error($con);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         } else {

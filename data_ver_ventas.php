@@ -308,6 +308,8 @@ if ($consulta == "busca_stock_actual") {
 
             $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Venta'><i class='fa fa-ban'></i></button>" : "");
 
+            $btn_orden_envio = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i> ORDEN ENVÍO</button>";
+
             $final_observaciones_to_display = $ww['observaciones'];
             $obs_general_text = htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8');
             $usuario_obs_suffix = !empty($ww['usuario_obs']) ? " <small>(" . htmlentities($ww['usuario_obs'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
@@ -338,6 +340,7 @@ if ($consulta == "busca_stock_actual") {
                 <div class='d-flex flex-column'>
                   $btn_quick_picking
                   $btn_entrega_rapida
+                  $btn_orden_envio
                   $btn_cancelar
                 </div>
               </td>
@@ -1692,6 +1695,131 @@ else if ($consulta == "busca_entregadas") {
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
+    }
+} else if ($consulta == "get_transportistas_select") {
+    $query = "SELECT
+                    t.nombre,
+                    t.id
+                     FROM
+                     transportistas t
+                     ORDER BY t.nombre ASC";
+    $val = mysqli_query($con, $query);
+    if (mysqli_num_rows($val) > 0) {
+        while ($re = mysqli_fetch_array($val)) {
+            $nombre = mysqli_real_escape_string($con, $re["nombre"]);
+
+            echo "<option value='$re[id]' x-nombre='$nombre'>$re[nombre] ($re[id])</option>";
+        }
+    }
+} else if ($consulta == "get_sucursales_select") {
+    $id_transportista = $_POST["id_transportista"];
+
+    if ((int) $id_transportista != 1) {
+        $query = "SELECT s.id,
+        s.nombre as nombre_sucursal,
+        s.direccion
+         FROM
+         transportistas_sucursales s
+         WHERE s.id_transportista = $id_transportista
+         ORDER BY s.nombre ASC";
+        $val = mysqli_query($con, $query);
+        if (mysqli_num_rows($val) > 0) {
+            while ($re = mysqli_fetch_array($val)) {
+                $nombre = htmlspecialchars($re["nombre_sucursal"], ENT_QUOTES, 'UTF-8');
+                $dire = $re["direccion"];
+                if (strlen($dire) > 14) {
+                    $dire = substr($dire, 0, 14) . "...";
+                }
+                $dire_escaped = htmlspecialchars($dire, ENT_QUOTES, 'UTF-8');
+                $sucu = $re["nombre_sucursal"];
+                if (strlen($sucu) > 12) {
+                    $sucu = substr($sucu, 0, 12) . "...";
+                }
+                $sucu_escaped = htmlspecialchars($sucu, ENT_QUOTES, 'UTF-8');
+                $re_direccion_escaped = htmlspecialchars($re["direccion"], ENT_QUOTES, 'UTF-8');
+                $re_id = htmlspecialchars($re["id"], ENT_QUOTES, 'UTF-8');
+
+                echo "<option x-direccion=\"$re_direccion_escaped\" value=\"$re_id\" x-nombre=\"$nombre\">$sucu_escaped [$dire_escaped] ($re_id)</option>";
+            }
+        }
+    } else {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_URL, "https://gateway.starken.cl/externo/integracion/agency/agency");
+        $token = "7b14bb8a-9df5-4cea-bb71-c6bc285b2ad7";
+        $headers = array(
+            "Content-Type: application/json; charset=utf-8",
+            "Authorization: Bearer " . $token,
+        );
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $resp = curl_exec($ch);
+        try {
+            $respArray = json_decode($resp);
+            foreach ($respArray as $sucursal) {
+                # code...
+                $direccion = $sucursal->address;
+                $id = $sucursal->id;
+                $nombre = $sucursal->name;
+
+                if (strlen($direccion) > 40) {
+                    $direccion = substr($direccion, 0, 40) . "...";
+                }
+                if (strlen($nombre) > 40) {
+                    $nombre = substr($nombre, 0, 40) . "...";
+                }
+
+                // Escapar atributos para HTML
+                $nombre_escaped = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
+                $direccion_escaped = htmlspecialchars($direccion, ENT_QUOTES, 'UTF-8');
+                $id_escaped = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+
+                echo "<option x-direccion=\"$direccion_escaped\" value=\"$id_escaped\" x-nombre=\"$nombre_escaped\">$nombre_escaped [$direccion_escaped] ($id_escaped)</option>";
+            }
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+} else if ($consulta == "get_datos_cliente_para_orden_envio") {
+    $id_reserva = $_POST["id_reserva"];
+
+    $query = "SELECT
+                c.nombre,
+                c.domicilio,
+                c.domicilio2,
+                c.telefono,
+                c.mail,
+                c.rut,
+                c.provincia,
+                c.region,
+                com.nombre as comuna
+            FROM reservas r
+            INNER JOIN clientes c ON c.id_cliente = r.id_cliente
+            LEFT JOIN comunas com ON c.comuna = com.id
+            WHERE r.id = $id_reserva
+            LIMIT 1";
+
+    $result = mysqli_query($con, $query);
+
+    if (mysqli_num_rows($result) > 0) {
+        $cliente = mysqli_fetch_assoc($result);
+        header('Content-Type: application/json');
+        echo json_encode($cliente);
+    } else {
+        header('Content-Type: application/json');
+        echo json_encode(array("error" => "Cliente no encontrado"));
+    }
+} else if ($consulta == "guardar_orden_envio") {
+    $data = $_POST["data"];
+    $id_reserva = $_POST["id_reserva"];
+
+    $query = "INSERT INTO ordenes_envio (codigo, id_cliente, id_reserva, fecha) VALUES ('$data', (SELECT id_cliente FROM reservas WHERE id = $id_reserva), $id_reserva, NOW())";
+
+    if (mysqli_query($con, $query)) {
+        echo "success";
+    } else {
+        echo "error: " . mysqli_error($con);
     }
 }
 

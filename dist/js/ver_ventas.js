@@ -46,7 +46,47 @@ $(document).ready(function () {
     $('#btn-cambiar-estado-masa').on('click', function() {
         $('#modal-cambiar-estado-masa').css({display:'block'});
     });
-    
+
+    // Event listener para cambio de tipo de envío en modal orden envío
+    $(document).on('changed.bs.select', '#select-tipo-envio', function (e, clickedIndex, newValue, oldValue) {
+        $("#select-sucursal").html("").selectpicker();
+        $(".col-direccion-envio-2").addClass("d-none");
+
+        // Asegurar que cliente existe
+        const cliente = (currentReservaOrden && currentReservaOrden.cliente) || {};
+        console.log("Cliente en tipo envío:", cliente);
+
+        if (this.value == 0) {
+            getTransportistasSelect();
+            $(".col-select-transp,.col-select-sucursal").removeClass("d-none");
+            $(".col-direccion-envio").addClass("d-none");
+            $("#input-direccion-entrega").val("");
+            $("#input-direccion-entrega2").val("");
+        } else if (this.value == 1) {
+            // Autocompletar con domicilio del cliente
+            const direccionCliente = cliente.domicilio || "";
+            console.log("Asignando domicilio:", direccionCliente);
+            $("#input-direccion-entrega").val(direccionCliente);
+            $(".col-select-transp,.col-select-sucursal").addClass("d-none");
+            $(".col-direccion-envio").removeClass("d-none");
+            $("#input-direccion-entrega2").val("");
+        }
+        else if (this.value == 2) {
+            // Autocompletar con domicilio de envío del cliente
+            const direccionEnvio = cliente.domicilio2 || "";
+            console.log("Asignando domicilio2:", direccionEnvio);
+            $("#input-direccion-entrega2").val(direccionEnvio);
+            $(".col-select-transp,.col-select-sucursal,.col-direccion-envio").addClass("d-none");
+            $(".col-direccion-envio-2").removeClass("d-none");
+            $("#input-direccion-entrega").val("");
+        }
+        else {
+            $(".col-select-transp,.col-select-sucursal").addClass("d-none");
+            $(".col-direccion-envio").addClass("d-none");
+        }
+        $("#select-transportista").val("default").selectpicker("refresh");
+    });
+
     $('#select-producto-reserva').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
         let id_variedad = $(this).val();
         let producto = productosParaReserva.find(p => p.id_variedad == id_variedad);
@@ -1035,5 +1075,550 @@ function guardarCambioEstadoMasa() {
                 }
             });
         }
+    });
+}
+
+// ORDENES ENVIO
+let currentReservaOrden = null;
+
+function modalOrdenEnvio(id_reserva) {
+    currentReservaOrden = { id_reserva: id_reserva, cliente: {} };
+
+    // Obtener datos del cliente de forma sincrónica
+    $.ajax({
+        url: phpFile,
+        type: "POST",
+        async: false,  // Sincrónico - espera a que se complete
+        dataType: "json",  // Especificar que es JSON
+        data: {
+            consulta: "get_datos_cliente_para_orden_envio",
+            id_reserva: id_reserva,
+        },
+        success: function (response) {
+            try {
+                // Ya es JSON decodificado por dataType: "json"
+                currentReservaOrden.cliente = response;
+                console.log("Cliente cargado:", currentReservaOrden.cliente);
+            } catch(e) {
+                console.error("Error al procesar cliente:", e);
+                currentReservaOrden.cliente = {};
+            }
+        },
+        error: function (error) {
+            console.error("Error al obtener datos del cliente:", error);
+            currentReservaOrden.cliente = {};
+        }
+    });
+
+    $("#input-direccion-entrega").val("");
+    $("#input-direccion-entrega2").val("");
+    $("#select-tipo-envio").val("0").selectpicker("refresh");
+    getTransportistasSelect();
+
+    $("#select-transportista").val("default").selectpicker("refresh");
+    $("#select-sucursal").html("").selectpicker("refresh");
+    $(".col-select-transp,.col-select-sucursal").removeClass("d-none");
+    $(".col-direccion-envio,.col-direccion-envio-2").addClass("d-none");
+
+    $("#modal-orden-envio").modal("show");
+
+    $("#table-bultos > tbody").html(`
+        <tr scope="row" class="tr-add-row">
+            <td colspan="6">
+                <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
+            </td>
+        </tr>
+    `);
+
+    addBulto();
+}
+
+function addBulto() {
+    const index = $("#table-bultos > tbody > tr").length;
+
+    if (index >= 25) return;
+
+    let peso = "",
+        alto = "",
+        ancho = "",
+        largo = "";
+    if ($(".tr-bulto").last().length > 0) {
+        const obj = $(".tr-bulto").last();
+        peso = $(obj).find(".i-peso").val().trim();
+        alto = $(obj).find(".i-alto").val().trim();
+        ancho = $(obj).find(".i-ancho").val().trim();
+        largo = $(obj).find(".i-largo").val().trim();
+    }
+
+    $("#table-bultos > tbody .tr-add-row").first().before(`
+        <tr class='tr-bulto'>
+            <td class='td-index'>
+                ${index}
+            </td>
+            <td>
+                <input value='${peso}' type='search' autocomplete="off" class="form-control input-decimal i-peso text-center" maxlength="6"/>
+            </td>
+            <td>
+                <input value='${alto}' type='search' autocomplete="off" class="form-control input-decimal i-alto text-center" maxlength="6"/>
+            </td>
+            <td>
+                <input value='${ancho}' type='search' autocomplete="off" class="form-control input-decimal i-ancho text-center" maxlength="6"/>
+            </td>
+            <td>
+                <input value='${largo}' type='search' autocomplete="off" class="form-control input-decimal i-largo text-center" maxlength="6"/>
+            </td>
+            <td class="text-center">
+                <button onclick="$(this).parent().parent().remove();updateIndexBulto()" class="btn btn-secondary fa fa-trash btn-sm"></button>
+            </td>
+        </tr>
+    `);
+
+    setInputDecimal($(".input-decimal"));
+}
+
+function updateIndexBulto() {
+    $("#table-bultos > tbody > tr").each(function (i) {
+        if (!$(this).hasClass("tr-bulto")) return;
+
+        $(this).find(".td-index").html(i + 1);
+    });
+}
+
+function setInputDecimal(elements) {
+    elements.on("keypress", function (e) {
+        var charCode = e.which ? e.which : e.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57) && charCode != 46) return false;
+        else {
+            var len = $(this).val().length;
+            var index = $(this).val().indexOf(".");
+            if (index > 0 && charCode == 46) return false;
+            if (index > 0) {
+                var charAfterdot = len + 1 - index;
+                if (charAfterdot > 3) return false;
+            }
+        }
+        return true;
+    });
+}
+
+function getSucursalesSelect(id) {
+    $.ajax({
+        beforeSend: function () {
+            $("#select-sucursal").selectpicker({ title: "Cargando..." });
+            $("#select-sucursal").html("").selectpicker("refresh");
+        },
+        url: phpFile,
+        type: "POST",
+        data: {
+            id_transportista: id,
+            consulta: "get_sucursales_select",
+        },
+        success: function (x) {
+            $("#select-sucursal").selectpicker({ title: "Selecciona" });
+            $("#select-sucursal").html(x).selectpicker("refresh");
+        },
+        error: function (jqXHR, estado, error) { },
+    });
+}
+
+function getTransportistasSelect() {
+    $.ajax({
+        beforeSend: function () {
+            $("#select-transportista").html("").selectpicker("refresh");
+        },
+        url: phpFile,
+        type: "POST",
+        data: {
+            consulta: "get_transportistas_select",
+        },
+        success: function (x) {
+            $("#select-transportista").html(x).selectpicker("refresh");
+            $("#select-transportista").on(
+                "changed.bs.select",
+                function (e, clickedIndex, newValue, oldValue) {
+                    getSucursalesSelect(this.value)
+                }
+            );
+        },
+        error: function (jqXHR, estado, error) { },
+    });
+}
+
+function guardarOrdenEnvio() {
+    if (!$(".tr-bulto").length) {
+        swal("Debes agregar un bulto", "", "error");
+        return;
+    }
+
+    const tipo = $("#select-tipo-envio option:selected").val();
+    const id_transportista = $("#select-transportista option:selected").val();
+    const selectedSucursalId = $("#select-sucursal").val();
+
+    // Intentar obtener atributos del elemento original, no del selectpicker wrapper
+    let nombre_sucursal = undefined;
+    let nombre_transp = undefined;
+    let direccion_sucursal = undefined;
+
+    // Obtener atributos del select original
+    if (selectedSucursalId) {
+        const $selectedOption = $(`#select-sucursal option[value="${selectedSucursalId}"]`);
+        nombre_sucursal = $selectedOption.attr("x-nombre");
+        direccion_sucursal = $selectedOption.attr("x-direccion");
+    }
+
+    // Obtener transportista
+    const selectedTranspId = $("#select-transportista").val();
+    if (selectedTranspId) {
+        const $selectedTranspOption = $(`#select-transportista option[value="${selectedTranspId}"]`);
+        nombre_transp = $selectedTranspOption.attr("x-nombre");
+    }
+
+    // Si los atributos no están disponibles, intentar extraer del texto visible
+    if (!nombre_sucursal || !direccion_sucursal) {
+        const textVisible = $("#select-sucursal option:selected").text();
+        // Extraer nombre y dirección del formato: "nombre [dirección] (id)"
+        const match = textVisible.match(/^(.+?)\s*\[(.+?)\]\s*\(/);
+        if (match) {
+            nombre_sucursal = match[1].trim();
+            direccion_sucursal = match[2].trim();
+        }
+    }
+
+    if (!tipo || !tipo.length) {
+        swal("Selecciona un Tipo de Entrega", "", "error");
+        return;
+    }
+
+    if (tipo == 0 && (!id_transportista || !id_transportista.length)) {
+        swal("Selecciona una Sucursal", "", "error");
+        return;
+    }
+
+    const direccion = $("#input-direccion-entrega").val().trim().replace(/[\s|.'"']/g, " ");
+    if (tipo == 1 && (!direccion || !direccion.length)) {
+        swal("Ingresa la Dirección de Entrega", "", "error");
+        return;
+    }
+
+    const direccion2 = $("#input-direccion-entrega2").val().trim().replace(/[\s|.'"']/g, " ");
+    if (tipo == 2 && (!direccion2 || !direccion2.length)) {
+        swal("Ingresa la Dirección de Entrega", "", "error");
+        return;
+    }
+
+    const notas = $("#input-notas-entrega").val().trim().replace(/[\s|.'"']/g, " ");
+
+    let bultos = [];
+    $("#table-bultos > tbody > tr").each(function (i) {
+        if ($(this).hasClass("tr-add-row") || $(this).hasClass("tr-ignore")) return;
+
+        const peso = $(this).find(".i-peso").val().trim();
+        const alto = $(this).find(".i-alto").val().trim();
+        const ancho = $(this).find(".i-ancho").val().trim();
+        const largo = $(this).find(".i-largo").val().trim();
+
+        bultos.push({
+            index: i + 1,
+            peso: peso && peso.length ? parseFloat(peso) : null,
+            alto: alto && alto.length ? parseFloat(alto) : null,
+            ancho: ancho && ancho.length ? parseFloat(ancho) : null,
+            largo: largo && largo.length ? parseFloat(largo) : null,
+        });
+    });
+
+    if (!bultos.length) {
+        swal("Debes agregar un bulto", "", "error");
+        return;
+    }
+
+    $("#modal-orden-envio").modal("hide");
+
+    const dataOrden = {
+        tipo,
+        id_transportista,
+        direccion,
+        direccion2,
+        notas,
+        bultos,
+        nombre_sucursal,
+        nombre_transp,
+        direccion_sucursal,
+    };
+
+    printOrdenEnvio(dataOrden);
+}
+
+function printOrdenEnvio(dataOrden) {
+    const now = new Date();
+    const datetime =
+        (now.getDate() < 10 ? "0" + now.getDate() : now.getDate()) +
+        "/" +
+        (now.getMonth() + 1 < 10
+            ? "0" + (now.getMonth() + 1)
+            : now.getMonth() + 1) +
+        "/" +
+        now.getFullYear();
+
+    const {
+        tipo,
+        nombre_sucursal,
+        nombre_transp,
+        direccion_sucursal,
+        notas,
+        bultos,
+    } = dataOrden;
+
+    let direccionEntrega = "";
+    let titulo = "ORDEN ENVÍO";
+
+    if (tipo == 0) {
+        // Para tipo SUCURSAL
+        const displayNombre = nombre_sucursal || "SUCURSAL";
+        const displayTransp = nombre_transp || "TRANSPORTISTA";
+        const displayDireccion = direccion_sucursal || "";
+
+        titulo = `${displayNombre} - ${displayTransp}`;
+        direccionEntrega = `Suc. ${displayTransp} ${displayNombre}${displayDireccion ? ` - ${displayDireccion}` : ""}`;
+    } else if (tipo == 1) {
+        direccionEntrega = dataOrden.direccion;
+    } else if (tipo == 2) {
+        direccionEntrega = dataOrden.direccion2;
+    }
+
+    $("#print-orden-envio").html("");
+
+    // Datos fijos de la empresa
+    const razonEmpresa = "PLANTINERA V.V.";
+    const rutEmpresa = "77436423-4";
+    const direccionEmpresa = "EL CARMEN PC 7 LOTE 2 EX FUNDO<br>LA GLORIETA LOBOS 5";
+    const telefonoEmpresa = "+56 972 912 979";
+    const emailEmpresa = "plantinera@roelplant.cl";
+
+    // Datos del cliente
+    const cliente = currentReservaOrden.cliente || {};
+    console.log("Cliente completo en print:", cliente);
+    console.log("dataOrden completo:", dataOrden);
+
+    const destinatario = cliente.nombre || "-";
+
+    // Lógica de dirección: usar la que el usuario escribió, si no existe usar del cliente
+    let direccionFinal = "-";
+    if (tipo == 0) {
+        // SUCURSAL: usar la dirección de la sucursal
+        direccionFinal = direccionEntrega;
+    } else if (tipo == 1) {
+        // DOMICILIO CLIENTE: preferir lo que escribió el usuario
+        direccionFinal = (dataOrden.direccion && dataOrden.direccion.trim()) || cliente.domicilio || "-";
+    } else if (tipo == 2) {
+        // DOMICILIO ENVÍO: preferir lo que escribió el usuario
+        direccionFinal = (dataOrden.direccion2 && dataOrden.direccion2.trim()) || cliente.domicilio2 || "-";
+    }
+
+    const comunaCliente = cliente.comuna || "-";
+    const regionCliente = cliente.region || "-";
+    const rutCliente = cliente.rut || "-";
+    const telefonoCliente = cliente.telefono || "-";
+    const emailCliente = cliente.mail || "-";
+
+    console.log("Dirección Final:", direccionFinal);
+    console.log("Destinatario:", destinatario);
+
+    bultos.forEach(function (b, i) {
+        const { peso, alto, ancho, largo } = b;
+
+        const tablarte = `
+            <table class='table table-bordered tablin tabla-bulto' style='width: 100%;' role='grid'>
+                <tbody>
+                    <tr>
+                        <td colspan="2">
+                            <div class="d-flex flex-row align-items-center">
+                                <div style="width: 160px; height: 100px;">
+                                    <img style="width: 160px; height: 100px" src="dist/img/roelprint.png"></img>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 style="font-weight:bold;">${titulo}</h4>
+                                    ${direccion_sucursal ? `<span>${direccion_sucursal}</span>` : ""}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Fecha emisión: ${datetime}
+                        </td>
+                        <td class="text-center">
+                            <h5 class="font-weight-bold">${currentReservaOrden.id_reserva
+                                .toString()
+                                .padStart(6, "0")}</h5>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div><strong>Remitente:</strong> ${razonEmpresa}</div>
+                            <div><strong>Dirección:</strong> ${direccionEmpresa}</div>
+                            <div><strong>R.U.T:</strong> ${rutEmpresa}</div>
+                            <div><strong>Teléfono:</strong> ${telefonoEmpresa}</div>
+                            <div><strong>Email:</strong> ${emailEmpresa}</div>
+                        </td>
+                        <td class="text-center">
+                            <div class="p-2 qr-code-cotizacion" id="qr-code-${i}"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>`;
+
+        const tabladest = `
+            <table class='table table-bordered w-100' role='grid'>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div><strong>Destinatario:</strong> ${destinatario}</div>
+                            <div><strong>Dirección:</strong> ${direccionFinal}</div>
+                            <div><strong>Comuna:</strong> ${comunaCliente}</div>
+                            <div><strong>Región:</strong> ${regionCliente}</div>
+                            <div><strong>R.U.T:</strong> ${rutCliente}</div>
+                            <div><strong>Teléfono:</strong> ${telefonoCliente}</div>
+                            <div><strong>Email:</strong> ${emailCliente}</div>
+                            <div><strong>Venta Nº:</strong> ${currentReservaOrden.id_reserva}</div>
+                        </td>
+                        <td class="text-center">
+                            <h6>BULTO N°</h6>
+                            <h4 class="font-weight-bold">${(i + 1)
+                                .toString()
+                                .padStart(3, "0")}/${bultos.length.toString().padStart(3, "0")}</h4>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div><strong>Notas:</strong> ${notas ? notas.toUpperCase() : ""}</div>
+                        </td>
+                        <td class="text-center">
+                            <span>Peso: ${peso ? `${peso} kg` : ""}</span><br>
+                            <span>Alto: ${alto ? `${alto} cm` : ""}</span><br>
+                            <span>Ancho: ${ancho ? `${ancho} cm` : ""}</span><br>
+                            <span>Largo: ${largo ? `${largo} cm` : ""}</span><br>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>`;
+
+        const contenidoBulto = `
+            <div class="bulto-print">
+                ${tablarte}
+                ${tabladest}
+            </div>
+        `;
+
+        $("#print-orden-envio").append(contenidoBulto);
+
+        // Generar QR
+        setTimeout(() => {
+            var qrcode = new QRCode(document.getElementById("qr-code-" + i), {
+                text: currentReservaOrden.id_reserva.toString(),
+                width: 150,
+                height: 150,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H,
+            });
+        }, 100);
+    });
+
+    const css = `
+        @media print {
+            @page {
+                size: 106mm 164mm;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            #print-orden-envio {
+                width: 106mm;
+                height: 164mm;
+            }
+            #print-orden-envio .tablin {
+                width: 100vw !important;
+                page-break-inside: avoid;
+            }
+            .bulto-print {
+                width: 100vw;
+                height: 164mm;
+                page-break-after: always;
+                box-sizing: border-box;
+                padding: 5mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .bulto-print:last-child {
+                page-break-after: auto;
+            }
+            .bulto-print table {
+                width: 100% !important;
+                table-layout: fixed;
+            }
+            .bulto-print td {
+                vertical-align: top;
+                font-size: 12px;
+            }
+            .qr-code-cotizacion {
+                text-align: center;
+                width: 150px !important;
+                height: 150px !important;
+                padding-bottom: 10px !important;
+                margin-bottom: 10px !important;
+            }
+            .qr-code-cotizacion img {
+                width: 150px !important;
+                height: 150px !important;
+            }
+        }`;
+
+    const oldStyleTag = document.getElementById('orden-envio-print-styles');
+    if (oldStyleTag) {
+        document.head.removeChild(oldStyleTag);
+    }
+
+    let styleTag = document.createElement("style");
+    styleTag.id = 'orden-envio-print-styles';
+    styleTag.innerHTML = css;
+    document.head.appendChild(styleTag);
+
+    $("#ocultar").css({ display: "none" });
+    $("#print-orden-envio").css({ display: "block" });
+
+    setTimeout(() => {
+        storeOrdenEnvio($("#print-orden-envio").html());
+        window.print();
+
+        const printStyleTag = document.getElementById('orden-envio-print-styles');
+        if (printStyleTag) {
+            document.head.removeChild(printStyleTag);
+        }
+        document.getElementById("ocultar").style.display = "block";
+        $("#print-orden-envio").css({ display: "none" });
+    }, 500);
+}
+
+function storeOrdenEnvio(html) {
+    $.ajax({
+        beforeSend: function () { },
+        url: phpFile,
+        type: "POST",
+        data: {
+            consulta: "guardar_orden_envio",
+            data: html,
+            id_reserva: currentReservaOrden.id_reserva,
+        },
+        success: function (x) {
+            if (x.includes("success")) {
+                // No mostrar swal aquí, ya se está imprimiendo
+            }
+        },
+        error: function (jqXHR, estado, error) {
+            // Error silencioso
+        },
     });
 }

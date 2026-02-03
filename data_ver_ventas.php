@@ -14,6 +14,31 @@ if (!$con) {
 mysqli_query($con, "SET NAMES 'utf8'");
 $consulta = $_POST["consulta"];
 
+// Función helper para obtener atributos de una variedad
+function getAtributosVariedad($con, $id_variedad) {
+    $query = "SELECT av.valor, a.nombre as nombre_atributo
+              FROM atributos_valores_variedades avv
+              INNER JOIN atributos_valores av ON avv.id_atributo_valor = av.id
+              INNER JOIN atributos a ON av.id_atributo = a.id
+              WHERE avv.id_variedad = $id_variedad
+              ORDER BY a.nombre ASC";
+
+    $result = mysqli_query($con, $query);
+    $atributos_html = "";
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $atributos = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $atributos[] = "<span class='badge badge-secondary' style='background-color: #6c757d; color: white; font-size: 0.85em; margin-right: 3px;'>{$row['valor']}</span>";
+        }
+        if (!empty($atributos)) {
+            $atributos_html = " " . implode("", $atributos);
+        }
+    }
+
+    return $atributos_html;
+}
+
 if ($consulta == "busca_stock_actual") {
     $query = "SELECT
   t.nombre as nombre_tipo,
@@ -287,8 +312,10 @@ if ($consulta == "busca_stock_actual") {
                 }
                 $botones_producto .= "</div>";
 
+                $atributos_html = getAtributosVariedad($con, $producto['id_variedad']);
+
                 $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
-                $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']}{$cantidad_entregada_info} <span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span></div>";
+                $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}){$atributos_html} - Cant: {$producto['cantidad']}{$cantidad_entregada_info} <span class='badge' style='background-color: unset;color:black;'>{$estado_producto}</span></div>";
                 $productos_html .= $botones_producto;
                 $productos_html .= "</li>";
             }
@@ -1123,26 +1150,28 @@ else if ($consulta == "busca_picking") {
             $id_reserva = $ww['id'];
             $productos_pendientes_picking = 0;
 
-            $productos_query = "SELECT rp.id as id_reserva_producto, v.nombre as nombre_variedad, t.codigo, v.id_interno, rp.cantidad, rp.estado,
+            $productos_query = "SELECT rp.id as id_reserva_producto, rp.id_variedad, v.nombre as nombre_variedad, t.codigo, v.id_interno, rp.cantidad, rp.estado,
                                   (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_entregada
                                   FROM reservas_productos rp
                                   INNER JOIN variedades_producto v ON v.id = rp.id_variedad
                                   INNER JOIN tipos_producto t ON t.id = v.id_tipo
                                   WHERE rp.id_reserva = $id_reserva";
-            
+
             $productos_result = mysqli_query($con, $productos_query);
             $productos_html = "<ul class='list-group'>";
 
             while ($producto = mysqli_fetch_array($productos_result)) {
                 if($producto['estado'] == 4) { // LISTO PARA PICKING
                     $productos_pendientes_picking++;
+                    $atributos_html = getAtributosVariedad($con, $producto['id_variedad']);
+
                     $botones_producto = "<div class='d-flex flex-column' style='gap: 5px;'>";
                     $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)' class='btn btn-info btn-sm'><i class='fa fa-search'></i> A REVISIÓN</button>";
                     $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 5)' class='btn btn-warning btn-sm'><i class='fa fa-archive'></i> A PACKING</button>";
                     $botones_producto .= "</div>";
 
                     $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
-                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}){$atributos_html} - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";
                 }
@@ -1232,8 +1261,9 @@ else if ($consulta == "busca_packing") {
             $id_reserva = $ww['id'];
             $productos_pendientes_packing = 0;
 
-            $productos_query = "SELECT 
+            $productos_query = "SELECT
                         rp.id AS id_reserva_producto,
+                        rp.id_variedad,
                         v.nombre AS nombre_variedad,
                         t.codigo,
                         v.id_interno,
@@ -1263,15 +1293,16 @@ else if ($consulta == "busca_packing") {
                 if ($producto['estado'] == 5) {
 
                     $productos_pendientes_packing++;
+                    $atributos_html = getAtributosVariedad($con, $producto['id_variedad']);
 
                     $botones_producto = "<div class='d-flex flex-column' style='gap:5px;'>";
 
-                    $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)' 
+                    $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)'
                                             class='btn btn-info btn-sm'>
                                             <i class='fa fa-search'></i> A REVISIÓN
                                           </button>";
 
-                    $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 6)' 
+                    $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 6)'
                                             class='btn btn-primary btn-sm'>
                                             <i class='fa fa-shipping-fast'></i> A TRANSPORTE
                                           </button>";
@@ -1283,7 +1314,7 @@ else if ($consulta == "busca_packing") {
                                                 \"{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']})\",
                                                 " . ($producto['cantidad'] - $producto['cantidad_entregada']) . ",
                                                 $stock_disponible_real
-                                            )' 
+                                            )'
                                             class='btn btn-success btn-sm'>
                                             <i class='fa fa-truck'></i> ENTREGAR
                                           </button>";
@@ -1291,9 +1322,9 @@ else if ($consulta == "busca_packing") {
                     $botones_producto .= "</div>";
 
                     $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
-                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) 
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}){$atributos_html}
                                         - Cant: {$producto['cantidad']}
-                                        <span class='badge' style='background-color:unset;color:black;'>" 
+                                        <span class='badge' style='background-color:unset;color:black;'>"
                                         . boxEstadoReserva($producto['estado'], true) . "</span></div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";
@@ -1392,16 +1423,16 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
             $id_reserva = $ww['id'];
             $productos_pendientes_transporte = 0;
 
-            $productos_query = "SELECT rp.id as id_reserva_producto, v.nombre as nombre_variedad, t.codigo, v.id_interno, rp.cantidad, rp.estado,
+            $productos_query = "SELECT rp.id as id_reserva_producto, rp.id_variedad, v.nombre as nombre_variedad, t.codigo, v.id_interno, rp.cantidad, rp.estado,
                                        (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_entregada,
                                        (
                                            (SELECT IFNULL(SUM(s.cantidad),0)
-                                            FROM stock_productos s 
-                                            INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id 
-                                            WHERE ap.id_variedad = rp.id_variedad AND ap.estado = 8) 
-                                           - 
+                                            FROM stock_productos s
+                                            INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id
+                                            WHERE ap.id_variedad = rp.id_variedad AND ap.estado = 8)
+                                           -
                                            (SELECT IFNULL(SUM(r.cantidad),0)
-                                            FROM reservas_productos r 
+                                            FROM reservas_productos r
                                             WHERE r.id_variedad = rp.id_variedad AND r.estado >= 0 AND r.id != rp.id)
                                        ) as stock_disponible
                                  FROM reservas_productos rp
@@ -1415,6 +1446,8 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
             while ($producto = mysqli_fetch_array($productos_result)) {
                 if ($producto['estado'] == 6) { // EN TRANSPORTE
                     $productos_pendientes_transporte++;
+                    $atributos_html = getAtributosVariedad($con, $producto['id_variedad']);
+
                     $botones_producto = "<div class='d-flex flex-column' style='gap:5px;'>";
                     $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)' class='btn btn-info btn-sm'><i class='fa fa-search'></i> A REVISIÓN</button>";
 
@@ -1424,7 +1457,7 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
                     $botones_producto .= "</div>";
 
                     $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
-                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}){$atributos_html} - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";
                 }
@@ -1518,7 +1551,7 @@ else if ($consulta == "busca_entregadas") {
             $id_reserva = $ww['id'];
             $productos_entregados_count = 0;
 
-            $productos_query = "SELECT rp.id as id_reserva_producto, v.nombre as nombre_variedad, t.codigo, v.id_interno, rp.cantidad, rp.estado,
+            $productos_query = "SELECT rp.id as id_reserva_producto, rp.id_variedad, v.nombre as nombre_variedad, t.codigo, v.id_interno, rp.cantidad, rp.estado,
                                    (SELECT IFNULL(SUM(e.cantidad),0) FROM entregas_stock e WHERE e.id_reserva_producto = rp.id) as cantidad_entregada
                                 FROM reservas_productos rp
                                 INNER JOIN variedades_producto v ON v.id = rp.id_variedad
@@ -1531,8 +1564,10 @@ else if ($consulta == "busca_entregadas") {
             while ($producto = mysqli_fetch_array($productos_result)) {
                 if ($producto['estado'] == 2) { // ENTREGADA
                     $productos_entregados_count++;
+                    $atributos_html = getAtributosVariedad($con, $producto['id_variedad']);
+
                     $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
-                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}){$atributos_html} - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span></div>";
                     $productos_html .= "</li>";
                 }
             }

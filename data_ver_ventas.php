@@ -580,9 +580,9 @@ else if ($consulta == "entrega_rapida") {
             while($producto = mysqli_fetch_assoc($productos_result)){
                 $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
                 if($cantidad_pendiente > 0){
-                    if($producto['stock_disponible'] < $cantidad_pendiente){
-                        $errors[] = "Stock insuficiente para el producto con ID de variedad: {$producto['id_variedad']}. Solicitado: $cantidad_pendiente, Disponible: {$producto['stock_disponible']}";
-                    }
+                    // if($producto['stock_disponible'] < $cantidad_pendiente){
+                    //     $errors[] = "Stock insuficiente para el producto con ID de variedad: {$producto['id_variedad']}. Solicitado: $cantidad_pendiente, Disponible: {$producto['stock_disponible']}";
+                    // }
                     $productos_a_entregar[] = $producto;
                 }
             }
@@ -1063,9 +1063,9 @@ else if ($consulta == "get_stock_variedad") {
             $stock_data = mysqli_fetch_assoc($res_stock);
             $disponible = (int) $stock_data['disponible'];
 
-            if ($disponible < $cantidad_solicitada) {
-                $errors[] = "Stock insuficiente para el producto con ID $id_variedad. Solicitado: $cantidad_solicitada, Disponible: $disponible";
-            }
+            // if ($disponible < $cantidad_solicitada) {
+            //     $errors[] = "Stock insuficiente para el producto con ID $id_variedad. Solicitado: $cantidad_solicitada, Disponible: $disponible";
+            // }
         }
 
         if (count($errors) > 0) {

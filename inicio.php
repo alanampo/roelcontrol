@@ -39,7 +39,7 @@
                             <li><a href="ver_variedades.php"><i class="fa fa-arrow-circle-right"></i> Variedades</a></li> 
                             <li><a href="ver_especies.php"><i class="fa fa-arrow-circle-right"></i> Especies</a></li> 
                             <li><a href="ver_tipos.php"><i class="fa fa-arrow-circle-right"></i> Tipos de Producto</a></li> 
-                            <li><a href="ver_clientes.php"><i class="fa fa-arrow-circle-right"></i> Clientes</a></li> 
+                            <li style='display:none;'><a href="ver_clientes.php"><i class="fa fa-arrow-circle-right"></i> Clientes</a></li> 
                             <li><a href="ver_usuarios.php"><i class="fa fa-arrow-circle-right"></i> Usuarios</a></li> 
                             <li><a href='ver_clicks.php'><i class='fa fa-arrow-circle-right'></i> (ADM) Clicks Vivero</a></li> \
                           </ul>`);

@@ -156,7 +156,7 @@ else if ($tipo == "reservas") {
 
     $desglose = "Ventas Hoy: $ventas_hoy<br>En Picking: $en_picking<br>En Packing: $en_packing<br>En Transporte: $en_transporte";
     $total_activos = $en_picking + $en_packing + $en_transporte;
-    $highlight = ($total_activos > 0 ? "style='font-weight:bold'" : "");
+    $highlight = ($total_activos > 0 ? "style='font-weight:bold;margin-bottom:3px'" : "");
 
     echo "
     <a href=\"ver_ventas.php\">

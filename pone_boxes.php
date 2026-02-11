@@ -131,35 +131,46 @@ else if ($tipo == "pedidos") {
     ";
 } 
 else if ($tipo == "reservas") {
-    $i = "0";
-    $consulta = "SELECT * FROM (Select IFNULL(COUNT(id),0) as reservas FROM reservas_productos WHERE estado >= 0) as q1,
-    (Select IFNULL(COUNT(id),0) as reservas_nuevas FROM reservas_productos WHERE estado >= 0 AND visto = 0) as q2";
+    $consulta = "SELECT
+        IFNULL(COUNT(CASE WHEN DATE(r.fecha) = CURDATE() THEN 1 END), 0) as ventas_hoy,
+        IFNULL(COUNT(CASE WHEN rp.estado = 4 THEN 1 END), 0) as en_picking,
+        IFNULL(COUNT(CASE WHEN rp.estado = 5 THEN 1 END), 0) as en_packing,
+        IFNULL(COUNT(CASE WHEN rp.estado = 6 THEN 1 END), 0) as en_transporte
+    FROM reservas_productos rp
+    INNER JOIN reservas r ON rp.id_reserva = r.id
+    WHERE rp.estado >= 0";
+
     $val = mysqli_query($con, $consulta);
+    $ventas_hoy = 0;
+    $en_picking = 0;
+    $en_packing = 0;
+    $en_transporte = 0;
+
     if (mysqli_num_rows($val) > 0) {
-        $r = mysqli_fetch_assoc($val); 
-        $i = $r['reservas'];
-        
+        $r = mysqli_fetch_assoc($val);
+        $ventas_hoy = $r['ventas_hoy'];
+        $en_picking = $r['en_picking'];
+        $en_packing = $r['en_packing'];
+        $en_transporte = $r['en_transporte'];
     }
 
-    $nuevas = ($r["reservas_nuevas"] > 0 ? "<br>($r[reservas_nuevas] NUEVAS)" : "");
+    $desglose = "Ventas Hoy: $ventas_hoy<br>En Picking: $en_picking<br>En Packing: $en_packing<br>En Transporte: $en_transporte";
+    $total_activos = $en_picking + $en_packing + $en_transporte;
+    $highlight = ($total_activos > 0 ? "style='font-weight:bold'" : "");
 
     echo "
-    
-    
     <a href=\"ver_ventas.php\">
     <div class=\"small-box bg-primary\">
-        <div class=\"inner\"  style=\"height:7.1em;\">    
-            <p ".($r["reservas_nuevas"] > 0 ? "style='font-weight:bold'" : "").">Ventas y Stock$nuevas</p>
+        <div class=\"inner\"  style=\"height:7.1em;\">
+            <p $highlight>Ventas y Stock<br><small>$desglose</small></p>
         </div>
         <div class=\"icon\">
-          <i class=\"fa fa-shopping-cart".($r["reservas_nuevas"] > 0 ? " blink":"")."\"></i>
+          <i class=\"fa fa-shopping-cart\"></i>
         </div>
          <span class=\"small-box-footer\">Ver Ventas <i class=\"fa fa-arrow-circle-right\"></i></span>
-   
+
     </div>
 </a>
-    
-        
     ";
 }
 else if ($tipo == "historial") {

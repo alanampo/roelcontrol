@@ -1162,6 +1162,15 @@ function modalOrdenEnvio(id_reserva) {
         success: function (response) {
             console.log("Respuesta autocompletado:", response);
 
+            // Mostrar información de debug si está disponible
+            if (response.datos_envio && response.datos_envio.debug) {
+                console.log("DEBUG - Productos encontrados:", response.datos_envio.debug.productos_encontrados);
+                console.log("DEBUG - Query:", response.datos_envio.debug.query_productos);
+                console.log("DEBUG - Detalle productos:", response.datos_envio.debug.productos_detalle);
+                console.log("DEBUG - Cantidad especial:", response.datos_envio.cantidad_especial);
+                console.log("DEBUG - Cantidad normal:", response.datos_envio.cantidad_normal);
+            }
+
             if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
                 // Activar modo autocompletado
                 isAutocompletandoOrdenEnvio = true;

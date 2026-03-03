@@ -2089,6 +2089,7 @@ else if ($consulta == "busca_entregadas") {
         // Obtener productos con sus atributos para calcular bultos correctamente
         $query_productos = "SELECT
                                 rp.cantidad,
+                                rp.estado,
                                 v.attrs_activos
                             FROM reservas_productos rp
                             INNER JOIN variedades_producto v ON v.id = rp.id_variedad
@@ -2099,21 +2100,33 @@ else if ($consulta == "busca_entregadas") {
         // Clasificar productos según sus atributos
         $qty_especial = 0;
         $qty_normal = 0;
+        $productos_encontrados = 0;
+        $debug_productos = array();
 
-        while ($producto = mysqli_fetch_assoc($result_productos)) {
-            $cantidad = (int)$producto['cantidad'];
-            $attrs = $producto['attrs_activos'] ?? '';
+        if ($result_productos) {
+            while ($producto = mysqli_fetch_assoc($result_productos)) {
+                $productos_encontrados++;
+                $cantidad = (int)$producto['cantidad'];
+                $attrs = $producto['attrs_activos'] ?? '';
 
-            // Detectar productos especiales (MAC-10 a MAC-15, BOL-10 a BOL-15)
-            $es_especial = false;
-            if (preg_match('/MACETA:\s*(MAC-1[0-5])|BOLSA:\s*(BOL-1[0-5])/i', $attrs)) {
-                $es_especial = true;
-            }
+                // Detectar productos especiales (MAC-10 a MAC-15, BOL-10 a BOL-15)
+                $es_especial = false;
+                if (preg_match('/MACETA:\s*(MAC-1[0-5])|BOLSA:\s*(BOL-1[0-5])/i', $attrs)) {
+                    $es_especial = true;
+                }
 
-            if ($es_especial) {
-                $qty_especial += $cantidad;
-            } else {
-                $qty_normal += $cantidad;
+                if ($es_especial) {
+                    $qty_especial += $cantidad;
+                } else {
+                    $qty_normal += $cantidad;
+                }
+
+                $debug_productos[] = array(
+                    'cantidad' => $cantidad,
+                    'estado' => $producto['estado'],
+                    'attrs' => $attrs,
+                    'es_especial' => $es_especial
+                );
             }
         }
 
@@ -2214,7 +2227,12 @@ else if ($consulta == "busca_entregadas") {
                 'comuna' => $nombre_comuna,
                 'bultos' => $bultos,
                 'cantidad_especial' => $qty_especial,
-                'cantidad_normal' => $qty_normal
+                'cantidad_normal' => $qty_normal,
+                'debug' => array(
+                    'productos_encontrados' => $productos_encontrados,
+                    'query_productos' => $query_productos,
+                    'productos_detalle' => $debug_productos
+                )
             )
         );
 

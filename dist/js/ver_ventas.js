@@ -47,6 +47,12 @@ $(document).ready(function () {
         $('#modal-cambiar-estado-masa').css({display:'block'});
     });
 
+    // Limpiar estado cuando se cierra el modal de orden de envío
+    $('#modal-orden-envio').on('hidden.bs.modal', function() {
+        isAutocompletandoOrdenEnvio = false;
+        console.log("Modal cerrado, flag de autocompletado reiniciado");
+    });
+
     // Event listener para cambio de tipo de envío en modal orden envío
     $(document).on('changed.bs.select', '#select-tipo-envio', function (e, clickedIndex, newValue, oldValue) {
         // Ignorar si estamos en modo autocompletado
@@ -1089,6 +1095,9 @@ let currentReservaOrden = null;
 let isAutocompletandoOrdenEnvio = false;
 
 function modalOrdenEnvio(id_reserva) {
+    // Reiniciar flag de autocompletado
+    isAutocompletandoOrdenEnvio = false;
+
     currentReservaOrden = { id_reserva: id_reserva, cliente: {} };
 
     // Obtener datos del cliente de forma sincrónica
@@ -1188,29 +1197,53 @@ function modalOrdenEnvio(id_reserva) {
                                 $("#select-transportista").val($(this).val()).selectpicker("refresh");
 
                                 // Cuando se carguen las sucursales, seleccionar la correcta
-                                $("#select-transportista").one('changed.bs.select', function() {
-                                    // Esperar a que se carguen las sucursales
-                                    setTimeout(function() {
+                                // Usar una función con reintentos para asegurar que se seleccione
+                                const intentarSeleccionarSucursal = function() {
+                                    let intentos = 0;
+                                    const maxIntentos = 10;
+                                    const intervalo = 300;
+
+                                    const intento = setInterval(function() {
+                                        intentos++;
+
                                         if (sucursalCodeDls) {
-                                            console.log("Intentando seleccionar sucursal con código:", sucursalCodeDls);
                                             // Buscar y seleccionar la sucursal por código DLS
                                             let sucursalSeleccionada = false;
                                             $("#select-sucursal option").each(function() {
                                                 const optionValue = $(this).val();
                                                 const optionCodeDls = $(this).attr('x-code-dls') || optionValue;
-                                                console.log("Comparando:", optionCodeDls, "con", sucursalCodeDls);
                                                 if (optionCodeDls == sucursalCodeDls) {
-                                                    console.log("Sucursal encontrada, seleccionando:", $(this).text());
+                                                    console.log("Intento " + intentos + ": Sucursal encontrada, seleccionando:", $(this).text());
                                                     $("#select-sucursal").val(optionValue).selectpicker("refresh");
                                                     sucursalSeleccionada = true;
+                                                    clearInterval(intento);
+
+                                                    // Desactivar modo autocompletado después de seleccionar
+                                                    setTimeout(function() {
+                                                        isAutocompletandoOrdenEnvio = false;
+                                                        console.log("Modo autocompletado desactivado después de selección exitosa");
+                                                    }, 500);
                                                     return false;
                                                 }
                                             });
+
                                             if (!sucursalSeleccionada) {
-                                                console.log("No se pudo encontrar la sucursal con código:", sucursalCodeDls);
+                                                console.log("Intento " + intentos + ": Sucursal no encontrada aún, reintentando...");
                                             }
                                         }
-                                    }, 500);
+
+                                        // Si llegamos al máximo de intentos o no hay código, cancelar
+                                        if (intentos >= maxIntentos) {
+                                            console.log("Se alcanzó el máximo de intentos (" + maxIntentos + ") sin encontrar la sucursal");
+                                            clearInterval(intento);
+                                            isAutocompletandoOrdenEnvio = false;
+                                        }
+                                    }, intervalo);
+                                };
+
+                                $("#select-transportista").one('changed.bs.select', function() {
+                                    // Iniciar proceso de selección con reintentos
+                                    setTimeout(intentarSeleccionarSucursal, 200);
                                 });
 
                                 // Trigger para cargar sucursales
@@ -1248,11 +1281,14 @@ function modalOrdenEnvio(id_reserva) {
 
                 console.log("Datos de envío autocompletados:", datos);
 
-                // Desactivar modo autocompletado después de un tiempo
-                setTimeout(function() {
-                    isAutocompletandoOrdenEnvio = false;
-                    console.log("Modo autocompletado desactivado");
-                }, 2000);
+                // Para domicilio, desactivar modo autocompletado después de un tiempo corto
+                if (response.shipping_method === 'domicilio') {
+                    setTimeout(function() {
+                        isAutocompletandoOrdenEnvio = false;
+                        console.log("Modo autocompletado desactivado (domicilio)");
+                    }, 1000);
+                }
+                // Para agencia/sucursal, se desactiva dentro de la función de selección de sucursal
             } else {
                 console.log("No es Webpay/Starken o no hay datos de envío");
                 // No es Webpay/Starken, añadir un bulto vacío por defecto

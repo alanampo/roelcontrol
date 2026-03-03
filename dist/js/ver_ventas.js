@@ -55,6 +55,8 @@ $(document).ready(function () {
 
     // Event listener para cambio de tipo de envío en modal orden envío
     $(document).on('changed.bs.select', '#select-tipo-envio', function (e, clickedIndex, newValue, oldValue) {
+        console.log("Evento changed.bs.select disparado, valor:", this.value, "isAutocompletandoOrdenEnvio:", isAutocompletandoOrdenEnvio);
+
         // Ignorar si estamos en modo autocompletado
         if (isAutocompletandoOrdenEnvio) {
             console.log("Ignorando evento changed.bs.select en modo autocompletado");
@@ -1178,13 +1180,6 @@ function modalOrdenEnvio(id_reserva) {
                 // Activar modo autocompletado temporalmente
                 isAutocompletandoOrdenEnvio = true;
 
-                // IMPORTANTE: Desactivar el flag después de completar el autocompletado
-                // Esto permite que el usuario pueda hacer cambios manuales inmediatamente después
-                setTimeout(function() {
-                    isAutocompletandoOrdenEnvio = false;
-                    console.log("Modo autocompletado desactivado (timeout general)");
-                }, 100);
-
                 const datos = response.datos_envio;
                 console.log("Datos de envío encontrados. Shipping method:", response.shipping_method);
                 console.log("Bultos calculados:", datos.bultos.length);
@@ -1192,12 +1187,24 @@ function modalOrdenEnvio(id_reserva) {
                 if (response.shipping_method === 'domicilio') {
                     // Envío a domicilio - tipo 2 (DOMICILIO ENVIO)
                     console.log("Configurando envío a DOMICILIO");
+
+                    // Cambiar valor del select y hacer refresh
                     $("#select-tipo-envio").val("2").selectpicker("refresh");
-                    // Para tipo 2, solo mostrar input-direccion-entrega2
-                    $("#input-direccion-entrega").val("");
-                    $("#input-direccion-entrega2").val(datos.direccion);
-                    $(".col-select-transp,.col-select-sucursal,.col-direccion-envio").addClass("d-none");
-                    $(".col-direccion-envio-2").removeClass("d-none");
+
+                    // Usar setTimeout para asegurar que estos cambios se ejecuten DESPUÉS de cualquier evento
+                    setTimeout(function() {
+                        $("#input-direccion-entrega").val("");
+                        $("#input-direccion-entrega2").val(datos.direccion);
+                        $(".col-select-transp,.col-select-sucursal,.col-direccion-envio").addClass("d-none");
+                        $(".col-direccion-envio-2").removeClass("d-none");
+                        console.log("Campos de domicilio configurados");
+
+                        // Desactivar flag después de completar los cambios
+                        setTimeout(function() {
+                            isAutocompletandoOrdenEnvio = false;
+                            console.log("Modo autocompletado desactivado (domicilio)");
+                        }, 50);
+                    }, 50);
                 } else if (response.shipping_method === 'agencia') {
                     // Retiro en sucursal - tipo 0 (SUCURSAL)
                     console.log("Configurando retiro en SUCURSAL");
@@ -1280,6 +1287,14 @@ function modalOrdenEnvio(id_reserva) {
 
                     $(".col-select-transp,.col-select-sucursal").removeClass("d-none");
                     $(".col-direccion-envio,.col-direccion-envio-2").addClass("d-none");
+
+                    // Timeout de respaldo para desactivar el flag si algo falla
+                    setTimeout(function() {
+                        if (isAutocompletandoOrdenEnvio) {
+                            isAutocompletandoOrdenEnvio = false;
+                            console.log("Modo autocompletado desactivado (timeout de respaldo agencia)");
+                        }
+                    }, 5000); // 5 segundos de respaldo
                 }
 
                 // Autocompletar bultos

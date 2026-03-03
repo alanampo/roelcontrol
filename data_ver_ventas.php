@@ -1983,7 +1983,7 @@ else if ($consulta == "busca_entregadas") {
 } else if ($consulta == "get_datos_autocompletado_orden_envio") {
     $id_reserva = $_POST["id_reserva"];
 
-    // Obtener datos de la reserva y verificar si es Webpay/Starken
+    // Obtener datos de la reserva
     $query = "SELECT
                 r.id,
                 r.payment_method,
@@ -1997,13 +1997,10 @@ else if ($consulta == "busca_entregadas") {
                 c.nombre AS cliente_nombre,
                 c.rut AS cliente_rut,
                 c.telefono AS cliente_telefono,
-                c.mail AS cliente_email,
-                SUM(rp.cantidad) AS cantidad_total_productos
+                c.mail AS cliente_email
             FROM reservas r
             INNER JOIN clientes c ON c.id_cliente = r.id_cliente
-            LEFT JOIN reservas_productos rp ON rp.id_reserva = r.id
-            WHERE r.id = $id_reserva
-            GROUP BY r.id";
+            WHERE r.id = $id_reserva";
 
     $result = mysqli_query($con, $query);
 
@@ -2014,70 +2011,125 @@ else if ($consulta == "busca_entregadas") {
         $es_webpay = ($data['payment_method'] == 'webpay');
         $es_starken = ($data['shipping_method'] == 'domicilio' || $data['shipping_method'] == 'agencia');
 
-        $response = array(
-            'es_webpay' => $es_webpay,
-            'es_starken' => $es_starken,
-            'shipping_method' => $data['shipping_method'],
-            'datos_envio' => array()
-        );
+        // Obtener productos con sus atributos para calcular bultos correctamente
+        $query_productos = "SELECT
+                                rp.cantidad,
+                                v.attrs_activos
+                            FROM reservas_productos rp
+                            INNER JOIN variedades_producto v ON v.id = rp.id_variedad
+                            WHERE rp.id_reserva = $id_reserva AND rp.estado >= 0";
 
-        // Si es Webpay y Starken, preparar los datos para autocompletar
-        if ($es_webpay && $es_starken) {
-            $cantidad_total = (int)$data['cantidad_total_productos'];
+        $result_productos = mysqli_query($con, $query_productos);
 
-            // Calcular bultos y peso según la lógica de Starken
-            if ($cantidad_total <= 50) {
-                $numero_bultos = 1;
-                $peso_por_bulto = 1.0;
-                $alto = 13;
-                $ancho = 29;
-                $largo = 27;
-            } elseif ($cantidad_total <= 100) {
-                $numero_bultos = 1;
-                $peso_por_bulto = 2.5;
-                $alto = 13;
-                $ancho = 29;
-                $largo = 54;
-            } else {
-                $numero_bultos = ceil($cantidad_total / 100);
-                $peso_por_bulto = 3.0;
-                $alto = 26;
-                $ancho = 29;
-                $largo = 54;
+        // Clasificar productos según sus atributos
+        $qty_especial = 0;
+        $qty_normal = 0;
+
+        while ($producto = mysqli_fetch_assoc($result_productos)) {
+            $cantidad = (int)$producto['cantidad'];
+            $attrs = $producto['attrs_activos'] ?? '';
+
+            // Detectar productos especiales (MAC-10 a MAC-15, BOL-10 a BOL-15)
+            $es_especial = false;
+            if (preg_match('/MACETA:\s*(MAC-1[0-5])|BOLSA:\s*(BOL-1[0-5])/i', $attrs)) {
+                $es_especial = true;
             }
 
-            // Preparar array de bultos
-            $bultos = array();
-            for ($i = 1; $i <= $numero_bultos; $i++) {
+            if ($es_especial) {
+                $qty_especial += $cantidad;
+            } else {
+                $qty_normal += $cantidad;
+            }
+        }
+
+        // Calcular bultos según las reglas de packing
+        $bultos = array();
+        $bulto_num = 1;
+
+        // Productos especiales: 25 por caja mediana
+        if ($qty_especial > 0) {
+            $cajas_especiales = ceil($qty_especial / 25);
+            for ($i = 0; $i < $cajas_especiales; $i++) {
                 $bultos[] = array(
-                    'numero' => $i,
-                    'peso' => $peso_por_bulto,
-                    'alto' => $alto,
-                    'ancho' => $ancho,
-                    'largo' => $largo
+                    'numero' => $bulto_num++,
+                    'peso' => 2.5,
+                    'alto' => 13,
+                    'ancho' => 29,
+                    'largo' => 54
                 );
             }
+        }
 
-            // Obtener nombre de comuna desde código Starken si es envío a domicilio
-            $nombre_comuna = '';
-            if ($data['shipping_method'] == 'domicilio' && $data['shipping_commune']) {
-                $query_cache = "SELECT communes_json FROM starken_cache WHERE id = 1 LIMIT 1";
-                $result_cache = mysqli_query($con, $query_cache);
-                if ($result_cache && mysqli_num_rows($result_cache) > 0) {
-                    $cache = mysqli_fetch_assoc($result_cache);
-                    $communes = json_decode($cache['communes_json'], true);
-                    if ($communes && is_array($communes)) {
-                        foreach ($communes as $comm) {
-                            if (isset($comm['code_dls']) && (int)$comm['code_dls'] === (int)$data['shipping_commune']) {
-                                $nombre_comuna = $comm['name'];
-                                break;
-                            }
+        // Productos normales: según rango de cantidad
+        if ($qty_normal > 0) {
+            if ($qty_normal <= 50) {
+                // 1 caja chica
+                $bultos[] = array(
+                    'numero' => $bulto_num++,
+                    'peso' => 1.0,
+                    'alto' => 13,
+                    'ancho' => 29,
+                    'largo' => 27
+                );
+            } elseif ($qty_normal <= 100) {
+                // 1 caja mediana
+                $bultos[] = array(
+                    'numero' => $bulto_num++,
+                    'peso' => 2.5,
+                    'alto' => 13,
+                    'ancho' => 29,
+                    'largo' => 54
+                );
+            } else {
+                // Múltiples cajas grandes (100 unidades por caja)
+                $cajas_grandes = ceil($qty_normal / 100);
+                for ($i = 0; $i < $cajas_grandes; $i++) {
+                    $bultos[] = array(
+                        'numero' => $bulto_num++,
+                        'peso' => 3.0,
+                        'alto' => 26,
+                        'ancho' => 29,
+                        'largo' => 54
+                    );
+                }
+            }
+        }
+
+        // Si no hay bultos calculados, usar un bulto por defecto
+        if (count($bultos) == 0) {
+            $bultos[] = array(
+                'numero' => 1,
+                'peso' => 1.0,
+                'alto' => 13,
+                'ancho' => 29,
+                'largo' => 27
+            );
+        }
+
+        // Obtener nombre de comuna desde código Starken si es envío a domicilio
+        $nombre_comuna = '';
+        if ($es_webpay && $es_starken && $data['shipping_method'] == 'domicilio' && $data['shipping_commune']) {
+            $query_cache = "SELECT communes_json FROM starken_cache WHERE id = 1 LIMIT 1";
+            $result_cache = mysqli_query($con, $query_cache);
+            if ($result_cache && mysqli_num_rows($result_cache) > 0) {
+                $cache = mysqli_fetch_assoc($result_cache);
+                $communes = json_decode($cache['communes_json'], true);
+                if ($communes && is_array($communes)) {
+                    foreach ($communes as $comm) {
+                        if (isset($comm['code_dls']) && (int)$comm['code_dls'] === (int)$data['shipping_commune']) {
+                            $nombre_comuna = $comm['name'];
+                            break;
                         }
                     }
                 }
             }
+        }
 
-            $response['datos_envio'] = array(
+        $response = array(
+            'es_webpay' => $es_webpay,
+            'es_starken' => $es_starken,
+            'shipping_method' => $data['shipping_method'],
+            'datos_envio' => array(
                 'tipo_envio' => ($data['shipping_method'] == 'domicilio') ? '2' : '0', // 0=SUCURSAL, 1=DOMICILIO CLIENTE, 2=DOMICILIO ENVIO
                 'direccion' => $data['shipping_address'] ?? '',
                 'direccion2' => '',
@@ -2086,9 +2138,10 @@ else if ($consulta == "busca_entregadas") {
                 'sucursal_direccion' => $data['shipping_agency_address'] ?? '',
                 'comuna' => $nombre_comuna,
                 'bultos' => $bultos,
-                'cantidad_productos' => $cantidad_total
-            );
-        }
+                'cantidad_especial' => $qty_especial,
+                'cantidad_normal' => $qty_normal
+            )
+        );
 
         header('Content-Type: application/json');
         echo json_encode($response);

@@ -1162,12 +1162,13 @@ function modalOrdenEnvio(id_reserva) {
         success: function (response) {
             console.log("Respuesta autocompletado:", response);
 
-            if (response.es_webpay && response.es_starken && response.datos_envio) {
+            if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
                 // Activar modo autocompletado
                 isAutocompletandoOrdenEnvio = true;
 
                 const datos = response.datos_envio;
-                console.log("Es Webpay + Starken. Shipping method:", response.shipping_method);
+                console.log("Datos de envío encontrados. Shipping method:", response.shipping_method);
+                console.log("Bultos calculados:", datos.bultos.length);
 
                 if (response.shipping_method === 'domicilio') {
                     // Envío a domicilio - tipo 2 (DOMICILIO ENVIO)

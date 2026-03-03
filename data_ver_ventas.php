@@ -337,17 +337,14 @@ if ($consulta == "busca_stock_actual") {
 
             $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Venta'><i class='fa fa-ban'></i></button>" : "");
 
-            // Botón de orden de envío solo si es webpay y envío starken (domicilio o agencia)
+            // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual (no catálogo)
             $btn_orden_envio = "";
-            $payment_method_val = $ww['payment_method'] ?? 'null';
             $shipping_method_val = $ww['shipping_method'] ?? 'null';
-            $es_webpay = ($payment_method_val == 'webpay');
-            $es_envio_starken = ($shipping_method_val == 'domicilio' || $shipping_method_val == 'agencia');
+            $vendedor = $ww['nombre_usuario'] ?? '';
+            $es_envio = ($shipping_method_val == 'domicilio' || $shipping_method_val == 'agencia');
+            $es_venta_manual = ($vendedor != 'Ventas Catálogo');
 
-            // Debug temporal - remover después
-            error_log("ID: $id_reserva, payment_method: '$payment_method_val', shipping_method: '$shipping_method_val', es_webpay: " . ($es_webpay ? 'true' : 'false') . ", es_envio_starken: " . ($es_envio_starken ? 'true' : 'false'));
-
-            if ($es_webpay && $es_envio_starken) {
+            if ($es_envio || $es_venta_manual) {
                 $btn_orden_envio = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i> ORDEN ENVÍO</button>";
             }
 
@@ -1206,11 +1203,11 @@ else if ($consulta == "busca_picking") {
             if($productos_pendientes_picking > 0){
                 $btn_quick_packing = "<button onclick='enviarAPackingReserva($id_reserva)' class='btn btn-warning btn-sm mb-2' title='Enviar a Packing'><i class='fa fa-archive'></i></button>";
 
-                // Botón de orden de envío solo si es webpay y envío starken
+                // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
                 $btn_orden_envio_picking = "";
-                $es_webpay_picking = ($ww['payment_method'] == 'webpay');
-                $es_envio_starken_picking = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
-                if ($es_webpay_picking && $es_envio_starken_picking) {
+                $es_envio_picking = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+                $es_venta_manual_picking = ($ww['nombre_usuario'] != 'Ventas Catálogo');
+                if ($es_envio_picking || $es_venta_manual_picking) {
                     $btn_orden_envio_picking = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
                 }
 
@@ -1389,11 +1386,11 @@ else if ($consulta == "busca_packing") {
                                                 <i class='fa fa-shipping-fast'></i> A TRANSPORTE
                                            </button>";
 
-                // Botón de orden de envío solo si es webpay y envío starken
+                // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
                 $btn_orden_envio_packing = "";
-                $es_webpay_packing = ($ww['payment_method'] == 'webpay');
-                $es_envio_starken_packing = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
-                if ($es_webpay_packing && $es_envio_starken_packing) {
+                $es_envio_packing = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+                $es_venta_manual_packing = ($ww['nombre_usuario'] != 'Ventas Catálogo');
+                if ($es_envio_packing || $es_venta_manual_packing) {
                     $btn_orden_envio_packing = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
                 }
 
@@ -1532,11 +1529,11 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
             if ($productos_pendientes_transporte > 0) {
                 $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i></button>";
 
-                // Botón de orden de envío solo si es webpay y envío starken
+                // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
                 $btn_orden_envio_transporte = "";
-                $es_webpay_transporte = ($ww['payment_method'] == 'webpay');
-                $es_envio_starken_transporte = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
-                if ($es_webpay_transporte && $es_envio_starken_transporte) {
+                $es_envio_transporte = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+                $es_venta_manual_transporte = ($ww['nombre_usuario'] != 'Ventas Catálogo');
+                if ($es_envio_transporte || $es_venta_manual_transporte) {
                     $btn_orden_envio_transporte = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
                 }
 

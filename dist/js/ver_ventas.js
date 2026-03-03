@@ -1188,23 +1188,31 @@ function modalOrdenEnvio(id_reserva) {
                     // Envío a domicilio - tipo 2 (DOMICILIO ENVIO)
                     console.log("Configurando envío a DOMICILIO");
 
-                    // Primero configurar los campos ANTES de cambiar el select
-                    // Esto evita que el evento changed.bs.select los sobrescriba
+                    // Cambiar el select sin disparar eventos
+                    $("#select-tipo-envio").val("2");
+
+                    // Configurar campos directamente con jQuery
                     $("#input-direccion-entrega").val("");
                     $("#input-direccion-entrega2").val(datos.direccion);
-                    $(".col-select-transp,.col-select-sucursal,.col-direccion-envio").addClass("d-none");
+
+                    // Ocultar campos innecesarios
+                    $(".col-select-transp").addClass("d-none");
+                    $(".col-select-sucursal").addClass("d-none");
+                    $(".col-direccion-envio").addClass("d-none");
+
+                    // Mostrar solo el campo de dirección 2
                     $(".col-direccion-envio-2").removeClass("d-none");
-                    console.log("Campos de domicilio configurados primero");
 
-                    // Ahora cambiar el select DESPUÉS de configurar todo
-                    // Esto dispara el evento pero los campos ya están configurados correctamente
-                    $("#select-tipo-envio").val("2").selectpicker("refresh");
+                    // Actualizar el select visualmente al final
+                    $("#select-tipo-envio").selectpicker("refresh");
 
-                    // Desactivar flag después de un tiempo prudencial
+                    console.log("Campos configurados - input-direccion-entrega2:", datos.direccion);
+
+                    // Desactivar flag
                     setTimeout(function() {
                         isAutocompletandoOrdenEnvio = false;
-                        console.log("Modo autocompletado desactivado (domicilio)");
-                    }, 200);
+                        console.log("Modo autocompletado desactivado");
+                    }, 100);
                 } else if (response.shipping_method === 'agencia') {
                     // Retiro en sucursal - tipo 0 (SUCURSAL)
                     console.log("Configurando retiro en SUCURSAL");

@@ -1193,10 +1193,11 @@ function modalOrdenEnvio(id_reserva) {
                     // Envío a domicilio - tipo 2 (DOMICILIO ENVIO)
                     console.log("Configurando envío a DOMICILIO");
                     $("#select-tipo-envio").val("2").selectpicker("refresh");
-                    $("#input-direccion-entrega").val(datos.direccion);
-                    $("#input-direccion-entrega2").val(datos.direccion2 || "");
-                    $(".col-select-transp,.col-select-sucursal").addClass("d-none");
-                    $(".col-direccion-envio,.col-direccion-envio-2").removeClass("d-none");
+                    // Para tipo 2, solo mostrar input-direccion-entrega2
+                    $("#input-direccion-entrega").val("");
+                    $("#input-direccion-entrega2").val(datos.direccion);
+                    $(".col-select-transp,.col-select-sucursal,.col-direccion-envio").addClass("d-none");
+                    $(".col-direccion-envio-2").removeClass("d-none");
                 } else if (response.shipping_method === 'agencia') {
                     // Retiro en sucursal - tipo 0 (SUCURSAL)
                     console.log("Configurando retiro en SUCURSAL");

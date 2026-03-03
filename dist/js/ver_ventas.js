@@ -49,6 +49,12 @@ $(document).ready(function () {
 
     // Event listener para cambio de tipo de envío en modal orden envío
     $(document).on('changed.bs.select', '#select-tipo-envio', function (e, clickedIndex, newValue, oldValue) {
+        // Ignorar si estamos en modo autocompletado
+        if (isAutocompletandoOrdenEnvio) {
+            console.log("Ignorando evento changed.bs.select en modo autocompletado");
+            return;
+        }
+
         $("#select-sucursal").html("").selectpicker();
         $(".col-direccion-envio-2").addClass("d-none");
 
@@ -1080,6 +1086,7 @@ function guardarCambioEstadoMasa() {
 
 // ORDENES ENVIO
 let currentReservaOrden = null;
+let isAutocompletandoOrdenEnvio = false;
 
 function modalOrdenEnvio(id_reserva) {
     currentReservaOrden = { id_reserva: id_reserva, cliente: {} };
@@ -1147,6 +1154,9 @@ function modalOrdenEnvio(id_reserva) {
             console.log("Respuesta autocompletado:", response);
 
             if (response.es_webpay && response.es_starken && response.datos_envio) {
+                // Activar modo autocompletado
+                isAutocompletandoOrdenEnvio = true;
+
                 const datos = response.datos_envio;
                 console.log("Es Webpay + Starken. Shipping method:", response.shipping_method);
 
@@ -1237,6 +1247,12 @@ function modalOrdenEnvio(id_reserva) {
                 }
 
                 console.log("Datos de envío autocompletados:", datos);
+
+                // Desactivar modo autocompletado después de un tiempo
+                setTimeout(function() {
+                    isAutocompletandoOrdenEnvio = false;
+                    console.log("Modo autocompletado desactivado");
+                }, 2000);
             } else {
                 console.log("No es Webpay/Starken o no hay datos de envío");
                 // No es Webpay/Starken, añadir un bulto vacío por defecto
@@ -1249,6 +1265,9 @@ function modalOrdenEnvio(id_reserva) {
                     </tr>
                 `);
                 addBulto();
+
+                // Desactivar modo autocompletado
+                isAutocompletandoOrdenEnvio = false;
             }
         },
         error: function (xhr, status, error) {
@@ -1265,6 +1284,9 @@ function modalOrdenEnvio(id_reserva) {
                 </tr>
             `);
             addBulto();
+
+            // Desactivar modo autocompletado
+            isAutocompletandoOrdenEnvio = false;
         }
     });
 }

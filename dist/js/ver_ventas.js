@@ -1175,8 +1175,15 @@ function modalOrdenEnvio(id_reserva) {
             }
 
             if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
-                // Activar modo autocompletado
+                // Activar modo autocompletado temporalmente
                 isAutocompletandoOrdenEnvio = true;
+
+                // IMPORTANTE: Desactivar el flag después de completar el autocompletado
+                // Esto permite que el usuario pueda hacer cambios manuales inmediatamente después
+                setTimeout(function() {
+                    isAutocompletandoOrdenEnvio = false;
+                    console.log("Modo autocompletado desactivado (timeout general)");
+                }, 100);
 
                 const datos = response.datos_envio;
                 console.log("Datos de envío encontrados. Shipping method:", response.shipping_method);
@@ -1235,7 +1242,7 @@ function modalOrdenEnvio(id_reserva) {
                                                     setTimeout(function() {
                                                         isAutocompletandoOrdenEnvio = false;
                                                         console.log("Modo autocompletado desactivado después de selección exitosa");
-                                                    }, 500);
+                                                    }, 100);
                                                     return false;
                                                 }
                                             });
@@ -1293,15 +1300,6 @@ function modalOrdenEnvio(id_reserva) {
                 }
 
                 console.log("Datos de envío autocompletados:", datos);
-
-                // Para domicilio, desactivar modo autocompletado después de un tiempo corto
-                if (response.shipping_method === 'domicilio') {
-                    setTimeout(function() {
-                        isAutocompletandoOrdenEnvio = false;
-                        console.log("Modo autocompletado desactivado (domicilio)");
-                    }, 1000);
-                }
-                // Para agencia/sucursal, se desactiva dentro de la función de selección de sucursal
             } else {
                 console.log("No es Webpay/Starken o no hay datos de envío");
                 // No es Webpay/Starken, añadir un bulto vacío por defecto

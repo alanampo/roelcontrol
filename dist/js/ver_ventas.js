@@ -1164,8 +1164,11 @@ function modalOrdenEnvio(id_reserva) {
 
             // Mostrar información de debug si está disponible
             if (response.datos_envio && response.datos_envio.debug) {
+                console.log("DEBUG - ID Reserva:", response.datos_envio.debug.id_reserva);
+                console.log("DEBUG - Num Rows:", response.datos_envio.debug.num_rows);
                 console.log("DEBUG - Productos encontrados:", response.datos_envio.debug.productos_encontrados);
                 console.log("DEBUG - Query:", response.datos_envio.debug.query_productos);
+                console.log("DEBUG - Query Error:", response.datos_envio.debug.query_error);
                 console.log("DEBUG - Detalle productos:", response.datos_envio.debug.productos_detalle);
                 console.log("DEBUG - Cantidad especial:", response.datos_envio.cantidad_especial);
                 console.log("DEBUG - Cantidad normal:", response.datos_envio.cantidad_normal);

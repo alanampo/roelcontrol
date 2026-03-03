@@ -2110,6 +2110,14 @@ else if ($consulta == "busca_entregadas") {
         $qty_normal = 0;
         $productos_encontrados = 0;
         $debug_productos = array();
+        $query_error = null;
+        $num_rows = 0;
+
+        if (!$result_productos) {
+            $query_error = mysqli_error($con);
+        } else {
+            $num_rows = mysqli_num_rows($result_productos);
+        }
 
         if ($result_productos) {
             while ($producto = mysqli_fetch_assoc($result_productos)) {
@@ -2239,8 +2247,11 @@ else if ($consulta == "busca_entregadas") {
                 'cantidad_especial' => $qty_especial,
                 'cantidad_normal' => $qty_normal,
                 'debug' => array(
+                    'id_reserva' => $id_reserva,
+                    'num_rows' => $num_rows,
                     'productos_encontrados' => $productos_encontrados,
                     'query_productos' => $query_productos,
+                    'query_error' => $query_error,
                     'productos_detalle' => $debug_productos
                 )
             )

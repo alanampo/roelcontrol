@@ -41,12 +41,14 @@ function getAtributosVariedad($con, $id_variedad) {
 
 function calcular_packing_label($con, $id_reserva) {
     // Obtener productos con sus atributos
+    // Usar la misma estructura que en la tabla de ventas
     $query_productos = "SELECT
                             rp.cantidad,
                             v.attrs_activos
                         FROM reservas_productos rp
                         INNER JOIN variedades_producto v ON v.id = rp.id_variedad
-                        WHERE rp.id_reserva = $id_reserva AND rp.estado >= 0";
+                        INNER JOIN tipos_producto t ON t.id = v.id_tipo
+                        WHERE rp.id_reserva = $id_reserva";
 
     $result_productos = mysqli_query($con, $query_productos);
 
@@ -2087,13 +2089,19 @@ else if ($consulta == "busca_entregadas") {
         $es_starken = ($data['shipping_method'] == 'domicilio' || $data['shipping_method'] == 'agencia');
 
         // Obtener productos con sus atributos para calcular bultos correctamente
+        // Usar la misma estructura que en la tabla de ventas
         $query_productos = "SELECT
                                 rp.cantidad,
                                 rp.estado,
-                                v.attrs_activos
+                                rp.id as id_reserva_producto,
+                                v.attrs_activos,
+                                v.id as id_variedad,
+                                t.nombre as nombre_tipo,
+                                v.nombre as nombre_variedad
                             FROM reservas_productos rp
                             INNER JOIN variedades_producto v ON v.id = rp.id_variedad
-                            WHERE rp.id_reserva = $id_reserva AND rp.estado >= 0";
+                            INNER JOIN tipos_producto t ON t.id = v.id_tipo
+                            WHERE rp.id_reserva = $id_reserva";
 
         $result_productos = mysqli_query($con, $query_productos);
 
@@ -2124,6 +2132,8 @@ else if ($consulta == "busca_entregadas") {
                 $debug_productos[] = array(
                     'cantidad' => $cantidad,
                     'estado' => $producto['estado'],
+                    'nombre_variedad' => $producto['nombre_variedad'] ?? '',
+                    'nombre_tipo' => $producto['nombre_tipo'] ?? '',
                     'attrs' => $attrs,
                     'es_especial' => $es_especial
                 );

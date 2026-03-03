@@ -1161,21 +1161,57 @@ function modalOrdenEnvio(id_reserva) {
                 } else if (response.shipping_method === 'agencia') {
                     // Retiro en sucursal - tipo 0 (SUCURSAL)
                     console.log("Configurando retiro en SUCURSAL");
+                    console.log("Código de sucursal:", datos.sucursal_code_dls);
                     $("#select-tipo-envio").val("0").selectpicker("refresh");
+
+                    // Guardar el código de sucursal para seleccionarlo después
+                    const sucursalCodeDls = datos.sucursal_code_dls;
 
                     // Cargar transportistas y seleccionar Starken si existe
                     setTimeout(function() {
                         console.log("Buscando Starken en transportistas...");
                         // Buscar Starken en los transportistas cargados
+                        let starkenFound = false;
                         $("#select-transportista option").each(function() {
                             if ($(this).text().toLowerCase().includes('starken')) {
-                                console.log("Starken encontrado:", $(this).val());
+                                console.log("Starken encontrado, ID:", $(this).val());
                                 $("#select-transportista").val($(this).val()).selectpicker("refresh");
+
+                                // Cuando se carguen las sucursales, seleccionar la correcta
+                                $("#select-transportista").one('changed.bs.select', function() {
+                                    // Esperar a que se carguen las sucursales
+                                    setTimeout(function() {
+                                        if (sucursalCodeDls) {
+                                            console.log("Intentando seleccionar sucursal con código:", sucursalCodeDls);
+                                            // Buscar y seleccionar la sucursal por código DLS
+                                            let sucursalSeleccionada = false;
+                                            $("#select-sucursal option").each(function() {
+                                                const optionValue = $(this).val();
+                                                const optionCodeDls = $(this).attr('x-code-dls') || optionValue;
+                                                console.log("Comparando:", optionCodeDls, "con", sucursalCodeDls);
+                                                if (optionCodeDls == sucursalCodeDls) {
+                                                    console.log("Sucursal encontrada, seleccionando:", $(this).text());
+                                                    $("#select-sucursal").val(optionValue).selectpicker("refresh");
+                                                    sucursalSeleccionada = true;
+                                                    return false;
+                                                }
+                                            });
+                                            if (!sucursalSeleccionada) {
+                                                console.log("No se pudo encontrar la sucursal con código:", sucursalCodeDls);
+                                            }
+                                        }
+                                    }, 500);
+                                });
+
                                 // Trigger para cargar sucursales
                                 $("#select-transportista").trigger('changed.bs.select');
+                                starkenFound = true;
                                 return false;
                             }
                         });
+                        if (!starkenFound) {
+                            console.log("No se encontró Starken en los transportistas");
+                        }
                     }, 500);
 
                     $(".col-select-transp,.col-select-sucursal").removeClass("d-none");

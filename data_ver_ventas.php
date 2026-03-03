@@ -1778,42 +1778,84 @@ else if ($consulta == "busca_entregadas") {
             }
         }
     } else {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_URL, "https://gateway.starken.cl/externo/integracion/agency/agency");
-        $token = "7b14bb8a-9df5-4cea-bb71-c6bc285b2ad7";
-        $headers = array(
-            "Content-Type: application/json; charset=utf-8",
-            "Authorization: Bearer " . $token,
-        );
+        // Starken - intentar usar caché primero
+        $usar_cache = false;
+        $query_cache = "SELECT all_agencies_json FROM starken_agencies_global_cache WHERE id = 1 LIMIT 1";
+        $result_cache = mysqli_query($con, $query_cache);
 
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        if ($result_cache && mysqli_num_rows($result_cache) > 0) {
+            $cache = mysqli_fetch_assoc($result_cache);
+            $agencies = json_decode($cache['all_agencies_json'], true);
 
-        $resp = curl_exec($ch);
-        try {
-            $respArray = json_decode($resp);
-            foreach ($respArray as $sucursal) {
-                # code...
-                $direccion = $sucursal->address;
-                $id = $sucursal->id;
-                $nombre = $sucursal->name;
+            if ($agencies && is_array($agencies) && count($agencies) > 0) {
+                $usar_cache = true;
+                foreach ($agencies as $agency) {
+                    $code_dls = $agency['code_dls'] ?? '';
+                    $nombre = $agency['name'] ?? '';
+                    $direccion_full = $agency['address'] ?? '';
 
-                if (strlen($direccion) > 40) {
-                    $direccion = substr($direccion, 0, 40) . "...";
+                    // Truncar dirección para display
+                    $dire = $direccion_full;
+                    if (strlen($dire) > 30) {
+                        $dire = substr($dire, 0, 30) . "...";
+                    }
+
+                    // Truncar nombre para display
+                    $sucu = $nombre;
+                    if (strlen($sucu) > 25) {
+                        $sucu = substr($sucu, 0, 25) . "...";
+                    }
+
+                    // Escapar para HTML
+                    $code_dls_escaped = htmlspecialchars($code_dls, ENT_QUOTES, 'UTF-8');
+                    $nombre_escaped = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
+                    $direccion_full_escaped = htmlspecialchars($direccion_full, ENT_QUOTES, 'UTF-8');
+                    $sucu_escaped = htmlspecialchars($sucu, ENT_QUOTES, 'UTF-8');
+                    $dire_escaped = htmlspecialchars($dire, ENT_QUOTES, 'UTF-8');
+
+                    echo "<option x-direccion=\"$direccion_full_escaped\" value=\"$code_dls_escaped\" x-nombre=\"$nombre_escaped\" x-code-dls=\"$code_dls_escaped\">$sucu_escaped [$dire_escaped]</option>";
                 }
-                if (strlen($nombre) > 40) {
-                    $nombre = substr($nombre, 0, 40) . "...";
-                }
-
-                // Escapar atributos para HTML
-                $nombre_escaped = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
-                $direccion_escaped = htmlspecialchars($direccion, ENT_QUOTES, 'UTF-8');
-                $id_escaped = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
-
-                echo "<option x-direccion=\"$direccion_escaped\" value=\"$id_escaped\" x-nombre=\"$nombre_escaped\">$nombre_escaped [$direccion_escaped] ($id_escaped)</option>";
             }
-        } catch (\Throwable $th) {
-            //throw $th;
+        }
+
+        // Si no hay caché o está vacío, ir a la API como fallback
+        if (!$usar_cache) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_URL, "https://gateway.starken.cl/externo/integracion/agency/agency");
+            $token = "7b14bb8a-9df5-4cea-bb71-c6bc285b2ad7";
+            $headers = array(
+                "Content-Type: application/json; charset=utf-8",
+                "Authorization: Bearer " . $token,
+            );
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+            $resp = curl_exec($ch);
+            try {
+                $respArray = json_decode($resp);
+                foreach ($respArray as $sucursal) {
+                    $direccion = $sucursal->address;
+                    $id = $sucursal->id;
+                    $nombre = $sucursal->name;
+
+                    if (strlen($direccion) > 40) {
+                        $direccion = substr($direccion, 0, 40) . "...";
+                    }
+                    if (strlen($nombre) > 40) {
+                        $nombre = substr($nombre, 0, 40) . "...";
+                    }
+
+                    // Escapar atributos para HTML
+                    $nombre_escaped = htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8');
+                    $direccion_escaped = htmlspecialchars($direccion, ENT_QUOTES, 'UTF-8');
+                    $id_escaped = htmlspecialchars($id, ENT_QUOTES, 'UTF-8');
+
+                    echo "<option x-direccion=\"$direccion_escaped\" value=\"$id_escaped\" x-nombre=\"$nombre_escaped\">$nombre_escaped [$direccion_escaped] ($id_escaped)</option>";
+                }
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
         }
     }
 } else if ($consulta == "get_datos_cliente_para_orden_envio") {
@@ -1946,7 +1988,7 @@ else if ($consulta == "busca_entregadas") {
                 'tipo_envio' => ($data['shipping_method'] == 'domicilio') ? '2' : '0', // 0=SUCURSAL, 1=DOMICILIO CLIENTE, 2=DOMICILIO ENVIO
                 'direccion' => $data['shipping_address'] ?? '',
                 'direccion2' => '',
-                'sucursal_code' => $data['shipping_agency_code_dls'] ?? '',
+                'sucursal_code_dls' => $data['shipping_agency_code_dls'] ?? '',
                 'sucursal_nombre' => $data['shipping_agency_name'] ?? '',
                 'sucursal_direccion' => $data['shipping_agency_address'] ?? '',
                 'comuna' => $nombre_comuna,

@@ -39,6 +39,61 @@ function getAtributosVariedad($con, $id_variedad) {
     return $atributos_html;
 }
 
+function calcular_packing_label($con, $id_reserva) {
+    // Obtener productos con sus atributos
+    $query_productos = "SELECT
+                            rp.cantidad,
+                            v.attrs_activos
+                        FROM reservas_productos rp
+                        INNER JOIN variedades_producto v ON v.id = rp.id_variedad
+                        WHERE rp.id_reserva = $id_reserva AND rp.estado >= 0";
+
+    $result_productos = mysqli_query($con, $query_productos);
+
+    // Clasificar productos según sus atributos
+    $qty_especial = 0;
+    $qty_normal = 0;
+
+    while ($producto = mysqli_fetch_assoc($result_productos)) {
+        $cantidad = (int)$producto['cantidad'];
+        $attrs = $producto['attrs_activos'] ?? '';
+
+        // Detectar productos especiales (MAC-10 a MAC-15, BOL-10 a BOL-15)
+        if (preg_match('/MACETA:\s*(MAC-1[0-5])|BOLSA:\s*(BOL-1[0-5])/i', $attrs)) {
+            $qty_especial += $cantidad;
+        } else {
+            $qty_normal += $cantidad;
+        }
+    }
+
+    $details = array();
+
+    // Calcular para productos especiales
+    if ($qty_especial > 0) {
+        $cajas_especiales = ceil($qty_especial / 25);
+        $details[] = "{$cajas_especiales} caja(s) mediana(s) para macetas/bolsas ({$qty_especial} unid)";
+    }
+
+    // Calcular para productos normales
+    if ($qty_normal > 0) {
+        if ($qty_normal <= 50) {
+            $details[] = '1 caja chica para otros productos (1-50 unid)';
+        } elseif ($qty_normal <= 100) {
+            $details[] = '1 caja mediana para otros productos (51-100 unid)';
+        } else {
+            $packs = ceil($qty_normal / 100);
+            $details[] = "{$packs} caja(s) grande(s) para otros productos (cada 100 unid)";
+        }
+    }
+
+    if (empty($details)) {
+        return '';
+    }
+
+    $label = implode(' | ', $details);
+    return "<br><small style='color: #777;'><strong>Packing:</strong> {$label}</small>";
+}
+
 if ($consulta == "busca_stock_actual") {
     $query = "SELECT
   t.nombre as nombre_tipo,
@@ -357,6 +412,10 @@ if ($consulta == "busca_stock_actual") {
             } elseif ($ww['shipping_method'] == 'vivero') {
                 $badge_entrega = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
             }
+
+            // Calcular y agregar label de packing
+            $packing_label = calcular_packing_label($con, $id_reserva);
+            $badge_entrega .= $packing_label;
 
             $final_observaciones_to_display = $ww['observaciones'];
             $obs_general_text = htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8');
@@ -1221,6 +1280,10 @@ else if ($consulta == "busca_picking") {
                     $badge_entrega_picking = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
                 }
 
+                // Calcular y agregar label de packing
+                $packing_label_picking = calcular_packing_label($con, $id_reserva);
+                $badge_entrega_picking .= $packing_label_picking;
+
                 echo "<tr class='text-center'>";
                 echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
@@ -1404,6 +1467,10 @@ else if ($consulta == "busca_packing") {
                     $badge_entrega_packing = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
                 }
 
+                // Calcular y agregar label de packing
+                $packing_label_packing = calcular_packing_label($con, $id_reserva);
+                $badge_entrega_packing .= $packing_label_packing;
+
                 echo "<tr class='text-center'>";
                 echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
@@ -1547,6 +1614,10 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
                     $badge_entrega_transporte = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
                 }
 
+                // Calcular y agregar label de packing
+                $packing_label_transporte = calcular_packing_label($con, $id_reserva);
+                $badge_entrega_transporte .= $packing_label_transporte;
+
                 echo "<tr class='text-center'>";
                 echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
@@ -1666,6 +1737,10 @@ else if ($consulta == "busca_entregadas") {
                 } elseif ($ww['shipping_method'] == 'vivero') {
                     $badge_entrega_entregadas = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
                 }
+
+                // Calcular y agregar label de packing
+                $packing_label_entregadas = calcular_packing_label($con, $id_reserva);
+                $badge_entrega_entregadas .= $packing_label_entregadas;
 
                 echo "<tr class='text-center'>";
                 echo "<td><small>$id_reserva</small></td>";

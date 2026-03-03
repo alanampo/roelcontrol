@@ -1121,14 +1121,18 @@ function modalOrdenEnvio(id_reserva) {
     $(".col-select-transp,.col-select-sucursal").removeClass("d-none");
     $(".col-direccion-envio,.col-direccion-envio-2").addClass("d-none");
 
-    // Limpiar tabla de bultos
+    // Limpiar tabla de bultos y mostrar spinner
     $("#table-bultos > tbody").html(`
-        <tr scope="row" class="tr-add-row">
-            <td colspan="6">
-                <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
+        <tr scope="row" class="tr-loading">
+            <td colspan="6" class="text-center">
+                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                <p>Cargando datos de envío...</p>
             </td>
         </tr>
     `);
+
+    // Mostrar el modal inmediatamente
+    $("#modal-orden-envio").modal("show");
 
     // Verificar si es Webpay/Starken y autocompletar
     $.ajax({
@@ -1140,11 +1144,15 @@ function modalOrdenEnvio(id_reserva) {
             id_reserva: id_reserva,
         },
         success: function (response) {
+            console.log("Respuesta autocompletado:", response);
+
             if (response.es_webpay && response.es_starken && response.datos_envio) {
                 const datos = response.datos_envio;
+                console.log("Es Webpay + Starken. Shipping method:", response.shipping_method);
 
                 if (response.shipping_method === 'domicilio') {
                     // Envío a domicilio - tipo 2 (DOMICILIO ENVIO)
+                    console.log("Configurando envío a DOMICILIO");
                     $("#select-tipo-envio").val("2").selectpicker("refresh");
                     $("#input-direccion-entrega").val(datos.direccion);
                     $("#input-direccion-entrega2").val(datos.direccion2 || "");
@@ -1152,13 +1160,16 @@ function modalOrdenEnvio(id_reserva) {
                     $(".col-direccion-envio,.col-direccion-envio-2").removeClass("d-none");
                 } else if (response.shipping_method === 'agencia') {
                     // Retiro en sucursal - tipo 0 (SUCURSAL)
+                    console.log("Configurando retiro en SUCURSAL");
                     $("#select-tipo-envio").val("0").selectpicker("refresh");
 
                     // Cargar transportistas y seleccionar Starken si existe
                     setTimeout(function() {
+                        console.log("Buscando Starken en transportistas...");
                         // Buscar Starken en los transportistas cargados
                         $("#select-transportista option").each(function() {
                             if ($(this).text().toLowerCase().includes('starken')) {
+                                console.log("Starken encontrado:", $(this).val());
                                 $("#select-transportista").val($(this).val()).selectpicker("refresh");
                                 // Trigger para cargar sucursales
                                 $("#select-transportista").trigger('changed.bs.select');
@@ -1173,6 +1184,7 @@ function modalOrdenEnvio(id_reserva) {
 
                 // Autocompletar bultos
                 if (datos.bultos && datos.bultos.length > 0) {
+                    console.log("Agregando " + datos.bultos.length + " bulto(s)");
                     $("#table-bultos > tbody").html(`
                         <tr scope="row" class="tr-add-row">
                             <td colspan="6">
@@ -1190,18 +1202,35 @@ function modalOrdenEnvio(id_reserva) {
 
                 console.log("Datos de envío autocompletados:", datos);
             } else {
+                console.log("No es Webpay/Starken o no hay datos de envío");
                 // No es Webpay/Starken, añadir un bulto vacío por defecto
+                // Primero limpiar la tabla
+                $("#table-bultos > tbody").html(`
+                    <tr scope="row" class="tr-add-row">
+                        <td colspan="6">
+                            <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
+                        </td>
+                    </tr>
+                `);
                 addBulto();
             }
         },
-        error: function (error) {
-            console.error("Error al obtener datos de autocompletado:", error);
-            // En caso de error, añadir un bulto vacío por defecto
+        error: function (xhr, status, error) {
+            console.error("Error al obtener datos de autocompletado:");
+            console.error("Status:", status);
+            console.error("Error:", error);
+            console.error("Response:", xhr.responseText);
+            // En caso de error, limpiar tabla y añadir un bulto vacío por defecto
+            $("#table-bultos > tbody").html(`
+                <tr scope="row" class="tr-add-row">
+                    <td colspan="6">
+                        <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
+                    </td>
+                </tr>
+            `);
             addBulto();
         }
     });
-
-    $("#modal-orden-envio").modal("show");
 }
 
 function addBulto() {

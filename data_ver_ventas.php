@@ -216,6 +216,8 @@ if ($consulta == "busca_stock_actual") {
             r.observaciones,
             r.observaciones_picking,
             r.observaciones_packing,
+            r.payment_method,
+            r.shipping_method,
             u.nombre_real as nombre_usuario,
             u_obs.nombre_real as usuario_obs,
             u_obs_picking.nombre_real as usuario_obs_picking,
@@ -335,7 +337,29 @@ if ($consulta == "busca_stock_actual") {
 
             $btn_cancelar = ($ww["estado"] < 2 ? "<button onclick='cancelarReserva($id_reserva)' class='btn btn-danger btn-sm mb-2' title='Cancelar Venta'><i class='fa fa-ban'></i></button>" : "");
 
-            $btn_orden_envio = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i> ORDEN ENVÍO</button>";
+            // Botón de orden de envío solo si es webpay y envío starken (domicilio o agencia)
+            $btn_orden_envio = "";
+            $payment_method_val = $ww['payment_method'] ?? 'null';
+            $shipping_method_val = $ww['shipping_method'] ?? 'null';
+            $es_webpay = ($payment_method_val == 'webpay');
+            $es_envio_starken = ($shipping_method_val == 'domicilio' || $shipping_method_val == 'agencia');
+
+            // Debug temporal - remover después
+            error_log("ID: $id_reserva, payment_method: '$payment_method_val', shipping_method: '$shipping_method_val', es_webpay: " . ($es_webpay ? 'true' : 'false') . ", es_envio_starken: " . ($es_envio_starken ? 'true' : 'false'));
+
+            if ($es_webpay && $es_envio_starken) {
+                $btn_orden_envio = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i> ORDEN ENVÍO</button>";
+            }
+
+            // Badge de tipo de entrega
+            $badge_entrega = "";
+            if ($ww['shipping_method'] == 'domicilio') {
+                $badge_entrega = "<br><span class='badge' style='background-color: #3c8dbc; color: white; font-size: 10px;'>ENVÍO A DOMICILIO</span>";
+            } elseif ($ww['shipping_method'] == 'agencia') {
+                $badge_entrega = "<br><span class='badge' style='background-color: #00a65a; color: white; font-size: 10px;'>ENVÍO A SUCURSAL</span>";
+            } elseif ($ww['shipping_method'] == 'vivero') {
+                $badge_entrega = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
+            }
 
             $final_observaciones_to_display = $ww['observaciones'];
             $obs_general_text = htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8');
@@ -361,6 +385,7 @@ if ($consulta == "busca_stock_actual") {
                 </div>
                 {$obs_picking_text}
                 {$obs_packing_text}
+                {$badge_entrega}
               </td>
               <td>{$estado_general}</td>
               <td>
@@ -1181,6 +1206,24 @@ else if ($consulta == "busca_picking") {
             if($productos_pendientes_picking > 0){
                 $btn_quick_packing = "<button onclick='enviarAPackingReserva($id_reserva)' class='btn btn-warning btn-sm mb-2' title='Enviar a Packing'><i class='fa fa-archive'></i></button>";
 
+                // Botón de orden de envío solo si es webpay y envío starken
+                $btn_orden_envio_picking = "";
+                $es_webpay_picking = ($ww['payment_method'] == 'webpay');
+                $es_envio_starken_picking = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+                if ($es_webpay_picking && $es_envio_starken_picking) {
+                    $btn_orden_envio_picking = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
+                }
+
+                // Badge de tipo de entrega
+                $badge_entrega_picking = "";
+                if ($ww['shipping_method'] == 'domicilio') {
+                    $badge_entrega_picking = "<br><span class='badge' style='background-color: #3c8dbc; color: white; font-size: 10px;'>ENVÍO A DOMICILIO</span>";
+                } elseif ($ww['shipping_method'] == 'agencia') {
+                    $badge_entrega_picking = "<br><span class='badge' style='background-color: #00a65a; color: white; font-size: 10px;'>ENVÍO A SUCURSAL</span>";
+                } elseif ($ww['shipping_method'] == 'vivero') {
+                    $badge_entrega_picking = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
+                }
+
                 echo "<tr class='text-center'>";
                 echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
@@ -1192,11 +1235,12 @@ else if ($consulta == "busca_picking") {
                 $usuario_obs_picking_suffix = !empty($ww['usuario_obs_picking']) ? " <small>(" . htmlentities($ww['usuario_obs_picking'], ENT_QUOTES, 'UTF-8') . ")</small>" : "";
 
                 echo "<td class='text-left'>";
-                echo "  <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>"; // General observations
-                echo "  <div><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPicking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>"; // Picking observations with edit button
+                echo "  <div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>";
+                echo "  <div><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPicking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>";
+                echo $badge_entrega_picking;
                 echo "</td>";
                 echo "<td>".boxEstadoReserva($ww['estado_general'], true)."</td>";
-                echo "<td><div class='d-flex flex-column'>$btn_quick_packing</div></td>";
+                echo "<td><div class='d-flex flex-column'>$btn_quick_packing $btn_orden_envio_picking</div></td>";
                 echo "</tr>";
             }
         }
@@ -1335,15 +1379,33 @@ else if ($consulta == "busca_packing") {
 
             if ($productos_pendientes_packing > 0) {
 
-                $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' 
+                $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)'
                                         class='btn btn-success btn-sm mb-2'>
                                         <i class='fa fa-truck'></i> ENTREGAR
                                       </button>";
 
-                $btn_enviar_a_transporte = "<button onclick='enviarATransporteReserva($id_reserva)' 
+                $btn_enviar_a_transporte = "<button onclick='enviarATransporteReserva($id_reserva)'
                                                 class='btn btn-primary btn-sm mb-2'>
                                                 <i class='fa fa-shipping-fast'></i> A TRANSPORTE
                                            </button>";
+
+                // Botón de orden de envío solo si es webpay y envío starken
+                $btn_orden_envio_packing = "";
+                $es_webpay_packing = ($ww['payment_method'] == 'webpay');
+                $es_envio_starken_packing = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+                if ($es_webpay_packing && $es_envio_starken_packing) {
+                    $btn_orden_envio_packing = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
+                }
+
+                // Badge de tipo de entrega
+                $badge_entrega_packing = "";
+                if ($ww['shipping_method'] == 'domicilio') {
+                    $badge_entrega_packing = "<br><span class='badge' style='background-color: #3c8dbc; color: white; font-size: 10px;'>ENVÍO A DOMICILIO</span>";
+                } elseif ($ww['shipping_method'] == 'agencia') {
+                    $badge_entrega_packing = "<br><span class='badge' style='background-color: #00a65a; color: white; font-size: 10px;'>ENVÍO A SUCURSAL</span>";
+                } elseif ($ww['shipping_method'] == 'vivero') {
+                    $badge_entrega_packing = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
+                }
 
                 echo "<tr class='text-center'>";
                 echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
@@ -1366,6 +1428,7 @@ else if ($consulta == "busca_packing") {
                                 <i class='fa fa-pencil'></i>
                             </button>
                         </div>
+                        {$badge_entrega_packing}
                       </td>";
 
                 echo "<td>" . boxEstadoReserva($ww['estado_general'], true) . "</td>";
@@ -1374,6 +1437,7 @@ else if ($consulta == "busca_packing") {
                         <div class='d-flex flex-column'>
                             $btn_quick_entrega
                             $btn_enviar_a_transporte
+                            $btn_orden_envio_packing
                         </div>
                       </td>";
 
@@ -1468,6 +1532,24 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
             if ($productos_pendientes_transporte > 0) {
                 $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i></button>";
 
+                // Botón de orden de envío solo si es webpay y envío starken
+                $btn_orden_envio_transporte = "";
+                $es_webpay_transporte = ($ww['payment_method'] == 'webpay');
+                $es_envio_starken_transporte = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+                if ($es_webpay_transporte && $es_envio_starken_transporte) {
+                    $btn_orden_envio_transporte = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
+                }
+
+                // Badge de tipo de entrega
+                $badge_entrega_transporte = "";
+                if ($ww['shipping_method'] == 'domicilio') {
+                    $badge_entrega_transporte = "<br><span class='badge' style='background-color: #3c8dbc; color: white; font-size: 10px;'>ENVÍO A DOMICILIO</span>";
+                } elseif ($ww['shipping_method'] == 'agencia') {
+                    $badge_entrega_transporte = "<br><span class='badge' style='background-color: #00a65a; color: white; font-size: 10px;'>ENVÍO A SUCURSAL</span>";
+                } elseif ($ww['shipping_method'] == 'vivero') {
+                    $badge_entrega_transporte = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
+                }
+
                 echo "<tr class='text-center'>";
                 echo "<td><input type='checkbox' class='venta-checkbox' value='$id_reserva'></td>";
                 echo "<td><small>$id_reserva</small></td>";
@@ -1484,9 +1566,10 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
                 echo "<div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>";
                 echo "<div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . "</small></div>";
                 echo "<div><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . $usuario_obs_packing_suffix . "</small></div>";
+                echo $badge_entrega_transporte;
                 echo "</td>";
                 echo "<td>" . boxEstadoReserva($ww['estado_general'], true) . "</td>";
-                echo "<td><div class='d-flex flex-column'>$btn_quick_entrega</div></td>";
+                echo "<td><div class='d-flex flex-column'>$btn_quick_entrega $btn_orden_envio_transporte</div></td>";
                 echo "</tr>";
             }
         }
@@ -1503,6 +1586,8 @@ else if ($consulta == "busca_entregadas") {
               r.observaciones,
               r.observaciones_picking,
               r.observaciones_packing,
+              r.payment_method,
+              r.shipping_method,
               r.id_usuario,
               r.id_usuario_obs,
               r.id_usuario_obs_picking,
@@ -1575,6 +1660,16 @@ else if ($consulta == "busca_entregadas") {
             $productos_html .= "</ul>";
 
             if ($productos_entregados_count > 0) {
+                // Badge de tipo de entrega
+                $badge_entrega_entregadas = "";
+                if ($ww['shipping_method'] == 'domicilio') {
+                    $badge_entrega_entregadas = "<br><span class='badge' style='background-color: #3c8dbc; color: white; font-size: 10px;'>ENVÍO A DOMICILIO</span>";
+                } elseif ($ww['shipping_method'] == 'agencia') {
+                    $badge_entrega_entregadas = "<br><span class='badge' style='background-color: #00a65a; color: white; font-size: 10px;'>ENVÍO A SUCURSAL</span>";
+                } elseif ($ww['shipping_method'] == 'vivero') {
+                    $badge_entrega_entregadas = "<br><span class='badge' style='background-color: #f39c12; color: white; font-size: 10px;'>RETIRO EN VIVERO</span>";
+                }
+
                 echo "<tr class='text-center'>";
                 echo "<td><small>$id_reserva</small></td>";
                 echo "<td><span style='display:none'>{$ww['fecha_entrega_raw']}</span>{$ww['fecha_entrega_formatted']}</td>";
@@ -1590,6 +1685,7 @@ else if ($consulta == "busca_entregadas") {
                 echo "<div>" . htmlentities($ww['observaciones'], ENT_QUOTES, 'UTF-8') . $usuario_obs_suffix . "</div>";
                 echo "<div><small><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . "</small></div>";
                 echo "<div><small><strong>Packing:</strong> " . htmlentities($ww['observaciones_packing'], ENT_QUOTES, 'UTF-8') . $usuario_obs_packing_suffix . "</small></div>";
+                echo $badge_entrega_entregadas;
                 echo "</td>";
                 echo "<td>" . boxEstadoReserva($ww['estado_general'], true) . "</td>";
                 echo "<td></td>";

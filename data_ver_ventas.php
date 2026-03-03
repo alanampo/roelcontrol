@@ -1845,6 +1845,122 @@ else if ($consulta == "busca_entregadas") {
         header('Content-Type: application/json');
         echo json_encode(array("error" => "Cliente no encontrado"));
     }
+} else if ($consulta == "get_datos_autocompletado_orden_envio") {
+    $id_reserva = $_POST["id_reserva"];
+
+    // Obtener datos de la reserva y verificar si es Webpay/Starken
+    $query = "SELECT
+                r.id,
+                r.payment_method,
+                r.payment_status,
+                r.shipping_method,
+                r.shipping_address,
+                r.shipping_commune,
+                r.shipping_agency_code_dls,
+                r.shipping_agency_name,
+                r.shipping_agency_address,
+                c.nombre AS cliente_nombre,
+                c.rut AS cliente_rut,
+                c.telefono AS cliente_telefono,
+                c.mail AS cliente_email,
+                SUM(rp.cantidad) AS cantidad_total_productos
+            FROM reservas r
+            INNER JOIN clientes c ON c.id_cliente = r.id_cliente
+            LEFT JOIN reservas_productos rp ON rp.id_reserva = r.id
+            WHERE r.id = $id_reserva
+            GROUP BY r.id";
+
+    $result = mysqli_query($con, $query);
+
+    if (mysqli_num_rows($result) > 0) {
+        $data = mysqli_fetch_assoc($result);
+
+        // Verificar si es pedido del catálogo con Webpay
+        $es_webpay = ($data['payment_method'] == 'webpay');
+        $es_starken = ($data['shipping_method'] == 'domicilio' || $data['shipping_method'] == 'agencia');
+
+        $response = array(
+            'es_webpay' => $es_webpay,
+            'es_starken' => $es_starken,
+            'shipping_method' => $data['shipping_method'],
+            'datos_envio' => array()
+        );
+
+        // Si es Webpay y Starken, preparar los datos para autocompletar
+        if ($es_webpay && $es_starken) {
+            $cantidad_total = (int)$data['cantidad_total_productos'];
+
+            // Calcular bultos y peso según la lógica de Starken
+            if ($cantidad_total <= 50) {
+                $numero_bultos = 1;
+                $peso_por_bulto = 1.0;
+                $alto = 13;
+                $ancho = 29;
+                $largo = 27;
+            } elseif ($cantidad_total <= 100) {
+                $numero_bultos = 1;
+                $peso_por_bulto = 2.5;
+                $alto = 13;
+                $ancho = 29;
+                $largo = 54;
+            } else {
+                $numero_bultos = ceil($cantidad_total / 100);
+                $peso_por_bulto = 3.0;
+                $alto = 26;
+                $ancho = 29;
+                $largo = 54;
+            }
+
+            // Preparar array de bultos
+            $bultos = array();
+            for ($i = 1; $i <= $numero_bultos; $i++) {
+                $bultos[] = array(
+                    'numero' => $i,
+                    'peso' => $peso_por_bulto,
+                    'alto' => $alto,
+                    'ancho' => $ancho,
+                    'largo' => $largo
+                );
+            }
+
+            // Obtener nombre de comuna desde código Starken si es envío a domicilio
+            $nombre_comuna = '';
+            if ($data['shipping_method'] == 'domicilio' && $data['shipping_commune']) {
+                $query_cache = "SELECT communes_json FROM starken_cache WHERE id = 1 LIMIT 1";
+                $result_cache = mysqli_query($con, $query_cache);
+                if ($result_cache && mysqli_num_rows($result_cache) > 0) {
+                    $cache = mysqli_fetch_assoc($result_cache);
+                    $communes = json_decode($cache['communes_json'], true);
+                    if ($communes && is_array($communes)) {
+                        foreach ($communes as $comm) {
+                            if (isset($comm['code_dls']) && (int)$comm['code_dls'] === (int)$data['shipping_commune']) {
+                                $nombre_comuna = $comm['name'];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            $response['datos_envio'] = array(
+                'tipo_envio' => ($data['shipping_method'] == 'domicilio') ? '2' : '0', // 0=SUCURSAL, 1=DOMICILIO CLIENTE, 2=DOMICILIO ENVIO
+                'direccion' => $data['shipping_address'] ?? '',
+                'direccion2' => '',
+                'sucursal_code' => $data['shipping_agency_code_dls'] ?? '',
+                'sucursal_nombre' => $data['shipping_agency_name'] ?? '',
+                'sucursal_direccion' => $data['shipping_agency_address'] ?? '',
+                'comuna' => $nombre_comuna,
+                'bultos' => $bultos,
+                'cantidad_productos' => $cantidad_total
+            );
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($response);
+    } else {
+        header('Content-Type: application/json');
+        echo json_encode(array("error" => "Reserva no encontrada"));
+    }
 } else if ($consulta == "guardar_orden_envio") {
     $data = $_POST["data"];
     $id_reserva = $_POST["id_reserva"];

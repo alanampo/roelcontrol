@@ -1110,6 +1110,7 @@ function modalOrdenEnvio(id_reserva) {
         }
     });
 
+    // Limpiar campos por defecto
     $("#input-direccion-entrega").val("");
     $("#input-direccion-entrega2").val("");
     $("#select-tipo-envio").val("0").selectpicker("refresh");
@@ -1120,8 +1121,7 @@ function modalOrdenEnvio(id_reserva) {
     $(".col-select-transp,.col-select-sucursal").removeClass("d-none");
     $(".col-direccion-envio,.col-direccion-envio-2").addClass("d-none");
 
-    $("#modal-orden-envio").modal("show");
-
+    // Limpiar tabla de bultos
     $("#table-bultos > tbody").html(`
         <tr scope="row" class="tr-add-row">
             <td colspan="6">
@@ -1130,7 +1130,78 @@ function modalOrdenEnvio(id_reserva) {
         </tr>
     `);
 
-    addBulto();
+    // Verificar si es Webpay/Starken y autocompletar
+    $.ajax({
+        url: phpFile,
+        type: "POST",
+        dataType: "json",
+        data: {
+            consulta: "get_datos_autocompletado_orden_envio",
+            id_reserva: id_reserva,
+        },
+        success: function (response) {
+            if (response.es_webpay && response.es_starken && response.datos_envio) {
+                const datos = response.datos_envio;
+
+                if (response.shipping_method === 'domicilio') {
+                    // Envío a domicilio - tipo 2 (DOMICILIO ENVIO)
+                    $("#select-tipo-envio").val("2").selectpicker("refresh");
+                    $("#input-direccion-entrega").val(datos.direccion);
+                    $("#input-direccion-entrega2").val(datos.direccion2 || "");
+                    $(".col-select-transp,.col-select-sucursal").addClass("d-none");
+                    $(".col-direccion-envio,.col-direccion-envio-2").removeClass("d-none");
+                } else if (response.shipping_method === 'agencia') {
+                    // Retiro en sucursal - tipo 0 (SUCURSAL)
+                    $("#select-tipo-envio").val("0").selectpicker("refresh");
+
+                    // Cargar transportistas y seleccionar Starken si existe
+                    setTimeout(function() {
+                        // Buscar Starken en los transportistas cargados
+                        $("#select-transportista option").each(function() {
+                            if ($(this).text().toLowerCase().includes('starken')) {
+                                $("#select-transportista").val($(this).val()).selectpicker("refresh");
+                                // Trigger para cargar sucursales
+                                $("#select-transportista").trigger('changed.bs.select');
+                                return false;
+                            }
+                        });
+                    }, 500);
+
+                    $(".col-select-transp,.col-select-sucursal").removeClass("d-none");
+                    $(".col-direccion-envio,.col-direccion-envio-2").addClass("d-none");
+                }
+
+                // Autocompletar bultos
+                if (datos.bultos && datos.bultos.length > 0) {
+                    $("#table-bultos > tbody").html(`
+                        <tr scope="row" class="tr-add-row">
+                            <td colspan="6">
+                                <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
+                            </td>
+                        </tr>
+                    `);
+
+                    datos.bultos.forEach(function(bulto) {
+                        addBultoWithData(bulto.peso, bulto.alto, bulto.ancho, bulto.largo);
+                    });
+                } else {
+                    addBulto();
+                }
+
+                console.log("Datos de envío autocompletados:", datos);
+            } else {
+                // No es Webpay/Starken, añadir un bulto vacío por defecto
+                addBulto();
+            }
+        },
+        error: function (error) {
+            console.error("Error al obtener datos de autocompletado:", error);
+            // En caso de error, añadir un bulto vacío por defecto
+            addBulto();
+        }
+    });
+
+    $("#modal-orden-envio").modal("show");
 }
 
 function addBulto() {
@@ -1149,6 +1220,37 @@ function addBulto() {
         ancho = $(obj).find(".i-ancho").val().trim();
         largo = $(obj).find(".i-largo").val().trim();
     }
+
+    $("#table-bultos > tbody .tr-add-row").first().before(`
+        <tr class='tr-bulto'>
+            <td class='td-index'>
+                ${index}
+            </td>
+            <td>
+                <input value='${peso}' type='search' autocomplete="off" class="form-control input-decimal i-peso text-center" maxlength="6"/>
+            </td>
+            <td>
+                <input value='${alto}' type='search' autocomplete="off" class="form-control input-decimal i-alto text-center" maxlength="6"/>
+            </td>
+            <td>
+                <input value='${ancho}' type='search' autocomplete="off" class="form-control input-decimal i-ancho text-center" maxlength="6"/>
+            </td>
+            <td>
+                <input value='${largo}' type='search' autocomplete="off" class="form-control input-decimal i-largo text-center" maxlength="6"/>
+            </td>
+            <td class="text-center">
+                <button onclick="$(this).parent().parent().remove();updateIndexBulto()" class="btn btn-secondary fa fa-trash btn-sm"></button>
+            </td>
+        </tr>
+    `);
+
+    setInputDecimal($(".input-decimal"));
+}
+
+function addBultoWithData(peso, alto, ancho, largo) {
+    const index = $("#table-bultos > tbody > tr").length;
+
+    if (index >= 25) return;
 
     $("#table-bultos > tbody .tr-add-row").first().before(`
         <tr class='tr-bulto'>

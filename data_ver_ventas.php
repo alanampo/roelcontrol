@@ -44,11 +44,15 @@ function calcular_packing_label($con, $id_reserva) {
     // Usar la misma estructura que en la tabla de ventas
     $query_productos = "SELECT
                             rp.cantidad,
-                            v.attrs_activos
+                            GROUP_CONCAT(CONCAT(a.nombre, ': ', av.valor) SEPARATOR '|') as attrs_activos
                         FROM reservas_productos rp
                         INNER JOIN variedades_producto v ON v.id = rp.id_variedad
                         INNER JOIN tipos_producto t ON t.id = v.id_tipo
-                        WHERE rp.id_reserva = $id_reserva";
+                        LEFT JOIN atributos_valores_variedades avv ON avv.id_variedad = v.id
+                        LEFT JOIN atributos_valores av ON av.id = avv.id_atributo_valor
+                        LEFT JOIN atributos a ON a.id = av.id_atributo
+                        WHERE rp.id_reserva = $id_reserva
+                        GROUP BY rp.id, rp.cantidad";
 
     $result_productos = mysqli_query($con, $query_productos);
 
@@ -2094,14 +2098,18 @@ else if ($consulta == "busca_entregadas") {
                                 rp.cantidad,
                                 rp.estado,
                                 rp.id as id_reserva_producto,
-                                v.attrs_activos,
                                 v.id as id_variedad,
                                 t.nombre as nombre_tipo,
-                                v.nombre as nombre_variedad
+                                v.nombre as nombre_variedad,
+                                GROUP_CONCAT(CONCAT(a.nombre, ': ', av.valor) SEPARATOR '|') as attrs_activos
                             FROM reservas_productos rp
                             INNER JOIN variedades_producto v ON v.id = rp.id_variedad
                             INNER JOIN tipos_producto t ON t.id = v.id_tipo
-                            WHERE rp.id_reserva = $id_reserva";
+                            LEFT JOIN atributos_valores_variedades avv ON avv.id_variedad = v.id
+                            LEFT JOIN atributos_valores av ON av.id = avv.id_atributo_valor
+                            LEFT JOIN atributos a ON a.id = av.id_atributo
+                            WHERE rp.id_reserva = $id_reserva
+                            GROUP BY rp.id, rp.cantidad, rp.estado, v.id, t.nombre, v.nombre";
 
         $result_productos = mysqli_query($con, $query_productos);
 

@@ -2116,20 +2116,9 @@ else if ($consulta == "busca_entregadas") {
         // Clasificar productos según sus atributos
         $qty_especial = 0;
         $qty_normal = 0;
-        $productos_encontrados = 0;
-        $debug_productos = array();
-        $query_error = null;
-        $num_rows = 0;
-
-        if (!$result_productos) {
-            $query_error = mysqli_error($con);
-        } else {
-            $num_rows = mysqli_num_rows($result_productos);
-        }
 
         if ($result_productos) {
             while ($producto = mysqli_fetch_assoc($result_productos)) {
-                $productos_encontrados++;
                 $cantidad = (int)$producto['cantidad'];
                 $attrs = $producto['attrs_activos'] ?? '';
 
@@ -2144,15 +2133,6 @@ else if ($consulta == "busca_entregadas") {
                 } else {
                     $qty_normal += $cantidad;
                 }
-
-                $debug_productos[] = array(
-                    'cantidad' => $cantidad,
-                    'estado' => $producto['estado'],
-                    'nombre_variedad' => $producto['nombre_variedad'] ?? '',
-                    'nombre_tipo' => $producto['nombre_tipo'] ?? '',
-                    'attrs' => $attrs,
-                    'es_especial' => $es_especial
-                );
             }
         }
 
@@ -2253,15 +2233,7 @@ else if ($consulta == "busca_entregadas") {
                 'comuna' => $nombre_comuna,
                 'bultos' => $bultos,
                 'cantidad_especial' => $qty_especial,
-                'cantidad_normal' => $qty_normal,
-                'debug' => array(
-                    'id_reserva' => $id_reserva,
-                    'num_rows' => $num_rows,
-                    'productos_encontrados' => $productos_encontrados,
-                    'query_productos' => $query_productos,
-                    'query_error' => $query_error,
-                    'productos_detalle' => $debug_productos
-                )
+                'cantidad_normal' => $qty_normal
             )
         );
 

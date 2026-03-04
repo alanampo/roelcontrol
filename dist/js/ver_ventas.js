@@ -55,8 +55,6 @@ $(document).ready(function () {
 
     // Event listener para cambio de tipo de envío en modal orden envío
     $(document).on('changed.bs.select', '#select-tipo-envio', function (e, clickedIndex, newValue, oldValue) {
-        console.log("Evento changed.bs.select disparado, valor:", this.value, "isAutocompletandoOrdenEnvio:", isAutocompletandoOrdenEnvio);
-
         // Ignorar si estamos en modo autocompletado
         if (isAutocompletandoOrdenEnvio) {
             console.log("Ignorando evento changed.bs.select en modo autocompletado");
@@ -71,32 +69,37 @@ $(document).ready(function () {
         console.log("Cliente en tipo envío:", cliente);
 
         if (this.value == 0) {
+            // SUCURSAL: mostrar transportista Y sucursal
             getTransportistasSelect();
             $(".col-select-transp,.col-select-sucursal").removeClass("d-none");
-            $(".col-direccion-envio").addClass("d-none");
+            $(".col-direccion-envio,.col-direccion-envio-2").addClass("d-none");
             $("#input-direccion-entrega").val("");
             $("#input-direccion-entrega2").val("");
         } else if (this.value == 1) {
-            // Autocompletar con domicilio del cliente
+            // DOMICILIO CLIENTE: mostrar transportista pero NO sucursal, mostrar input-direccion-entrega
+            getTransportistasSelect();
             const direccionCliente = cliente.domicilio || "";
             console.log("Asignando domicilio:", direccionCliente);
             $("#input-direccion-entrega").val(direccionCliente);
-            $(".col-select-transp,.col-select-sucursal").addClass("d-none");
+            $(".col-select-transp").removeClass("d-none");
             $(".col-direccion-envio").removeClass("d-none");
+            $(".col-select-sucursal,.col-direccion-envio-2").addClass("d-none");
             $("#input-direccion-entrega2").val("");
         }
         else if (this.value == 2) {
-            // Autocompletar con domicilio de envío del cliente
+            // DOMICILIO ENVIO: mostrar transportista pero NO sucursal, mostrar input-direccion-entrega2
+            getTransportistasSelect();
             const direccionEnvio = cliente.domicilio2 || "";
             console.log("Asignando domicilio2:", direccionEnvio);
             $("#input-direccion-entrega2").val(direccionEnvio);
-            $(".col-select-transp,.col-select-sucursal,.col-direccion-envio").addClass("d-none");
+            $(".col-select-transp").removeClass("d-none");
             $(".col-direccion-envio-2").removeClass("d-none");
+            $(".col-select-sucursal,.col-direccion-envio").addClass("d-none");
             $("#input-direccion-entrega").val("");
         }
         else {
             $(".col-select-transp,.col-select-sucursal").addClass("d-none");
-            $(".col-direccion-envio").addClass("d-none");
+            $(".col-direccion-envio,.col-direccion-envio-2").addClass("d-none");
         }
         $("#select-transportista").val("default").selectpicker("refresh");
     });
@@ -1164,17 +1167,6 @@ function modalOrdenEnvio(id_reserva) {
         success: function (response) {
             console.log("Respuesta autocompletado:", response);
 
-            // Mostrar información de debug si está disponible
-            if (response.datos_envio && response.datos_envio.debug) {
-                console.log("DEBUG - ID Reserva:", response.datos_envio.debug.id_reserva);
-                console.log("DEBUG - Num Rows:", response.datos_envio.debug.num_rows);
-                console.log("DEBUG - Productos encontrados:", response.datos_envio.debug.productos_encontrados);
-                console.log("DEBUG - Query:", response.datos_envio.debug.query_productos);
-                console.log("DEBUG - Query Error:", response.datos_envio.debug.query_error);
-                console.log("DEBUG - Detalle productos:", response.datos_envio.debug.productos_detalle);
-                console.log("DEBUG - Cantidad especial:", response.datos_envio.cantidad_especial);
-                console.log("DEBUG - Cantidad normal:", response.datos_envio.cantidad_normal);
-            }
 
             if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
                 // Activar modo autocompletado temporalmente
@@ -1195,13 +1187,29 @@ function modalOrdenEnvio(id_reserva) {
                     $("#input-direccion-entrega").val("");
                     $("#input-direccion-entrega2").val(datos.direccion);
 
-                    // Ocultar campos innecesarios
-                    $(".col-select-transp").addClass("d-none");
+                    // Mostrar transportista pero NO sucursal
+                    $(".col-select-transp").removeClass("d-none");
+                    $(".col-direccion-envio-2").removeClass("d-none");
+
+                    // Ocultar sucursal y dirección 1
                     $(".col-select-sucursal").addClass("d-none");
                     $(".col-direccion-envio").addClass("d-none");
 
-                    // Mostrar solo el campo de dirección 2
-                    $(".col-direccion-envio-2").removeClass("d-none");
+                    // Intentar seleccionar Starken si está disponible
+                    setTimeout(function() {
+                        let starkenFound = false;
+                        $("#select-transportista option").each(function() {
+                            if ($(this).text().toLowerCase().includes('starken')) {
+                                console.log("Autoseleccionando Starken para domicilio");
+                                $("#select-transportista").val($(this).val()).selectpicker("refresh");
+                                starkenFound = true;
+                                return false;
+                            }
+                        });
+                        if (!starkenFound) {
+                            console.log("Starken no encontrado en transportistas");
+                        }
+                    }, 100);
 
                     // Actualizar el select visualmente al final
                     $("#select-tipo-envio").selectpicker("refresh");
@@ -1212,7 +1220,7 @@ function modalOrdenEnvio(id_reserva) {
                     setTimeout(function() {
                         isAutocompletandoOrdenEnvio = false;
                         console.log("Modo autocompletado desactivado");
-                    }, 100);
+                    }, 200);
                 } else if (response.shipping_method === 'agencia') {
                     // Retiro en sucursal - tipo 0 (SUCURSAL)
                     console.log("Configurando retiro en SUCURSAL");
@@ -1549,17 +1557,26 @@ function guardarOrdenEnvio() {
         return;
     }
 
-    if (tipo == 0 && (!id_transportista || !id_transportista.length)) {
+    // Todos los tipos requieren transportista
+    if (!id_transportista || !id_transportista.length) {
+        swal("Selecciona un Transportista", "", "error");
+        return;
+    }
+
+    // Tipo 0 (SUCURSAL) requiere sucursal
+    if (tipo == 0 && !selectedSucursalId) {
         swal("Selecciona una Sucursal", "", "error");
         return;
     }
 
+    // Tipo 1 (DOMICILIO CLIENTE) requiere dirección
     const direccion = $("#input-direccion-entrega").val().trim().replace(/[\s|.'"']/g, " ");
     if (tipo == 1 && (!direccion || !direccion.length)) {
         swal("Ingresa la Dirección de Entrega", "", "error");
         return;
     }
 
+    // Tipo 2 (DOMICILIO ENVIO) requiere dirección 2
     const direccion2 = $("#input-direccion-entrega2").val().trim().replace(/[\s|.'"']/g, " ");
     if (tipo == 2 && (!direccion2 || !direccion2.length)) {
         swal("Ingresa la Dirección de Entrega", "", "error");
@@ -1630,6 +1647,7 @@ function printOrdenEnvio(dataOrden) {
 
     let direccionEntrega = "";
     let titulo = "ORDEN ENVÍO";
+    let tipoEnvioTexto = "";
 
     if (tipo == 0) {
         // Para tipo SUCURSAL
@@ -1639,10 +1657,17 @@ function printOrdenEnvio(dataOrden) {
 
         titulo = `${displayNombre} - ${displayTransp}`;
         direccionEntrega = `Suc. ${displayTransp} ${displayNombre}${displayDireccion ? ` - ${displayDireccion}` : ""}`;
+        tipoEnvioTexto = "SUCURSAL";
     } else if (tipo == 1) {
         direccionEntrega = dataOrden.direccion;
+        tipoEnvioTexto = "DOMICILIO CLIENTE";
+        const displayTransp = nombre_transp || "";
+        titulo = displayTransp ? `DOMICILIO CLIENTE - ${displayTransp}` : "DOMICILIO CLIENTE";
     } else if (tipo == 2) {
         direccionEntrega = dataOrden.direccion2;
+        tipoEnvioTexto = "DOMICILIO ENVÍO";
+        const displayTransp = nombre_transp || "";
+        titulo = displayTransp ? `DOMICILIO ENVÍO - ${displayTransp}` : "DOMICILIO ENVÍO";
     }
 
     $("#print-orden-envio").html("");
@@ -1733,6 +1758,8 @@ function printOrdenEnvio(dataOrden) {
                     <tr>
                         <td>
                             <div><strong>Destinatario:</strong> ${destinatario}</div>
+                            <div><strong>Tipo de Envío:</strong> ${tipoEnvioTexto}</div>
+                            ${nombre_transp ? `<div><strong>Transportista:</strong> ${nombre_transp}</div>` : ''}
                             <div><strong>Dirección:</strong> ${direccionFinal}</div>
                             <div><strong>Comuna:</strong> ${comunaCliente}</div>
                             <div><strong>Región:</strong> ${regionCliente}</div>

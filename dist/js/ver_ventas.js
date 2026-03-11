@@ -1170,6 +1170,8 @@ function modalOrdenEnvio(id_reserva) {
             // Guardar información del método de pago para usarla en el PDF
             currentReservaOrden.payment_method = response.payment_method;
             currentReservaOrden.es_starken = response.es_starken;
+            console.log("Payment method guardado:", currentReservaOrden.payment_method);
+            console.log("Es Starken:", currentReservaOrden.es_starken);
 
             if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
                 // Activar modo autocompletado temporalmente
@@ -1627,6 +1629,10 @@ function guardarOrdenEnvio() {
         es_starken: currentReservaOrden.es_starken,
     };
 
+    console.log("dataOrden antes de printOrdenEnvio:", dataOrden);
+    console.log("payment_method en dataOrden:", dataOrden.payment_method);
+    console.log("es_starken en dataOrden:", dataOrden.es_starken);
+
     printOrdenEnvio(dataOrden);
 }
 
@@ -1654,8 +1660,12 @@ function printOrdenEnvio(dataOrden) {
 
     // Verificar si es Starken + Webpay para agregar "(ENVÍO PAGADO)"
     let nombre_transp_final = nombre_transp;
+    console.log("En printOrdenEnvio - es_starken:", es_starken, "payment_method:", payment_method, "nombre_transp:", nombre_transp);
     if (es_starken && payment_method === 'webpay' && nombre_transp) {
+        console.log("Condición cumplida, agregando (ENVÍO PAGADO)");
         nombre_transp_final = `${nombre_transp} (ENVÍO PAGADO)`;
+    } else {
+        console.log("Condición NO cumplida:", {es_starken, payment_method, nombre_transp});
     }
 
     let direccionEntrega = "";

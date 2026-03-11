@@ -8,7 +8,7 @@
   <?php include "./class_lib/scripts.php"; ?>
   <script src="dist/js/check_permisos.js?v=<?php echo $version ?>"></script>
   <script src="plugins/QRCode/qrcode.min.js"></script>
-  <script src="dist/js/ver_ventas.js?v=1aaaqq222"></script>
+  <script src="dist/js/ver_ventas.js?v=da1"></script>
 </head>
 
 <body>

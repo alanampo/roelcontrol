@@ -2223,6 +2223,7 @@ else if ($consulta == "busca_entregadas") {
             'es_webpay' => $es_webpay,
             'es_starken' => $es_starken,
             'shipping_method' => $data['shipping_method'],
+            'payment_method' => $data['payment_method'],
             'datos_envio' => array(
                 'tipo_envio' => ($data['shipping_method'] == 'domicilio') ? '2' : '0', // 0=SUCURSAL, 1=DOMICILIO CLIENTE, 2=DOMICILIO ENVIO
                 'direccion' => $data['shipping_address'] ?? '',

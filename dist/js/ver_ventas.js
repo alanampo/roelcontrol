@@ -1167,6 +1167,9 @@ function modalOrdenEnvio(id_reserva) {
         success: function (response) {
             console.log("Respuesta autocompletado:", response);
 
+            // Guardar información del método de pago para usarla en el PDF
+            currentReservaOrden.payment_method = response.payment_method;
+            currentReservaOrden.es_starken = response.es_starken;
 
             if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
                 // Activar modo autocompletado temporalmente
@@ -1620,6 +1623,8 @@ function guardarOrdenEnvio() {
         nombre_sucursal,
         nombre_transp,
         direccion_sucursal,
+        payment_method: currentReservaOrden.payment_method,
+        es_starken: currentReservaOrden.es_starken,
     };
 
     printOrdenEnvio(dataOrden);
@@ -1643,7 +1648,15 @@ function printOrdenEnvio(dataOrden) {
         direccion_sucursal,
         notas,
         bultos,
+        payment_method,
+        es_starken,
     } = dataOrden;
+
+    // Verificar si es Starken + Webpay para agregar "(ENVÍO PAGADO)"
+    let nombre_transp_final = nombre_transp;
+    if (es_starken && payment_method === 'webpay' && nombre_transp) {
+        nombre_transp_final = `${nombre_transp} (ENVÍO PAGADO)`;
+    }
 
     let direccionEntrega = "";
     let titulo = "ORDEN ENVÍO";
@@ -1652,7 +1665,7 @@ function printOrdenEnvio(dataOrden) {
     if (tipo == 0) {
         // Para tipo SUCURSAL
         const displayNombre = nombre_sucursal || "SUCURSAL";
-        const displayTransp = nombre_transp || "TRANSPORTISTA";
+        const displayTransp = nombre_transp_final || "TRANSPORTISTA";
         const displayDireccion = direccion_sucursal || "";
 
         titulo = `${displayNombre} - ${displayTransp}`;
@@ -1661,12 +1674,12 @@ function printOrdenEnvio(dataOrden) {
     } else if (tipo == 1) {
         direccionEntrega = dataOrden.direccion;
         tipoEnvioTexto = "DOMICILIO CLIENTE";
-        const displayTransp = nombre_transp || "";
+        const displayTransp = nombre_transp_final || "";
         titulo = displayTransp ? `DOMICILIO CLIENTE - ${displayTransp}` : "DOMICILIO CLIENTE";
     } else if (tipo == 2) {
         direccionEntrega = dataOrden.direccion2;
         tipoEnvioTexto = "DOMICILIO ENVÍO";
-        const displayTransp = nombre_transp || "";
+        const displayTransp = nombre_transp_final || "";
         titulo = displayTransp ? `DOMICILIO ENVÍO - ${displayTransp}` : "DOMICILIO ENVÍO";
     }
 
@@ -1759,7 +1772,7 @@ function printOrdenEnvio(dataOrden) {
                         <td>
                             <div><strong>Destinatario:</strong> ${destinatario}</div>
                             <div><strong>Tipo de Envío:</strong> ${tipoEnvioTexto}</div>
-                            ${nombre_transp ? `<div><strong>Transportista:</strong> ${nombre_transp}</div>` : ''}
+                            ${nombre_transp_final ? `<div><strong>Transportista:</strong> ${nombre_transp_final}</div>` : ''}
                             <div><strong>Dirección:</strong> ${direccionFinal}</div>
                             <div><strong>Comuna:</strong> ${comunaCliente}</div>
                             <div><strong>Región:</strong> ${regionCliente}</div>

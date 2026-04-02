@@ -1173,8 +1173,9 @@ function modalOrdenEnvio(id_reserva) {
             console.log("Payment method guardado:", currentReservaOrden.payment_method);
             console.log("Es Starken:", currentReservaOrden.es_starken);
 
-            if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
-                // Activar modo autocompletado temporalmente
+            // Solo activar modo autocompletado si es venta del catálogo (Webpay)
+            if (response.es_webpay && response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
+                // Activar modo autocompletado temporalmente (solo para ventas del catálogo)
                 isAutocompletandoOrdenEnvio = true;
 
                 const datos = response.datos_envio;
@@ -1338,19 +1339,35 @@ function modalOrdenEnvio(id_reserva) {
 
                 console.log("Datos de envío autocompletados:", datos);
             } else {
-                console.log("No es Webpay/Starken o no hay datos de envío");
-                // No es Webpay/Starken, añadir un bulto vacío por defecto
-                // Primero limpiar la tabla
-                $("#table-bultos > tbody").html(`
-                    <tr scope="row" class="tr-add-row">
-                        <td colspan="6">
-                            <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
-                        </td>
-                    </tr>
-                `);
-                addBulto();
+                console.log("No es venta del catálogo (Webpay)");
 
-                // Desactivar modo autocompletado
+                // Para ventas manuales, solo agregar los bultos calculados (sin autocompletar tipo/dirección/transportista)
+                if (response.datos_envio && response.datos_envio.bultos && response.datos_envio.bultos.length > 0) {
+                    console.log("Agregando bultos calculados para venta manual:", response.datos_envio.bultos.length);
+                    $("#table-bultos > tbody").html(`
+                        <tr scope="row" class="tr-add-row">
+                            <td colspan="6">
+                                <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
+                            </td>
+                        </tr>
+                    `);
+
+                    response.datos_envio.bultos.forEach(function(bulto) {
+                        addBultoWithData(bulto.peso, bulto.alto, bulto.ancho, bulto.largo);
+                    });
+                } else {
+                    // Si no hay datos de bultos, añadir un bulto vacío por defecto
+                    $("#table-bultos > tbody").html(`
+                        <tr scope="row" class="tr-add-row">
+                            <td colspan="6">
+                                <button onclick="addBulto()" class="btn btn-success btn-sm"><i class="fa fa-plus-square"></i></button>
+                            </td>
+                        </tr>
+                    `);
+                    addBulto();
+                }
+
+                // Modo autocompletado ya está desactivado (nunca se activó para ventas manuales)
                 isAutocompletandoOrdenEnvio = false;
             }
         },

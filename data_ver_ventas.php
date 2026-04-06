@@ -181,7 +181,10 @@ if ($consulta == "busca_stock_actual") {
         t.codigo,
         v.id_interno,
         (SUM(s.cantidad) - 
-         IFNULL((SELECT SUM(r.cantidad) FROM reservas_productos r WHERE r.id_variedad = v.id AND r.estado >= 0), 0)
+         IFNULL((SELECT SUM(r.cantidad) FROM reservas_productos r WHERE r.id_variedad = v.id AND (r.estado = 0 OR r.estado = 1)), 0) -
+         IFNULL((SELECT SUM(e.cantidad) FROM entregas_stock e
+                 INNER JOIN reservas_productos rp ON e.id_reserva_producto = rp.id
+                 WHERE rp.id_variedad = v.id AND rp.estado = 2), 0)
         ) as disponible
     FROM stock_productos s
     INNER JOIN articulospedidos ap ON s.id_artpedido = ap.id

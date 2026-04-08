@@ -1585,12 +1585,6 @@ function guardarOrdenEnvio() {
         return;
     }
 
-    // Tipo 0 (SUCURSAL) requiere sucursal
-    if (tipo == 0 && !selectedSucursalId) {
-        swal("Selecciona una Sucursal", "", "error");
-        return;
-    }
-
     // Tipo 1 (DOMICILIO CLIENTE) requiere dirección
     const direccion = $("#input-direccion-entrega").val().trim().replace(/[\s|.'"']/g, " ");
     if (tipo == 1 && (!direccion || !direccion.length)) {

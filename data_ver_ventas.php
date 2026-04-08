@@ -15,7 +15,8 @@ mysqli_query($con, "SET NAMES 'utf8'");
 $consulta = $_POST["consulta"];
 
 // Función helper para obtener atributos de una variedad
-function getAtributosVariedad($con, $id_variedad) {
+function getAtributosVariedad($con, $id_variedad)
+{
     $query = "SELECT av.valor, a.nombre as nombre_atributo
               FROM atributos_valores_variedades avv
               INNER JOIN atributos_valores av ON avv.id_atributo_valor = av.id
@@ -39,7 +40,8 @@ function getAtributosVariedad($con, $id_variedad) {
     return $atributos_html;
 }
 
-function calcular_packing_label($con, $id_reserva) {
+function calcular_packing_label($con, $id_reserva)
+{
     // Obtener productos con sus atributos
     // Usar la misma estructura que en la tabla de ventas
     $query_productos = "SELECT
@@ -210,9 +212,8 @@ if ($consulta == "busca_stock_actual") {
         }
         echo json_encode($clientes);
     } catch (\Throwable $th) {
-        echo "error: " . $th->getMessage()." ".$th->getTraceAsString() ;
+        echo "error: " . $th->getMessage() . " " . $th->getTraceAsString();
     }
-
 } else if ($consulta == "busca_ventas") {
     // Eliminar automáticamente reservas con estado 100 (En espera de pago) más viejas de 5 minutos
     try {
@@ -369,10 +370,10 @@ if ($consulta == "busca_stock_actual") {
                     if ($producto['estado'] != 2) {
                         $productos_pendientes++;
                     }
-                    if(in_array($producto['estado'], [0, 1])) { // PAGO ACEPTADO or EN PROCESO
+                    if (in_array($producto['estado'], [0, 1])) { // PAGO ACEPTADO or EN PROCESO
                         $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 3)' class='btn btn-info btn-sm'><i class='fa fa-search'></i> A REVISIÓN</button>";
                     }
-                    if(in_array($producto['estado'], [0, 1, 3])) { // PAGO ACEPTADO, EN PROCESO or REVISAR STOCK
+                    if (in_array($producto['estado'], [0, 1, 3])) { // PAGO ACEPTADO, EN PROCESO or REVISAR STOCK
                         $botones_producto .= "<button onclick='cambiarEstadoProducto({$producto['id_reserva_producto']}, 4)' class='btn btn-primary btn-sm'><i class='fa fa-arrow-right'></i> A PICKING</button>";
                     }
                 }
@@ -388,12 +389,12 @@ if ($consulta == "busca_stock_actual") {
             $productos_html .= "</ul>";
 
             $estado_general = boxEstadoReserva($ww["estado"], true);
-            
+
             $btn_quick_picking = "";
-            if($productos_pendientes > 0){
-                 $btn_quick_picking = "<button onclick='enviarAPickingReserva($id_reserva)' class='btn btn-primary btn-sm mb-2' title='Enviar a Picking'><i class='fa fa-arrow-right'></i></button>";
+            if ($productos_pendientes > 0) {
+                $btn_quick_picking = "<button onclick='enviarAPickingReserva($id_reserva)' class='btn btn-primary btn-sm mb-2' title='Enviar a Picking'><i class='fa fa-arrow-right'></i></button>";
             }
-            
+
             $btn_entrega_rapida = "";
             // if($productos_pendientes > 0){
             //     $btn_entrega_rapida = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-rocket'></i></button>";
@@ -409,7 +410,7 @@ if ($consulta == "busca_stock_actual") {
             $es_venta_manual = ($vendedor != 'Ventas Catálogo');
 
             if ($es_envio || $es_venta_manual) {
-                $btn_orden_envio = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i> ORDEN ENVÍO</button>";
+                $btn_orden_envio = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'>ORDEN ENVÍO</button>";
             }
 
             // Badge de tipo de entrega
@@ -503,7 +504,6 @@ if ($consulta == "busca_stock_actual") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
@@ -534,7 +534,6 @@ if ($consulta == "busca_stock_actual") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
@@ -564,15 +563,13 @@ if ($consulta == "busca_stock_actual") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
     }
-}
-else if ($consulta == "enviar_a_packing_reserva") {
+} else if ($consulta == "enviar_a_packing_reserva") {
     $id_reserva = $_POST["id_reserva"];
 
     try {
@@ -597,15 +594,13 @@ else if ($consulta == "enviar_a_packing_reserva") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
     }
-}
-else if ($consulta == "enviar_a_transporte_reserva") {
+} else if ($consulta == "enviar_a_transporte_reserva") {
     $id_reserva = $_POST["id_reserva"];
 
     try {
@@ -630,15 +625,13 @@ else if ($consulta == "enviar_a_transporte_reserva") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
     }
-}
-else if ($consulta == "entrega_rapida") {
+} else if ($consulta == "entrega_rapida") {
     $id_reserva = $_POST["id_reserva"];
 
     try {
@@ -662,14 +655,14 @@ else if ($consulta == "entrega_rapida") {
                                 ) as stock_disponible
                             FROM reservas_productos rp
                             WHERE rp.id_reserva = $id_reserva AND rp.estado = 6";
-        
+
         $productos_result = mysqli_query($con, $query_productos);
 
-        if(mysqli_num_rows($productos_result) > 0){
+        if (mysqli_num_rows($productos_result) > 0) {
             $productos_a_entregar = [];
-            while($producto = mysqli_fetch_assoc($productos_result)){
+            while ($producto = mysqli_fetch_assoc($productos_result)) {
                 $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
-                if($cantidad_pendiente > 0){
+                if ($cantidad_pendiente > 0) {
                     // if($producto['stock_disponible'] < $cantidad_pendiente){
                     //     $errors[] = "Stock insuficiente para el producto con ID de variedad: {$producto['id_variedad']}. Solicitado: $cantidad_pendiente, Disponible: {$producto['stock_disponible']}";
                     // }
@@ -677,8 +670,8 @@ else if ($consulta == "entrega_rapida") {
                 }
             }
 
-            if(count($errors) == 0){
-                foreach($productos_a_entregar as $producto){
+            if (count($errors) == 0) {
+                foreach ($productos_a_entregar as $producto) {
                     $id_reserva_producto = $producto['id_reserva_producto'];
                     $cantidad_pendiente = $producto['cantidad'] - $producto['cantidad_entregada'];
 
@@ -709,7 +702,6 @@ else if ($consulta == "entrega_rapida") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
@@ -780,7 +772,6 @@ else if ($consulta == "entrega_rapida") {
                     mysqli_rollback($con);
                     echo "error: " . implode(", ", $errors);
                 }
-
             } else {
                 echo "max:" . min($disponible_para_entregar, $stock_real_disponible);
             }
@@ -806,8 +797,7 @@ else if ($consulta == "entrega_rapida") {
             )
         );
     }
-}
-else if ($consulta == "update_general_observacion") {
+} else if ($consulta == "update_general_observacion") {
     $id_reserva = $_POST["id_reserva"];
     $observaciones = mysqli_real_escape_string($con, $_POST["observaciones"]);
     $id_usuario = $_SESSION['id_usuario'];
@@ -832,15 +822,13 @@ else if ($consulta == "update_general_observacion") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
     }
-}
-else if ($consulta == "update_picking_observacion") {
+} else if ($consulta == "update_picking_observacion") {
     $id_reserva = $_POST["id_reserva"];
     $observaciones_picking = mysqli_real_escape_string($con, $_POST["observaciones_picking"]);
     $id_usuario = $_SESSION['id_usuario'];
@@ -865,15 +853,13 @@ else if ($consulta == "update_picking_observacion") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
     }
-}
-else if ($consulta == "update_packing_observacion") {
+} else if ($consulta == "update_packing_observacion") {
     $id_reserva = $_POST["id_reserva"];
     $observaciones_packing = mysqli_real_escape_string($con, $_POST["observaciones_packing"]);
     $id_usuario = $_SESSION['id_usuario'];
@@ -898,15 +884,13 @@ else if ($consulta == "update_packing_observacion") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
     }
-}
-else if ($consulta == "get_stock_variedad") {
+} else if ($consulta == "get_stock_variedad") {
     $id_variedad = $_POST["id_variedad"];
 
     $query = "SELECT
@@ -1037,7 +1021,6 @@ else if ($consulta == "get_stock_variedad") {
     } catch (\Throwable $th) {
         echo $th->getMessage();
     }
-
 } else if ($consulta == "actualizar_stock_articulo") {
     $id_artpedido = $_POST["id_artpedido"];
     $id_variedad = $_POST["id_variedad"];
@@ -1196,15 +1179,13 @@ else if ($consulta == "get_stock_variedad") {
             mysqli_rollback($con);
             echo "error: " . implode("; ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
     } finally {
         mysqli_close($con);
     }
-}
-else if ($consulta == "busca_picking") {
+} else if ($consulta == "busca_picking") {
     $query = "SELECT r.*, cl.nombre as nombre_cliente, u.nombre_real as nombre_usuario,
               u_obs.nombre_real as usuario_obs,
               u_obs_picking.nombre_real as usuario_obs_picking,
@@ -1251,7 +1232,7 @@ else if ($consulta == "busca_picking") {
             $productos_html = "<ul class='list-group'>";
 
             while ($producto = mysqli_fetch_array($productos_result)) {
-                if($producto['estado'] == 4) { // LISTO PARA PICKING
+                if ($producto['estado'] == 4) { // LISTO PARA PICKING
                     $productos_pendientes_picking++;
                     $atributos_html = getAtributosVariedad($con, $producto['id_variedad']);
 
@@ -1261,23 +1242,23 @@ else if ($consulta == "busca_picking") {
                     $botones_producto .= "</div>";
 
                     $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
-                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span><br>{$atributos_html}</div>";
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>" . boxEstadoReserva($producto['estado'], true) . "</span><br>{$atributos_html}</div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";
                 }
             }
             $productos_html .= "</ul>";
-
-            if($productos_pendientes_picking > 0){
+            // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
+            $btn_orden_envio_picking = "";
+            $es_envio_picking = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+            $es_venta_manual_picking = ($ww['nombre_usuario'] != 'Ventas Catálogo');
+            if ($es_envio_picking || $es_venta_manual_picking) {
+                $btn_orden_envio_picking = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'>ORDEN ENVÍO</button>";
+            }
+            if ($productos_pendientes_picking > 0) {
                 $btn_quick_packing = "<button onclick='enviarAPackingReserva($id_reserva)' class='btn btn-warning btn-sm mb-2' title='Enviar a Packing'><i class='fa fa-archive'></i></button>";
 
-                // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
-                $btn_orden_envio_picking = "";
-                $es_envio_picking = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
-                $es_venta_manual_picking = ($ww['nombre_usuario'] != 'Ventas Catálogo');
-                if ($es_envio_picking || $es_venta_manual_picking) {
-                    $btn_orden_envio_picking = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
-                }
+
 
                 // Badge de tipo de entrega
                 $badge_entrega_picking = "";
@@ -1308,7 +1289,7 @@ else if ($consulta == "busca_picking") {
                 echo "  <div><strong>Picking:</strong> " . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . $usuario_obs_picking_suffix . " <button class='btn btn-default btn-xs' onclick='modalEditarObservacionPicking(\"$id_reserva\", \"" . htmlentities($ww['observaciones_picking'], ENT_QUOTES, 'UTF-8') . "\")'><i class='fa fa-pencil'></i></button></div>";
                 echo $badge_entrega_picking;
                 echo "</td>";
-                echo "<td>".boxEstadoReserva($ww['estado_general'], true)."</td>";
+                echo "<td>" . boxEstadoReserva($ww['estado_general'], true) . "</td>";
                 echo "<td><div class='d-flex flex-column'>$btn_quick_packing $btn_orden_envio_picking</div></td>";
                 echo "</tr>";
             }
@@ -1317,8 +1298,7 @@ else if ($consulta == "busca_picking") {
     } else {
         echo "<div class='callout callout-info'><b>No se encontraron ventas en la etapa de picking.</b></div>";
     }
-}
-else if ($consulta == "busca_packing") {
+} else if ($consulta == "busca_packing") {
 
     $query = "SELECT r.*,
                      cl.nombre AS nombre_cliente,
@@ -1438,14 +1418,20 @@ else if ($consulta == "busca_packing") {
                     $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']})
                                         - Cant: {$producto['cantidad']}
                                         <span class='badge' style='background-color:unset;color:black;'>"
-                                        . boxEstadoReserva($producto['estado'], true) . "</span><br>{$atributos_html}</div>";
+                        . boxEstadoReserva($producto['estado'], true) . "</span><br>{$atributos_html}</div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";
                 }
             }
 
             $productos_html .= "</ul>";
-
+            // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
+            $btn_orden_envio_packing = "";
+            $es_envio_packing = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
+            $es_venta_manual_packing = ($ww['nombre_usuario'] != 'Ventas Catálogo');
+            if ($es_envio_packing || $es_venta_manual_packing) {
+                $btn_orden_envio_packing = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'>ORDEN ENVIO</button>";
+            }
             if ($productos_pendientes_packing > 0) {
 
                 $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)'
@@ -1458,13 +1444,7 @@ else if ($consulta == "busca_packing") {
                                                 <i class='fa fa-shipping-fast'></i> A TRANSPORTE
                                            </button>";
 
-                // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
-                $btn_orden_envio_packing = "";
-                $es_envio_packing = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
-                $es_venta_manual_packing = ($ww['nombre_usuario'] != 'Ventas Catálogo');
-                if ($es_envio_packing || $es_venta_manual_packing) {
-                    $btn_orden_envio_packing = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
-                }
+
 
                 // Badge de tipo de entrega
                 $badge_entrega_packing = "";
@@ -1519,13 +1499,10 @@ else if ($consulta == "busca_packing") {
         }
 
         echo "</tbody></table></div></div>";
-
     } else {
         echo "<div class='callout callout-info'><b>No se encontraron ventas en la etapa de packing.</b></div>";
     }
-}
-
-else if ($consulta == "busca_en_transporte") { // NEW BLOCK
+} else if ($consulta == "busca_en_transporte") { // NEW BLOCK
     $query = "SELECT r.*, cl.nombre as nombre_cliente, u.nombre_real as nombre_usuario,
               u_obs.nombre_real as usuario_obs,
               u_obs_picking.nombre_real as usuario_obs_picking,
@@ -1594,24 +1571,24 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
                     $botones_producto .= "</div>";
 
                     $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center' style='border-bottom: 1px solid #d3d3d3;'>";
-                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span><br>{$atributos_html}</div>";
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>" . boxEstadoReserva($producto['estado'], true) . "</span><br>{$atributos_html}</div>";
                     $productos_html .= $botones_producto;
                     $productos_html .= "</li>";
                 }
             }
 
             $productos_html .= "</ul>";
-
-            if ($productos_pendientes_transporte > 0) {
-                $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i></button>";
-
-                // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
+            // Botón de orden de envío: si es envío (domicilio/sucursal) O si es venta manual
                 $btn_orden_envio_transporte = "";
                 $es_envio_transporte = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
                 $es_venta_manual_transporte = ($ww['nombre_usuario'] != 'Ventas Catálogo');
                 if ($es_envio_transporte || $es_venta_manual_transporte) {
-                    $btn_orden_envio_transporte = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'><i class='fa fa-shipping-fast'></i></button>";
+                    $btn_orden_envio_transporte = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'>ORDEN ENVÍO</button>";
                 }
+            if ($productos_pendientes_transporte > 0) {
+                $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)' class='btn btn-success btn-sm mb-2' title='Entrega Rápida'><i class='fa fa-truck'></i></button>";
+
+                
 
                 // Badge de tipo de entrega
                 $badge_entrega_transporte = "";
@@ -1655,8 +1632,7 @@ else if ($consulta == "busca_en_transporte") { // NEW BLOCK
     } else {
         echo "<div class='callout callout-info'><b>No se encontraron ventas en la etapa de transporte.</b></div>";
     }
-}
-else if ($consulta == "busca_entregadas") {
+} else if ($consulta == "busca_entregadas") {
     $query = "SELECT r.id,
               r.id_cliente,
               r.fecha,
@@ -1729,7 +1705,7 @@ else if ($consulta == "busca_entregadas") {
                     $atributos_html = getAtributosVariedad($con, $producto['id_variedad']);
 
                     $productos_html .= "<li class='list-group-item d-flex justify-content-between align-items-center'>";
-                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>".boxEstadoReserva($producto['estado'], true)."</span><br>{$atributos_html}</div>";
+                    $productos_html .= "<div>{$producto['nombre_variedad']} ({$producto['codigo']}{$producto['id_interno']}) - Cant: {$producto['cantidad']} <span class='badge' style='background-color: unset;color:black;'>" . boxEstadoReserva($producto['estado'], true) . "</span><br>{$atributos_html}</div>";
                     $productos_html .= "</li>";
                 }
             }
@@ -1868,7 +1844,7 @@ else if ($consulta == "busca_entregadas") {
             $query_productos_a_revertir = "SELECT id FROM reservas_productos WHERE id_reserva IN ($ids_list) AND estado = 2";
             $result_revertir = mysqli_query($con, $query_productos_a_revertir);
             $productos_ids_a_revertir = [];
-            while($row = mysqli_fetch_assoc($result_revertir)){
+            while ($row = mysqli_fetch_assoc($result_revertir)) {
                 $productos_ids_a_revertir[] = $row['id'];
             }
 
@@ -1882,7 +1858,7 @@ else if ($consulta == "busca_entregadas") {
             }
 
             // Update the state of all non-cancelled products for the selected reservations
-            if(count($errors) == 0){
+            if (count($errors) == 0) {
                 $query_update = "UPDATE reservas_productos SET estado = $estado WHERE id_reserva IN ($ids_list) AND estado != -1";
                 if (!mysqli_query($con, $query_update)) {
                     $errors[] = "Error al actualizar estados: " . mysqli_error($con);
@@ -1901,7 +1877,6 @@ else if ($consulta == "busca_entregadas") {
             mysqli_rollback($con);
             echo "error: " . implode(", ", $errors);
         }
-
     } catch (\Throwable $th) {
         mysqli_rollback($con);
         echo "error: " . $th->getMessage();
@@ -2259,4 +2234,3 @@ else if ($consulta == "busca_entregadas") {
         echo "error: " . mysqli_error($con);
     }
 }
-

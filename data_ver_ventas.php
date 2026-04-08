@@ -1429,9 +1429,9 @@ if ($consulta == "busca_stock_actual") {
             $btn_orden_envio_packing = "";
             $es_envio_packing = ($ww['shipping_method'] == 'domicilio' || $ww['shipping_method'] == 'agencia');
             $es_venta_manual_packing = ($ww['nombre_usuario'] != 'Ventas Catálogo');
-            if ($es_envio_packing || $es_venta_manual_packing) {
+            //if ($es_envio_packing || $es_venta_manual_packing) {
                 $btn_orden_envio_packing = "<button onclick='modalOrdenEnvio($id_reserva)' class='btn btn-info btn-sm mb-2' title='Orden de Envío'>ORDEN ENVIO</button>";
-            }
+            //}
             if ($productos_pendientes_packing > 0) {
 
                 $btn_quick_entrega = "<button onclick='entregaRapida($id_reserva)'

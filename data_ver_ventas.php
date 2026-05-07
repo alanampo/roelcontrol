@@ -5,6 +5,7 @@ include "./class_lib/sesionSecurity.php";
 error_reporting(0);
 require 'class_lib/class_conecta_mysql.php';
 require 'class_lib/funciones.php';
+require_once __DIR__ . '/class_lib/mailer.php';
 
 $con = mysqli_connect($host, $user, $password, $dbname);
 // Check connection
@@ -555,6 +556,7 @@ if ($consulta == "busca_stock_actual") {
         if (count($errors) === 0) {
             if (mysqli_commit($con)) {
                 echo "success";
+                try { send_reservation_status_email((int)$id_reserva, 'PREPARACIÓN EN CURSO', '#d97706'); } catch (\Throwable $e) { error_log('[mailer] picking: '.$e->getMessage()); }
             } else {
                 mysqli_rollback($con);
                 echo "error: No se pudo confirmar la transacción";
@@ -617,6 +619,7 @@ if ($consulta == "busca_stock_actual") {
         if (count($errors) === 0) {
             if (mysqli_commit($con)) {
                 echo "success";
+                try { send_reservation_status_email((int)$id_reserva, 'EN RUTA', '#1d4ed8'); } catch (\Throwable $e) { error_log('[mailer] transporte: '.$e->getMessage()); }
             } else {
                 mysqli_rollback($con);
                 echo "error: No se pudo confirmar la transacción";
@@ -694,6 +697,7 @@ if ($consulta == "busca_stock_actual") {
         if (count($errors) === 0) {
             if (mysqli_commit($con)) {
                 echo "success";
+                try { send_reservation_status_email((int)$id_reserva, 'ENTREGADO', '#166534'); } catch (\Throwable $e) { error_log('[mailer] entrega: '.$e->getMessage()); }
             } else {
                 mysqli_rollback($con);
                 echo "error: No se pudo confirmar la transacción";

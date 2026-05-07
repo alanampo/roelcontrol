@@ -243,16 +243,41 @@
             </div>
           </div>
 
-          <!-- Formulario de Registro -->
+          <!-- Pedidos Disponibles -->
           <div class="row">
+            <div class="col-md-12">
+              <div class="box box-primary">
+                <div class="box-header with-border">
+                  <h3 class="box-title"><i class="fa fa-list"></i> Pedidos Disponibles (Esquejes)</h3>
+                  <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-sm btn-default" onclick="cargarPedidosDisponibles()">
+                      <i class="fa fa-refresh"></i> Actualizar
+                    </button>
+                  </div>
+                </div>
+                <div class="box-body">
+                  <div id="tabla-pedidos-disponibles">
+                    <div class="text-center"><i class="fa fa-spinner fa-spin fa-2x"></i><p>Cargando pedidos...</p></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel de Registro (hidden until pedido selected) -->
+          <div class="row" id="panel-registro" style="display:none;">
             <div class="col-md-12">
               <div class="box box-success">
                 <div class="box-header with-border">
-                  <h3 class="box-title">
-                    <i class="fa fa-plus-circle"></i> Registrar Avance Diario
-                  </h3>
+                  <h3 class="box-title"><i class="fa fa-plus-circle"></i> Registrar Avance</h3>
+                  <div class="box-tools pull-right">
+                    <button type="button" class="btn btn-sm btn-default" onclick="cancelarSeleccionPedido()">
+                      <i class="fa fa-times"></i> Cancelar
+                    </button>
+                  </div>
                 </div>
                 <div class="box-body">
+                  <div class="callout callout-info" id="info-pedido-seleccionado" style="margin-bottom:15px;"></div>
                   <form id="form-registro">
                     <div class="row">
                       <div class="col-md-3">
@@ -261,7 +286,6 @@
                           <input type="date" class="form-control" id="input-fecha" required>
                         </div>
                       </div>
-
                       <div class="col-md-3">
                         <div class="form-group">
                           <label>Turno <span class="text-danger">*</span></label>
@@ -272,78 +296,33 @@
                           </select>
                         </div>
                       </div>
-
-                      <div class="col-md-4">
-                        <div class="form-group">
-                          <label>Tipo de Item <span class="text-danger">*</span></label>
-                          <select id="select-tipo-item" class="form-control" required>
-                            <option value="variedad">Variedad de Producto</option>
-                            <option value="manual">Descripción Manual</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="col-md-4" id="col-variedad">
-                        <div class="form-group">
-                          <label>Variedad <span class="text-danger">*</span></label>
-                          <select id="select-variedad" class="selectpicker" title="Seleccionar Variedad"
-                                  data-style="btn-default" data-width="100%" data-live-search="true">
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="col-md-4" id="col-descripcion-manual" style="display:none;">
-                        <div class="form-group">
-                          <label>Descripción Manual <span class="text-danger">*</span></label>
-                          <select id="select-descripcion-manual" class="selectpicker" title="Seleccionar o escribir..."
-                                  data-style="btn-default" data-width="100%" data-live-search="true">
-                            <option value="__NUEVO__">+ Nueva descripción...</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="col-md-4" id="col-descripcion-texto" style="display:none;">
-                        <div class="form-group">
-                          <label>Nueva Descripción</label>
-                          <input type="text" class="form-control" id="input-descripcion-texto" maxlength="255"
-                                 placeholder="Ej: Trasplante lechuga">
-                        </div>
-                      </div>
-
-                      <div class="col-md-4">
+                      <div class="col-md-3">
                         <div class="form-group">
                           <label>Cantidad de Plantines <span class="text-danger">*</span></label>
                           <input type="number" class="form-control" id="input-cantidad" placeholder="0" min="1" required>
+                          <p class="help-block text-info" id="label-restante"></p>
                         </div>
                       </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6">
+                      <div class="col-md-3">
                         <div class="form-group">
                           <label>Ubicación / Lote (opcional)</label>
-                          <input type="text" class="form-control" id="input-ubicacion" maxlength="100"
-                                 placeholder="Ej: Invernadero 2, Mesa 3">
-                        </div>
-                      </div>
-
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label>Observaciones (opcional)</label>
-                          <textarea class="form-control" id="input-observaciones" rows="2"
-                                    placeholder="Notas adicionales..." maxlength="500"></textarea>
+                          <input type="text" class="form-control" id="input-ubicacion" maxlength="100" placeholder="Ej: Invernadero 2, Mesa 3">
                         </div>
                       </div>
                     </div>
-
                     <div class="row">
                       <div class="col-md-12">
                         <div class="form-group">
-                          <label>
-                            <i class="fa fa-camera"></i> Evidencias Fotográficas (opcional, máximo 5)
-                          </label>
-                          <br>
-                          <input type="file" id="input-imagenes" name="imagenes[]" multiple accept="image/*" style="display: none;">
+                          <label>Observaciones (opcional)</label>
+                          <textarea class="form-control" id="input-observaciones" rows="2" placeholder="Notas adicionales..." maxlength="500"></textarea>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label><i class="fa fa-camera"></i> Evidencias Fotográficas (opcional, máximo 5)</label><br>
+                          <input type="file" id="input-imagenes" name="imagenes[]" multiple accept="image/*" style="display:none;">
                           <button type="button" id="btn-seleccionar-imagenes" class="btn btn-info btn-sm">
                             <i class="fa fa-camera"></i> Seleccionar Fotos
                           </button>
@@ -351,20 +330,15 @@
                         </div>
                       </div>
                     </div>
-
                     <div class="row">
                       <div class="col-md-12">
-                        <div id="preview-imagenes" style="display: none;"></div>
+                        <div id="preview-imagenes" style="display:none;"></div>
                       </div>
                     </div>
-
                     <div class="row mt-3">
                       <div class="col-md-12 text-right">
-                        <button type="button" class="btn btn-default" id="btn-cancelar">
-                          <i class="fa fa-times"></i> Limpiar
-                        </button>
                         <button type="button" class="btn btn-success" id="btn-registrar">
-                          <i class="fa fa-save"></i> Registrar
+                          <i class="fa fa-save"></i> Registrar Avance
                         </button>
                       </div>
                     </div>
@@ -408,8 +382,6 @@
       const id_usuario = "<?php echo $_SESSION['id_usuario'] ?>";
       const permisos = "<?php echo $_SESSION['permisos'] ?>";
       func_check(id_usuario, permisos.split(","));
-
-      $('.selectpicker').selectpicker();
     });
   </script>
 </body>

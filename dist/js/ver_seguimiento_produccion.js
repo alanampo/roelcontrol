@@ -140,6 +140,7 @@ function cargarDatosProduccion() {
       const dataProduccion = results[0] ? JSON.parse(results[0]) : [];
       estadosDias = results[1] ? JSON.parse(results[1]) : {};
       renderizarTabla(dataProduccion, diasDelMes);
+      cargarPedidosTrabajados();
     } catch (error) {
       console.error("Error al parsear datos:", error);
       $("#tabla_produccion").html(
@@ -1408,6 +1409,91 @@ function scrollToDiaActual() {
   $contenedor.animate({
     scrollLeft: scrollTarget
   }, 800, 'swing');
+}
+
+// ==================== PEDIDOS EN PRODUCCIÓN ====================
+
+function cargarPedidosTrabajados() {
+  if (!usuarioSeleccionado) return;
+  $.ajax({
+    url: "data_ver_seguimiento_produccion.php",
+    type: "POST",
+    data: { consulta: "obtener_pedidos_trabajados", mes: mesActual, anio: anioActual, id_usuario: usuarioSeleccionado },
+    success: function (x) {
+      try {
+        const pedidos = JSON.parse(x);
+        renderizarPedidosTrabajados(pedidos);
+      } catch (e) {
+        console.error("Error pedidos trabajados:", e);
+        $("#seccion-pedidos-produccion").hide();
+      }
+    },
+    error: function () { $("#seccion-pedidos-produccion").hide(); }
+  });
+}
+
+function renderizarPedidosTrabajados(pedidos) {
+  if (!pedidos || pedidos.length === 0) {
+    $("#seccion-pedidos-produccion").hide();
+    return;
+  }
+
+  let html = '<div class="table-responsive"><table class="table table-bordered table-condensed">';
+  html += '<thead><tr>';
+  html += '<th>Variedad</th><th>Cliente</th><th class="text-center">Etapa Actual</th>';
+  html += '<th class="text-center">Total</th><th class="text-center">Este trabajador</th>';
+  html += '<th class="text-center">Todos (esta etapa)</th><th class="text-center">Restante</th>';
+  html += '<th class="text-center">Pendientes</th>';
+  html += '</tr></thead><tbody>';
+
+  pedidos.forEach(function (p) {
+    const cantTotal = parseInt(p.cant_plantas);
+    const trabajadoEste = parseInt(p.trabajado_este_usuario);
+    const trabajadoTotal = parseInt(p.trabajado_total);
+    const restante = cantTotal - trabajadoTotal;
+    const porcentaje = cantTotal > 0 ? Math.min(100, Math.round((trabajadoTotal / cantTotal) * 100)) : 0;
+    const pendientes = parseInt(p.registros_pendientes);
+    const etapaLabels = { '0': '0 - Inicio', '1': '1 - 10%', '2': '2 - 50%' };
+    const etapaLabel = etapaLabels[String(p.estado)] || `Etapa ${p.estado}`;
+    const bandejas = p.cant_bandejas ? `${p.cant_bandejas} band. ${p.tipo_bandeja || ''}` : '';
+    const completado = restante <= 0;
+
+    const idEspecie = p.id_especie ? '-' + String(p.id_especie).padStart(2, '0') : '';
+    const idInterno = String(p.id_variedad_interno).padStart(2, '0');
+    const idCliente = String(p.id_cliente).padStart(2, '0');
+    const codigoCompleto = `${p.iniciales || ''}${p.id_pedido_interno}/M${p.mes_dia}/${p.tipo_codigo}${idInterno}${idEspecie}/${p.cant_plantas}/${idCliente}`;
+
+    html += `<tr>
+      <td>
+        <strong>${p.nombre_variedad}</strong>
+        <br><small class="text-muted text-monospace">${codigoCompleto}</small>
+        ${bandejas ? `<br><small class="text-muted">${bandejas}</small>` : ''}
+      </td>
+      <td>${p.nombre_cliente}</td>
+      <td class="text-center"><span class="label label-default">${etapaLabel}</span></td>
+      <td class="text-center">${formatNumber(cantTotal)}</td>
+      <td class="text-center text-primary"><strong>${formatNumber(trabajadoEste)}</strong></td>
+      <td class="text-center">
+        ${formatNumber(trabajadoTotal)}
+        <div class="progress" style="margin:3px 0 0;height:8px;">
+          <div class="progress-bar progress-bar-${completado ? 'success' : (porcentaje >= 75 ? 'warning' : 'danger')}" style="width:${porcentaje}%;"></div>
+        </div>
+        <small class="text-muted">${porcentaje}%</small>
+      </td>
+      <td class="text-center ${completado ? 'text-success' : ''}">
+        ${completado ? '<i class="fa fa-check-circle"></i> Completo' : formatNumber(restante)}
+      </td>
+      <td class="text-center">
+        ${pendientes > 0
+          ? `<span class="badge bg-yellow">${pendientes} pendiente(s)</span>`
+          : '<span class="text-muted">-</span>'}
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  $("#tabla-pedidos-produccion").html(html);
+  $("#seccion-pedidos-produccion").show();
 }
 
 // ==================== FUNCIONES AUXILIARES ====================

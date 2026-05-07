@@ -69,107 +69,321 @@ else if ($consulta == "obtener_meta_semanal") {
         echo json_encode(array("meta_semanal" => 1000));
     }
 }
-else if ($consulta == "guardar_registro") {
-    $fecha = mysqli_real_escape_string($con, $_POST["fecha"]);
-    $turno = mysqli_real_escape_string($con, $_POST["turno"]);
-    $item_tipo = mysqli_real_escape_string($con, $_POST["item_tipo"]);
-    $cantidad = intval($_POST["cantidad_plantines"]);
+else if ($consulta == "obtener_pedidos_disponibles") {
+    $query = "SELECT
+                ap.id as id_artpedido,
+                ap.cant_plantas,
+                ap.cant_bandejas,
+                ap.tipo_bandeja,
+                ap.estado,
+                ap.id_especie,
+                p.fecha as fecha_pedido,
+                p.id_interno as id_pedido_interno,
+                DATE_FORMAT(p.fecha, '%m/%d') as mes_dia,
+                v.id as id_variedad,
+                v.nombre as nombre_variedad,
+                v.id_interno as id_variedad_interno,
+                t.codigo as tipo_codigo,
+                c.id_cliente,
+                c.nombre as nombre_cliente,
+                u.iniciales,
+                COALESCE(
+                    (SELECT SUM(rpd.cantidad_plantines)
+                     FROM registro_produccion_diario rpd
+                     WHERE rpd.id_artpedido = ap.id
+                     AND rpd.estado != 'rechazado'),
+                0) as total_trabajado
+              FROM articulospedidos ap
+              INNER JOIN variedades_producto v ON v.id = ap.id_variedad
+              INNER JOIN tipos_producto t ON t.id = v.id_tipo
+              INNER JOIN pedidos p ON p.ID_PEDIDO = ap.id_pedido
+              INNER JOIN clientes c ON c.id_cliente = p.id_cliente
+              LEFT JOIN usuarios u ON u.id = p.id_usuario
+              WHERE ap.eliminado IS NULL
+              AND ap.estado IN (0, 1)
+              AND t.codigo IN ('E', 'HE')
+              AND COALESCE(
+                  (SELECT SUM(rpd.cantidad_plantines)
+                   FROM registro_produccion_diario rpd
+                   WHERE rpd.id_artpedido = ap.id
+                   AND rpd.estado != 'rechazado'),
+              0) < ap.cant_plantas
+              ORDER BY ap.estado ASC, p.fecha ASC";
 
-    $id_variedad = "NULL";
-    $descripcion_manual = "NULL";
+    $val = mysqli_query($con, $query);
 
-    if ($item_tipo == "variedad") {
-        $id_variedad = intval($_POST["id_variedad"]);
+    if ($val && mysqli_num_rows($val) > 0) {
+        $pedidos = array();
+        while ($row = mysqli_fetch_assoc($val)) {
+            array_push($pedidos, $row);
+        }
+        echo json_encode($pedidos);
     } else {
-        $descripcion_manual = "'" . mysqli_real_escape_string($con, $_POST["descripcion_manual"]) . "'";
+        echo json_encode(array());
     }
+}
+else if ($consulta == "guardar_registro") {
 
-    $ubicacion = isset($_POST["ubicacion_lote"]) && !empty($_POST["ubicacion_lote"])
-        ? "'" . mysqli_real_escape_string($con, $_POST["ubicacion_lote"]) . "'"
-        : "NULL";
-    $observaciones = isset($_POST["observaciones"]) && !empty($_POST["observaciones"])
-        ? "'" . mysqli_real_escape_string($con, $_POST["observaciones"]) . "'"
-        : "NULL";
+    // ── BRANCH: Registro vinculado a pedido real ──────────────────────────────
+    if (isset($_POST["id_artpedido"]) && $_POST["id_artpedido"] !== "") {
 
-    // Validar que no exista un registro duplicado (que no esté rechazado)
-    // Si el registro anterior fue rechazado, permitir crear uno nuevo
-    $where_item = $item_tipo == "variedad"
-        ? "id_variedad = $id_variedad"
-        : "descripcion_manual = $descripcion_manual";
+        $id_artpedido = intval($_POST["id_artpedido"]);
+        $fecha        = mysqli_real_escape_string($con, $_POST["fecha"]);
+        $turno        = mysqli_real_escape_string($con, $_POST["turno"]);
+        $cantidad     = intval($_POST["cantidad_plantines"]);
 
-    $query_check = "SELECT id FROM registro_produccion_diario
-                    WHERE id_usuario = $id_usuario
-                    AND fecha = '$fecha'
-                    AND turno = '$turno'
-                    AND $where_item
-                    AND estado != 'rechazado'";
-    $check = mysqli_query($con, $query_check);
+        $ubicacion = isset($_POST["ubicacion_lote"]) && !empty($_POST["ubicacion_lote"])
+            ? "'" . mysqli_real_escape_string($con, $_POST["ubicacion_lote"]) . "'"
+            : "NULL";
+        $observaciones = isset($_POST["observaciones"]) && !empty($_POST["observaciones"])
+            ? "'" . mysqli_real_escape_string($con, $_POST["observaciones"]) . "'"
+            : "NULL";
 
-    if (mysqli_num_rows($check) > 0) {
-        echo json_encode(array("error" => "Ya existe un registro para este item en este turno"));
-        mysqli_close($con);
-        exit;
-    }
+        // 1. Validar que el pedido existe, no está eliminado, estado IN (0,1) y tipo IN ('E','HE')
+        $query_pedido = "SELECT ap.id, ap.cant_plantas, ap.cant_bandejas, ap.tipo_bandeja,
+                                ap.estado, ap.id_variedad,
+                                v.nombre as nombre_variedad,
+                                t.codigo as tipo_codigo
+                         FROM articulospedidos ap
+                         INNER JOIN variedades_producto v ON v.id = ap.id_variedad
+                         INNER JOIN tipos_producto t ON t.id = v.id_tipo
+                         WHERE ap.id = $id_artpedido
+                         AND ap.eliminado IS NULL
+                         AND ap.estado IN (0, 1)
+                         AND t.codigo IN ('E', 'HE')";
+        $res_pedido = mysqli_query($con, $query_pedido);
 
-    // Insertar registro diario
-    $query = "INSERT INTO registro_produccion_diario
-              (id_usuario, item_tipo, fecha, turno, id_variedad, descripcion_manual, cantidad_plantines, ubicacion_lote, observaciones)
-              VALUES ($id_usuario, '$item_tipo', '$fecha', '$turno', $id_variedad, $descripcion_manual, $cantidad, $ubicacion, $observaciones)";
+        if (!$res_pedido || mysqli_num_rows($res_pedido) == 0) {
+            echo json_encode(array("error" => "Pedido no encontrado o no disponible"));
+            mysqli_close($con);
+            exit;
+        }
 
-    if (mysqli_query($con, $query)) {
+        $pedido = mysqli_fetch_assoc($res_pedido);
+        $etapa_actual   = intval($pedido['estado']);
+        $cant_plantas   = intval($pedido['cant_plantas']);
+        $id_variedad    = intval($pedido['id_variedad']);
+
+        // 2. Obtener total ya trabajado para esta etapa
+        $query_total = "SELECT COALESCE(SUM(cantidad_plantines), 0) as total
+                        FROM registro_produccion_diario
+                        WHERE id_artpedido = $id_artpedido
+                        AND etapa_pedido = $etapa_actual
+                        AND estado != 'rechazado'";
+        $res_total = mysqli_query($con, $query_total);
+        $row_total = mysqli_fetch_assoc($res_total);
+        $total_trabajado = intval($row_total['total']);
+        $restante = $cant_plantas - $total_trabajado;
+
+        // 3. Validar cantidad <= restante
+        if ($cantidad <= 0) {
+            echo json_encode(array("error" => "La cantidad debe ser mayor a 0"));
+            mysqli_close($con);
+            exit;
+        }
+        if ($cantidad > $restante) {
+            echo json_encode(array("error" => "La cantidad ($cantidad) supera el restante ($restante) para esta etapa"));
+            mysqli_close($con);
+            exit;
+        }
+
+        // 4. Ya no se verifica duplicado: se permiten avances parciales (mismo usuario)
+        //    y trabajo colaborativo (diferentes usuarios) en el mismo pedido/turno/fecha.
+        //    La validación de cantidad (punto 3) controla que no se exceda el total.
+
+        // 5. INSERT con id_artpedido y etapa_pedido
+        $query_insert = "INSERT INTO registro_produccion_diario
+                         (id_usuario, item_tipo, fecha, turno, id_variedad, descripcion_manual,
+                          cantidad_plantines, ubicacion_lote, observaciones,
+                          id_artpedido, etapa_pedido)
+                         VALUES ($id_usuario, 'variedad', '$fecha', '$turno', $id_variedad, NULL,
+                                 $cantidad, $ubicacion, $observaciones,
+                                 $id_artpedido, $etapa_actual)";
+
+        if (!mysqli_query($con, $query_insert)) {
+            echo json_encode(array("error" => mysqli_error($con)));
+            mysqli_close($con);
+            exit;
+        }
+
         $id_registro = mysqli_insert_id($con);
 
-        // SINCRONIZACIÓN: Actualizar tabla mensual del admin
+        // 6. Sync a seguimiento_produccion_trabajadoras (igual que el flujo legacy)
         $dia = intval(date('d', strtotime($fecha)));
         $mes = intval(date('m', strtotime($fecha)));
         $anio = intval(date('Y', strtotime($fecha)));
         $columna_dia = "dia_" . str_pad($dia, 2, '0', STR_PAD_LEFT);
 
-        // Obtener precio de producción
+        // Obtener precio de producción de la variedad
         $precio = 0;
-        if ($item_tipo == "variedad") {
-            $query_precio = "SELECT precio_produccion FROM variedades_producto WHERE id = $id_variedad";
-            $res_precio = mysqli_query($con, $query_precio);
-            if ($res_precio && mysqli_num_rows($res_precio) > 0) {
-                $row_precio = mysqli_fetch_assoc($res_precio);
-                $precio = floatval($row_precio['precio_produccion']);
-            }
+        $query_precio = "SELECT precio_produccion FROM variedades_producto WHERE id = $id_variedad";
+        $res_precio = mysqli_query($con, $query_precio);
+        if ($res_precio && mysqli_num_rows($res_precio) > 0) {
+            $row_precio = mysqli_fetch_assoc($res_precio);
+            $precio = floatval($row_precio['precio_produccion']);
         }
 
-        // Verificar si existe la fila en la tabla mensual
-        $where_mensual = $item_tipo == "variedad"
-            ? "id_variedad = $id_variedad AND item_tipo = 'variedad'"
-            : "descripcion_manual = $descripcion_manual AND item_tipo = 'manual'";
-
+        // Verificar si existe fila en tabla mensual para esta variedad
         $query_existe = "SELECT id, $columna_dia FROM seguimiento_produccion_trabajadoras
-                        WHERE id_usuario = $id_usuario
-                        AND mes = $mes
-                        AND anio = $anio
-                        AND $where_mensual";
+                         WHERE id_usuario = $id_usuario
+                         AND mes = $mes
+                         AND anio = $anio
+                         AND id_variedad = $id_variedad
+                         AND item_tipo = 'variedad'";
         $res_existe = mysqli_query($con, $query_existe);
 
         if ($res_existe && mysqli_num_rows($res_existe) > 0) {
-            // Actualizar cantidad sumando
             $row_existe = mysqli_fetch_assoc($res_existe);
             $cantidad_actual = intval($row_existe[$columna_dia]);
             $nueva_cantidad = $cantidad_actual + $cantidad;
             $id_fila = $row_existe['id'];
 
             $query_update = "UPDATE seguimiento_produccion_trabajadoras
-                           SET $columna_dia = $nueva_cantidad
-                           WHERE id = $id_fila";
+                             SET $columna_dia = $nueva_cantidad
+                             WHERE id = $id_fila";
             mysqli_query($con, $query_update);
         } else {
-            // Insertar nueva fila
-            $query_insert = "INSERT INTO seguimiento_produccion_trabajadoras
-                           (mes, anio, id_usuario, item_tipo, id_variedad, descripcion_manual, precio, $columna_dia)
-                           VALUES ($mes, $anio, $id_usuario, '$item_tipo', $id_variedad, $descripcion_manual, $precio, $cantidad)";
-            mysqli_query($con, $query_insert);
+            $query_ins_seg = "INSERT INTO seguimiento_produccion_trabajadoras
+                              (mes, anio, id_usuario, item_tipo, id_variedad, descripcion_manual, precio, $columna_dia)
+                              VALUES ($mes, $anio, $id_usuario, 'variedad', $id_variedad, NULL, $precio, $cantidad)";
+            mysqli_query($con, $query_ins_seg);
         }
 
-        echo json_encode(array("success" => true, "id_registro" => $id_registro));
+        // 7. Calcular nuevo total y verificar si se completó la etapa
+        $nuevo_total = $total_trabajado + $cantidad;
+        $pedido_completado = false;
+
+        if ($nuevo_total >= $cant_plantas) {
+            $pedido_completado = true;
+            $nueva_etapa = $etapa_actual + 1;
+
+            // Determinar qué campo de fecha actualizar según la etapa que se cierra
+            if ($etapa_actual == 0) {
+                $campo_fecha = "fecha_etapa1";
+            } else if ($etapa_actual == 1) {
+                $campo_fecha = "fecha_etapa2";
+            } else {
+                $campo_fecha = "fecha_etapa" . ($etapa_actual + 1);
+            }
+
+            $query_avanzar = "UPDATE articulospedidos
+                              SET estado = $nueva_etapa, $campo_fecha = NOW()
+                              WHERE id = $id_artpedido";
+            mysqli_query($con, $query_avanzar);
+        }
+
+        $restante_nuevo = max(0, $cant_plantas - $nuevo_total);
+
+        echo json_encode(array(
+            "success"           => true,
+            "id_registro"       => $id_registro,
+            "pedido_completado" => $pedido_completado,
+            "restante_nuevo"    => $restante_nuevo
+        ));
+
     } else {
-        echo json_encode(array("error" => mysqli_error($con)));
+        // ── BRANCH: Registro legacy (sin pedido) ──────────────────────────────
+
+        $fecha = mysqli_real_escape_string($con, $_POST["fecha"]);
+        $turno = mysqli_real_escape_string($con, $_POST["turno"]);
+        $item_tipo = mysqli_real_escape_string($con, $_POST["item_tipo"]);
+        $cantidad = intval($_POST["cantidad_plantines"]);
+
+        $id_variedad = "NULL";
+        $descripcion_manual = "NULL";
+
+        if ($item_tipo == "variedad") {
+            $id_variedad = intval($_POST["id_variedad"]);
+        } else {
+            $descripcion_manual = "'" . mysqli_real_escape_string($con, $_POST["descripcion_manual"]) . "'";
+        }
+
+        $ubicacion = isset($_POST["ubicacion_lote"]) && !empty($_POST["ubicacion_lote"])
+            ? "'" . mysqli_real_escape_string($con, $_POST["ubicacion_lote"]) . "'"
+            : "NULL";
+        $observaciones = isset($_POST["observaciones"]) && !empty($_POST["observaciones"])
+            ? "'" . mysqli_real_escape_string($con, $_POST["observaciones"]) . "'"
+            : "NULL";
+
+        // Validar que no exista un registro duplicado (que no esté rechazado)
+        $where_item = $item_tipo == "variedad"
+            ? "id_variedad = $id_variedad"
+            : "descripcion_manual = $descripcion_manual";
+
+        $query_check = "SELECT id FROM registro_produccion_diario
+                        WHERE id_usuario = $id_usuario
+                        AND fecha = '$fecha'
+                        AND turno = '$turno'
+                        AND $where_item
+                        AND estado != 'rechazado'";
+        $check = mysqli_query($con, $query_check);
+
+        if (mysqli_num_rows($check) > 0) {
+            echo json_encode(array("error" => "Ya existe un registro para este item en este turno"));
+            mysqli_close($con);
+            exit;
+        }
+
+        // Insertar registro diario
+        $query = "INSERT INTO registro_produccion_diario
+                  (id_usuario, item_tipo, fecha, turno, id_variedad, descripcion_manual, cantidad_plantines, ubicacion_lote, observaciones)
+                  VALUES ($id_usuario, '$item_tipo', '$fecha', '$turno', $id_variedad, $descripcion_manual, $cantidad, $ubicacion, $observaciones)";
+
+        if (mysqli_query($con, $query)) {
+            $id_registro = mysqli_insert_id($con);
+
+            // SINCRONIZACIÓN: Actualizar tabla mensual del admin
+            $dia = intval(date('d', strtotime($fecha)));
+            $mes = intval(date('m', strtotime($fecha)));
+            $anio = intval(date('Y', strtotime($fecha)));
+            $columna_dia = "dia_" . str_pad($dia, 2, '0', STR_PAD_LEFT);
+
+            // Obtener precio de producción
+            $precio = 0;
+            if ($item_tipo == "variedad") {
+                $query_precio = "SELECT precio_produccion FROM variedades_producto WHERE id = $id_variedad";
+                $res_precio = mysqli_query($con, $query_precio);
+                if ($res_precio && mysqli_num_rows($res_precio) > 0) {
+                    $row_precio = mysqli_fetch_assoc($res_precio);
+                    $precio = floatval($row_precio['precio_produccion']);
+                }
+            }
+
+            // Verificar si existe la fila en la tabla mensual
+            $where_mensual = $item_tipo == "variedad"
+                ? "id_variedad = $id_variedad AND item_tipo = 'variedad'"
+                : "descripcion_manual = $descripcion_manual AND item_tipo = 'manual'";
+
+            $query_existe = "SELECT id, $columna_dia FROM seguimiento_produccion_trabajadoras
+                            WHERE id_usuario = $id_usuario
+                            AND mes = $mes
+                            AND anio = $anio
+                            AND $where_mensual";
+            $res_existe = mysqli_query($con, $query_existe);
+
+            if ($res_existe && mysqli_num_rows($res_existe) > 0) {
+                // Actualizar cantidad sumando
+                $row_existe = mysqli_fetch_assoc($res_existe);
+                $cantidad_actual = intval($row_existe[$columna_dia]);
+                $nueva_cantidad = $cantidad_actual + $cantidad;
+                $id_fila = $row_existe['id'];
+
+                $query_update = "UPDATE seguimiento_produccion_trabajadoras
+                               SET $columna_dia = $nueva_cantidad
+                               WHERE id = $id_fila";
+                mysqli_query($con, $query_update);
+            } else {
+                // Insertar nueva fila
+                $query_insert = "INSERT INTO seguimiento_produccion_trabajadoras
+                               (mes, anio, id_usuario, item_tipo, id_variedad, descripcion_manual, precio, $columna_dia)
+                               VALUES ($mes, $anio, $id_usuario, '$item_tipo', $id_variedad, $descripcion_manual, $precio, $cantidad)";
+                mysqli_query($con, $query_insert);
+            }
+
+            echo json_encode(array("success" => true, "id_registro" => $id_registro));
+        } else {
+            echo json_encode(array("error" => mysqli_error($con)));
+        }
     }
 }
 else if ($consulta == "subir_evidencia") {
@@ -235,9 +449,22 @@ else if ($consulta == "obtener_mi_produccion") {
     $query = "SELECT rpd.*,
               vp.nombre as variedad_nombre,
               vp.precio_produccion,
-              (SELECT COUNT(*) FROM evidencias_produccion WHERE id_registro = rpd.id) as num_evidencias
+              vp.id_interno as id_variedad_interno,
+              (SELECT COUNT(*) FROM evidencias_produccion WHERE id_registro = rpd.id) as num_evidencias,
+              c.nombre as pedido_cliente,
+              ap.id_especie,
+              p.id_interno as id_pedido_interno,
+              DATE_FORMAT(p.fecha, '%m/%d') as mes_dia,
+              t.codigo as tipo_codigo,
+              c.id_cliente,
+              u.iniciales
               FROM registro_produccion_diario rpd
               LEFT JOIN variedades_producto vp ON rpd.id_variedad = vp.id
+              LEFT JOIN tipos_producto t ON t.id = vp.id_tipo
+              LEFT JOIN articulospedidos ap ON rpd.id_artpedido = ap.id
+              LEFT JOIN pedidos p ON ap.id_pedido = p.ID_PEDIDO
+              LEFT JOIN clientes c ON p.id_cliente = c.id_cliente
+              LEFT JOIN usuarios u ON u.id = p.id_usuario
               WHERE rpd.id_usuario = $id_usuario
               AND rpd.fecha BETWEEN '$fecha_desde' AND '$fecha_hasta'
               ORDER BY rpd.fecha DESC, rpd.turno DESC, rpd.id DESC";
@@ -329,9 +556,6 @@ else if ($consulta == "obtener_estadisticas") {
     // Calcular progreso y bono estimado
     $progreso_semanal = $meta_semanal > 0 ? round(($produccion_semanal / $meta_semanal) * 100, 1) : 0;
 
-    // Calcular bono basado en el mes
-    // Para mes actual: usar producción semanal
-    // Para meses anteriores: usar producción mensual / 4 semanas
     $bono_estimado = 0;
     if ($es_mes_actual) {
         if ($produccion_semanal > $meta_semanal) {
@@ -339,7 +563,6 @@ else if ($consulta == "obtener_estadisticas") {
             $bono_estimado = $exceso * 0.50;
         }
     } else {
-        // Calcular bono del mes completo (aproximado)
         $meta_mensual = $meta_semanal * 4;
         if ($produccion_mensual > $meta_mensual) {
             $exceso = $produccion_mensual - $meta_mensual;
@@ -348,7 +571,7 @@ else if ($consulta == "obtener_estadisticas") {
     }
 
     // Determinar indicador de cumplimiento
-    $indicador = "red"; // Rojo por defecto
+    $indicador = "red";
     if ($progreso_semanal >= 100) {
         $indicador = "green";
     } else if ($progreso_semanal >= 75) {

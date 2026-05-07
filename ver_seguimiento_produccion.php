@@ -223,6 +223,23 @@
             </div>
           </div>
 
+          <!-- Pedidos en Producción (vinculados al sistema de pedidos reales) -->
+          <div class="row mt-4" id="seccion-pedidos-produccion" style="display:none;">
+            <div class="col-md-12">
+              <div class="box box-primary">
+                <div class="box-header with-border">
+                  <h3 class="box-title"><i class="fa fa-list-ol"></i> Pedidos de Esquejes en Producción</h3>
+                  <div class="box-tools pull-right">
+                   
+                  </div>
+                </div>
+                <div class="box-body">
+                  <div id="tabla-pedidos-produccion"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
       </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 

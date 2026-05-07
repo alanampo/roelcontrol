@@ -636,5 +636,77 @@ if ($consulta == "aprobar_todos_item") {
     ));
 }
 
+else if ($consulta == "obtener_pedidos_trabajados") {
+    $mes       = intval($_POST["mes"]);
+    $anio      = intval($_POST["anio"]);
+    $id_usuario = intval($_POST["id_usuario"]);
+
+    $query = "SELECT
+                ap.id as id_artpedido,
+                ap.cant_plantas,
+                ap.cant_bandejas,
+                ap.tipo_bandeja,
+                ap.estado,
+                ap.id_especie,
+                p.fecha as fecha_pedido,
+                p.id_interno as id_pedido_interno,
+                DATE_FORMAT(p.fecha, '%m/%d') as mes_dia,
+                v.nombre as nombre_variedad,
+                v.id_interno as id_variedad_interno,
+                t.codigo as tipo_codigo,
+                c.id_cliente,
+                c.nombre as nombre_cliente,
+                u.iniciales,
+                COALESCE(
+                    (SELECT SUM(rpd2.cantidad_plantines)
+                     FROM registro_produccion_diario rpd2
+                     WHERE rpd2.id_artpedido = ap.id
+                     AND rpd2.id_usuario = $id_usuario
+                     AND rpd2.estado != 'rechazado'
+                     AND rpd2.etapa_pedido = ap.estado),
+                0) as trabajado_este_usuario,
+                COALESCE(
+                    (SELECT SUM(rpd3.cantidad_plantines)
+                     FROM registro_produccion_diario rpd3
+                     WHERE rpd3.id_artpedido = ap.id
+                     AND rpd3.estado != 'rechazado'),
+                0) as trabajado_total,
+                (SELECT COUNT(*)
+                 FROM registro_produccion_diario rpd4
+                 WHERE rpd4.id_artpedido = ap.id
+                 AND rpd4.id_usuario = $id_usuario
+                 AND rpd4.estado = 'pendiente'
+                 AND rpd4.etapa_pedido = ap.estado) as registros_pendientes
+              FROM articulospedidos ap
+              INNER JOIN variedades_producto v ON v.id = ap.id_variedad
+              INNER JOIN tipos_producto t ON t.id = v.id_tipo
+              INNER JOIN pedidos p ON p.ID_PEDIDO = ap.id_pedido
+              INNER JOIN clientes c ON c.id_cliente = p.id_cliente
+              LEFT JOIN usuarios u ON u.id = p.id_usuario
+              WHERE ap.eliminado IS NULL
+              AND t.codigo IN ('E', 'HE')
+              AND ap.estado IN (0, 1)
+              AND EXISTS (
+                  SELECT 1 FROM registro_produccion_diario rpd_ex
+                  WHERE rpd_ex.id_artpedido = ap.id
+                  AND rpd_ex.id_usuario = $id_usuario
+                  AND MONTH(rpd_ex.fecha) = $mes
+                  AND YEAR(rpd_ex.fecha) = $anio
+              )
+              ORDER BY ap.estado ASC, ap.id ASC";
+
+    $val = mysqli_query($con, $query);
+
+    if ($val && mysqli_num_rows($val) > 0) {
+        $pedidos = array();
+        while ($row = mysqli_fetch_assoc($val)) {
+            array_push($pedidos, $row);
+        }
+        echo json_encode($pedidos);
+    } else {
+        echo json_encode(array());
+    }
+}
+
 mysqli_close($con);
 ?>

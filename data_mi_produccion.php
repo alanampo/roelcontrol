@@ -90,8 +90,10 @@ else if ($consulta == "obtener_pedidos_disponibles") {
         c.nombre as nombre_cliente,
         u.iniciales,
         CASE 
+            WHEN interior_attr.valor IS NOT NULL THEN 'Interior'
             WHEN t.codigo IN ('E', 'HE') THEN 'Esquejes'
             WHEN t.codigo IN ('S', 'HS') THEN 'Semillas'
+            ELSE 'Otro'
         END as tipo_pedido,
         COALESCE(
             (SELECT SUM(rpd.cantidad_plantines)
@@ -105,9 +107,20 @@ else if ($consulta == "obtener_pedidos_disponibles") {
     INNER JOIN pedidos p ON p.ID_PEDIDO = ap.id_pedido
     INNER JOIN clientes c ON c.id_cliente = p.id_cliente
     LEFT JOIN usuarios u ON u.id = p.id_usuario
+    LEFT JOIN (
+        SELECT avv.id_variedad, av.valor
+        FROM atributos_valores_variedades avv
+        INNER JOIN atributos_valores av ON av.id = avv.id_atributo_valor
+        INNER JOIN atributos a ON a.id = av.id_atributo
+        WHERE UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.nombre, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'TIPO DE PLANTA'
+        AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(av.valor, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'PLANTAS DE INTERIOR'
+    ) interior_attr ON interior_attr.id_variedad = v.id
     WHERE ap.eliminado IS NULL
     AND ap.estado IN (0, 1)
-    AND t.codigo IN ('E', 'HE', 'S', 'HS')
+    AND (
+        t.codigo IN ('E', 'HE', 'S', 'HS')
+        OR interior_attr.valor IS NOT NULL
+    )
     AND COALESCE(
         (SELECT SUM(rpd.cantidad_plantines)
          FROM registro_produccion_diario rpd
@@ -115,54 +128,7 @@ else if ($consulta == "obtener_pedidos_disponibles") {
          AND rpd.estado != 'rechazado'),
     0) < ap.cant_plantas
     
-    UNION
-    
-    SELECT 
-        ap.id as id_artpedido,
-        ap.cant_plantas,
-        ap.cant_bandejas,
-        ap.tipo_bandeja,
-        ap.estado,
-        ap.id_especie,
-        p.fecha as fecha_pedido,
-        p.id_interno as id_pedido_interno,
-        DATE_FORMAT(p.fecha, '%m/%d') as mes_dia,
-        v.id as id_variedad,
-        v.nombre as nombre_variedad,
-        v.id_interno as id_variedad_interno,
-        t.codigo as tipo_codigo,
-        t.nombre as nombre_tipo,
-        c.id_cliente,
-        c.nombre as nombre_cliente,
-        u.iniciales,
-        'Interior' as tipo_pedido,
-        COALESCE(
-            (SELECT SUM(rpd.cantidad_plantines)
-             FROM registro_produccion_diario rpd
-             WHERE rpd.id_artpedido = ap.id
-             AND rpd.estado != 'rechazado'),
-        0) as total_trabajado
-    FROM articulospedidos ap
-    INNER JOIN variedades_producto v ON v.id = ap.id_variedad
-    INNER JOIN tipos_producto t ON t.id = v.id_tipo
-    INNER JOIN pedidos p ON p.ID_PEDIDO = ap.id_pedido
-    INNER JOIN clientes c ON c.id_cliente = p.id_cliente
-    LEFT JOIN usuarios u ON u.id = p.id_usuario
-    INNER JOIN atributos_valores_variedades avv ON avv.id_variedad = v.id
-    INNER JOIN atributos_valores av ON av.id = avv.id_atributo_valor
-    INNER JOIN atributos a ON a.id = av.id_atributo
-    WHERE ap.eliminado IS NULL
-    AND ap.estado IN (0, 1)
-    AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.nombre, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'TIPO DE PLANTA'
-    AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(av.valor, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'PLANTAS DE INTERIOR'
-    AND COALESCE(
-        (SELECT SUM(rpd.cantidad_plantines)
-         FROM registro_produccion_diario rpd
-         WHERE rpd.id_artpedido = ap.id
-         AND rpd.estado != 'rechazado'),
-    0) < ap.cant_plantas
-    
-    ORDER BY FIELD(tipo_pedido, 'Esquejes', 'Semillas', 'Interior'), estado ASC, fecha_pedido ASC";
+    ORDER BY FIELD(tipo_pedido, 'Esquejes', 'Semillas', 'Interior', 'Otro'), estado ASC, fecha_pedido ASC";
 
     $val = mysqli_query($con, $query);
 

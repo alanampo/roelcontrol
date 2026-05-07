@@ -43,23 +43,18 @@ function send_reservation_status_email(int $idReserva, string $estadoLabel, stri
     return;
   }
 
-  // ── Conectar BD ─────────────────────────────────────────────────────────
-  $_conectaPaths = [
-    __DIR__ . '/class_conecta_mysql.php',
-    __DIR__ . '/../class_lib/class_conecta_mysql.php',
-  ];
-  $dbM = null;
-  foreach ($_conectaPaths as $_p) {
-    if (is_file($_p)) {
-      require_once $_p;
-      $dbM = @mysqli_connect($host, $user, $password, $dbname);
-      if ($dbM) { mysqli_set_charset($dbM, 'utf8'); break; }
-    }
-  }
+  // ── Conectar BD (misma lógica que class_conecta_mysql.php) ──────────────
+  $isProduction = strpos($_SERVER['HTTP_HOST'] ?? '', 'roelplant') !== false;
+  $dbHost = getenv($isProduction ? 'DB_HOST'       : 'DB_HOST_LOCAL');
+  $dbUser = getenv($isProduction ? 'DB_USER'       : 'DB_USER_LOCAL');
+  $dbPass = getenv($isProduction ? 'DB_PASSWORD'   : 'DB_PASSWORD_LOCAL');
+  $dbName = getenv($isProduction ? 'DB_NAME'       : 'DB_NAME_LOCAL');
+  $dbM = @mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
   if (!$dbM) {
-    error_log("[mailer] No se pudo conectar a BD para reserva {$idReserva}");
+    error_log("[mailer] No se pudo conectar a BD para reserva {$idReserva} (host={$dbHost}, db={$dbName})");
     return;
   }
+  mysqli_set_charset($dbM, 'utf8');
 
   // ── Reserva + email cliente ──────────────────────────────────────────────
   $stRes = $dbM->prepare(

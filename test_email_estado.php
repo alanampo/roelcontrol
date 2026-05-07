@@ -104,11 +104,13 @@ function _send_test_email(int $idReserva, string $estadoLabel, string $bgColor, 
   // Reusar toda la lógica de mailer.php pero forzar destinatario
   if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) throw new \RuntimeException('PHPMailer no disponible');
 
-  $conectaPaths = [__DIR__ . '/class_lib/class_conecta_mysql.php'];
-  $dbM = null;
-  foreach ($conectaPaths as $p) {
-    if (is_file($p)) { require_once $p; $dbM = @mysqli_connect($host, $user, $password, $dbname); if ($dbM) { mysqli_set_charset($dbM, 'utf8'); break; } }
-  }
+  $isProduction = strpos($_SERVER['HTTP_HOST'] ?? '', 'roelplant') !== false;
+  $dbM = @mysqli_connect(
+    getenv($isProduction ? 'DB_HOST'     : 'DB_HOST_LOCAL'),
+    getenv($isProduction ? 'DB_USER'     : 'DB_USER_LOCAL'),
+    getenv($isProduction ? 'DB_PASSWORD' : 'DB_PASSWORD_LOCAL'),
+    getenv($isProduction ? 'DB_NAME'     : 'DB_NAME_LOCAL')
+  );
   if (!$dbM) throw new \RuntimeException('No se pudo conectar a BD');
 
   $stRes = $dbM->prepare("SELECT r.subtotal_clp, r.packing_cost_clp, r.shipping_cost_clp, r.total_clp, r.paid_clp,

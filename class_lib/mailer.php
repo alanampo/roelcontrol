@@ -237,6 +237,7 @@ function send_reservation_status_email(int $idReserva, string $estadoLabel, stri
   $mail->CharSet    = 'UTF-8';
   $mail->setFrom('ventas@roelplant.cl', 'Roelplant');
   $mail->addAddress($toEmail, $toNombre);
+  $mail->addBCC('ventas@roelplant.cl', 'Roelplant Ventas');
   $mail->addReplyTo('ventas@roelplant.cl', 'Roelplant');
   $mail->isHTML(true);
   $mail->Subject = "Tu pedido {$orderCode} — {$badgeText}";

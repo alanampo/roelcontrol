@@ -13,6 +13,7 @@ let mesActual = new Date().getMonth() + 1;
 let anioActual = new Date().getFullYear();
 let pedidoSeleccionado = null;
 let pedidosDisponibles = [];
+let filtroTipoActual = 'todos';
 
 $(document).ready(function () {
   inicializarSelectorMes();
@@ -87,7 +88,7 @@ function cargarPedidosDisponibles() {
     success: function (x) {
       try {
         pedidosDisponibles = JSON.parse(x);
-        renderizarPedidosDisponibles(pedidosDisponibles);
+        aplicarFiltroTipo();
       } catch (e) {
         console.error("Error al cargar pedidos:", e);
         $("#tabla-pedidos-disponibles").html('<div class="callout callout-danger"><p>Error al cargar pedidos</p></div>');
@@ -99,25 +100,40 @@ function cargarPedidosDisponibles() {
   });
 }
 
+function aplicarFiltroTipo() {
+  filtroTipoActual = $("#filtro-tipo-pedido").val();
+  let pedidosFiltrados = pedidosDisponibles;
+  if (filtroTipoActual !== 'todos') {
+    pedidosFiltrados = pedidosDisponibles.filter(function(p) {
+      return p.tipo_pedido === filtroTipoActual;
+    });
+  }
+  renderizarPedidosDisponibles(pedidosFiltrados);
+}
+
 function renderizarPedidosDisponibles(pedidos) {
   if ($.fn.DataTable && $.fn.DataTable.isDataTable('#tabla-pedidos-dt')) {
     $('#tabla-pedidos-dt').DataTable().destroy();
   }
 
   if (pedidos.length === 0) {
+    let mensaje = filtroTipoActual === 'todos' 
+      ? 'No hay pedidos disponibles en Etapa 0 o 1 en este momento.'
+      : `No hay pedidos de tipo "${filtroTipoActual}" disponibles en Etapa 0 o 1.`;
     $("#tabla-pedidos-disponibles").html(
-      '<div class="callout callout-info"><p>No hay pedidos de Esquejes disponibles en Etapa 0 o 1 en este momento.</p></div>'
+      '<div class="callout callout-info"><p>' + mensaje + '</p></div>'
     );
     return;
   }
 
   const etapaLabels = { '0': 'Etapa 0 - INICIO', '1': 'Etapa 1 -  10%' };
   const etapaClasses = { '0': 'bg-red', '1': 'bg-yellow' };
+  const tipoColors = { 'Esquejes': 'bg-green', 'Semillas': 'bg-blue', 'Interior': 'bg-purple' };
 
   let html = '<div class="table-responsive">';
   html += '<table id="tabla-pedidos-dt" class="table table-bordered table-hover" style="margin-bottom:0;">';
   html += '<thead class="bg-light"><tr>';
-  html += '<th>Código</th><th>Variedad</th><th>Cliente</th><th class="text-center">Etapa</th>';
+  html += '<th>Código</th><th>Variedad</th><th>Tipo</th><th>Cliente</th><th class="text-center">Etapa</th>';
   html += '<th class="text-center">Total Plantas</th><th class="text-center">Progreso</th>';
   html += '<th class="text-center">Restante</th><th class="text-center" style="width:120px;">Acción</th>';
   html += '</tr></thead><tbody>';
@@ -130,6 +146,8 @@ function renderizarPedidosDisponibles(pedidos) {
     const etapaKey = String(p.estado);
     const etapaLabel = etapaLabels[etapaKey] || `Etapa ${p.estado}`;
     const etapaClass = etapaClasses[etapaKey] || 'bg-gray';
+    const tipoPedido = p.tipo_pedido || 'Otro';
+    const tipoClass = tipoColors[tipoPedido] || 'bg-gray';
     const bandejas = p.cant_bandejas ? `(${p.cant_bandejas} band. de ${p.tipo_bandeja || '-'})` : '';
     const completado = restante <= 0;
     const esSeleccionado = pedidoSeleccionado && pedidoSeleccionado.id_artpedido == p.id_artpedido;
@@ -145,6 +163,7 @@ function renderizarPedidosDisponibles(pedidos) {
         <strong>${p.nombre_variedad}</strong>
         ${bandejas ? `<br><small class="text-muted">${bandejas}</small>` : ''}
       </td>
+      <td class="text-center"><span class="badge ${tipoClass}">${tipoPedido}</span></td>
       <td>${p.nombre_cliente}</td>
       <td class="text-center"><span class="badge ${etapaClass}">${etapaLabel}</span></td>
       <td class="text-center">${formatNumber(cantTotal)}</td>
@@ -172,9 +191,9 @@ function renderizarPedidosDisponibles(pedidos) {
 
   $('#tabla-pedidos-dt').DataTable({
     pageLength: 15,
-    order: [[3, 'asc'], [0, 'asc']],
+    order: [[4, 'asc'], [0, 'asc']],
     columnDefs: [
-      { orderable: false, targets: [5, 7] }
+      { orderable: false, targets: [5, 6, 8] }
     ],
     language: {
       search: "Buscar:",

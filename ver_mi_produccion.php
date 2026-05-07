@@ -248,8 +248,14 @@
             <div class="col-md-12">
               <div class="box box-primary">
                 <div class="box-header with-border">
-                  <h3 class="box-title"><i class="fa fa-list"></i> Pedidos Disponibles (Esquejes)</h3>
+                  <h3 class="box-title"><i class="fa fa-list"></i> Pedidos Disponibles</h3>
                   <div class="box-tools pull-right">
+                    <select id="filtro-tipo-pedido" class="form-control input-sm" style="width: 150px; display: inline-block; margin-right: 10px;" onchange="aplicarFiltroTipo()">
+                      <option value="todos">Todos</option>
+                      <option value="Esquejes">Esquejes</option>
+                      <option value="Semillas">Semillas</option>
+                      <option value="Interior">Interior</option>
+                    </select>
                     <button type="button" class="btn btn-sm btn-default" onclick="cargarPedidosDisponibles()">
                       <i class="fa fa-refresh"></i> Actualizar
                     </button>

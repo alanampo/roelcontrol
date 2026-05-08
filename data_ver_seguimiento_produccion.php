@@ -662,8 +662,7 @@ else if ($consulta == "obtener_pedidos_trabajados") {
                      FROM registro_produccion_diario rpd2
                      WHERE rpd2.id_artpedido = ap.id
                      AND rpd2.id_usuario = $id_usuario
-                     AND rpd2.estado != 'rechazado'
-                     AND rpd2.etapa_pedido = ap.estado),
+                     AND rpd2.estado != 'rechazado'),
                 0) as trabajado_este_usuario,
                 COALESCE(
                     (SELECT SUM(rpd3.cantidad_plantines)
@@ -700,6 +699,22 @@ else if ($consulta == "obtener_pedidos_trabajados") {
     if ($val && mysqli_num_rows($val) > 0) {
         $pedidos = array();
         while ($row = mysqli_fetch_assoc($val)) {
+            $id_artpedido = $row['id_artpedido'];
+            $estado = $row['estado'];
+
+            $workers_query = "SELECT GROUP_CONCAT(DISTINCT u.nombre SEPARATOR ', ') as trabajadores
+                              FROM registro_produccion_diario rpd
+                              LEFT JOIN usuarios u ON u.id = rpd.id_usuario
+                              WHERE rpd.id_artpedido = $id_artpedido
+                              AND rpd.estado != 'rechazado'";
+
+            $workers_result = mysqli_query($con, $workers_query);
+            $row['trabajadores'] = '';
+            if ($workers_result && mysqli_num_rows($workers_result) > 0) {
+                $workers_row = mysqli_fetch_assoc($workers_result);
+                $row['trabajadores'] = $workers_row['trabajadores'] ?: '';
+            }
+
             array_push($pedidos, $row);
         }
         echo json_encode($pedidos);

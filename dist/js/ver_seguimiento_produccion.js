@@ -1479,6 +1479,7 @@ function renderizarPedidosTrabajados(pedidos) {
           <div class="progress-bar progress-bar-${completado ? 'success' : (porcentaje >= 75 ? 'warning' : 'danger')}" style="width:${porcentaje}%;"></div>
         </div>
         <small class="text-muted">${porcentaje}%</small>
+        ${p.trabajadores ? `<br><small style="color:#d9534f;font-weight:bold;">Trabajado por: ${p.trabajadores}</small>` : ''}
       </td>
       <td class="text-center ${completado ? 'text-success' : ''}">
         ${completado ? '<i class="fa fa-check-circle"></i> Completo' : formatNumber(restante)}

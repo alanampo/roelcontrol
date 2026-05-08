@@ -172,6 +172,7 @@ function renderizarPedidosDisponibles(pedidos) {
           <div class="progress-bar progress-bar-${completado ? 'success' : (porcentaje >= 75 ? 'warning' : 'danger')}" role="progressbar" style="width:${porcentaje}%;line-height:14px;font-size:11px;">${porcentaje > 15 ? porcentaje + '%' : ''}</div>
         </div>
         <small class="text-muted">${formatNumber(totalTrabajado)} de ${formatNumber(cantTotal)}</small>
+        ${p.trabajadores ? `<br><small style="color:#d9534f;font-weight:bold;">Trabajado por: ${p.trabajadores}</small>` : ''}
       </td>
       <td class="text-center">
         ${completado

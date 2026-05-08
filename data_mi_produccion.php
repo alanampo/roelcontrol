@@ -135,6 +135,22 @@ else if ($consulta == "obtener_pedidos_disponibles") {
     if ($val && mysqli_num_rows($val) > 0) {
         $pedidos = array();
         while ($row = mysqli_fetch_assoc($val)) {
+            $id_artpedido = $row['id_artpedido'];
+            $estado = $row['estado'];
+
+            $workers_query = "SELECT GROUP_CONCAT(DISTINCT u.nombre SEPARATOR ', ') as trabajadores
+                              FROM registro_produccion_diario rpd
+                              LEFT JOIN usuarios u ON u.id = rpd.id_usuario
+                              WHERE rpd.id_artpedido = $id_artpedido
+                              AND rpd.estado != 'rechazado'";
+
+            $workers_result = mysqli_query($con, $workers_query);
+            $row['trabajadores'] = '';
+            if ($workers_result && mysqli_num_rows($workers_result) > 0) {
+                $workers_row = mysqli_fetch_assoc($workers_result);
+                $row['trabajadores'] = $workers_row['trabajadores'] ?: '';
+            }
+
             array_push($pedidos, $row);
         }
         echo json_encode($pedidos);
@@ -159,7 +175,7 @@ else if ($consulta == "guardar_registro") {
             ? "'" . mysqli_real_escape_string($con, $_POST["observaciones"]) . "'"
             : "NULL";
 
-        // 1. Validar que el pedido existe, no está eliminado, estado IN (0,1) y tipo IN ('E','HE')
+        // 1. Validar que el pedido existe, no está eliminado, estado IN (0,1) y tipo válido (E, HE, S, HS o Interior)
         $query_pedido = "SELECT ap.id, ap.cant_plantas, ap.cant_bandejas, ap.tipo_bandeja,
                                 ap.estado, ap.id_variedad,
                                 v.nombre as nombre_variedad,
@@ -167,10 +183,19 @@ else if ($consulta == "guardar_registro") {
                          FROM articulospedidos ap
                          INNER JOIN variedades_producto v ON v.id = ap.id_variedad
                          INNER JOIN tipos_producto t ON t.id = v.id_tipo
+                         LEFT JOIN atributos_valores_variedades avv ON avv.id_variedad = v.id
+                         LEFT JOIN atributos_valores av ON av.id = avv.id_atributo_valor
+                         LEFT JOIN atributos a ON a.id = av.id_atributo
                          WHERE ap.id = $id_artpedido
                          AND ap.eliminado IS NULL
                          AND ap.estado IN (0, 1)
-                         AND t.codigo IN ('E', 'HE')";
+                         AND (
+                             t.codigo IN ('E', 'HE', 'S', 'HS')
+                             OR (
+                                 UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(a.nombre, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'TIPO DE PLANTA'
+                                 AND UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(av.valor, 'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U')) = 'PLANTAS DE INTERIOR'
+                             )
+                         )";
         $res_pedido = mysqli_query($con, $query_pedido);
 
         if (!$res_pedido || mysqli_num_rows($res_pedido) == 0) {
